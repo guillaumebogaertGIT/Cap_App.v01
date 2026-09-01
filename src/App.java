@@ -1,9 +1,20 @@
 public class App {
-    public static void main(String[] args) throws Exception {
-       Athlete athlete = new Athlete ("Guillaume");
-       Exercise exercise = new Exercise ("Bench press", 3, 6, "3-1-1-0");
+    public static void main(String[] args) {
 
-       System.out.println(athlete);
-       System.out.println(exercise);
+        WorkoutLibrary library = new WorkoutLibrary();
+
+        // create workout
+        Workout workout = new Workout("Upper Boddy");
+
+        Exercise exercise = new Exercise("Bench press", 3 , 5, "4-1-3-2");
+        workout.addExercise(exercise);
+
+        // add it
+        library.addWorkout(workout);
+
+        // print library
+        library.printWorkouts();
     }
+
+    
 }

@@ -6,4 +6,13 @@ public class WorkoutLibrary {
 public WorkoutLibrary() {
     this.workouts = new ArrayList<Workout>();
 }
+public void addWorkout(Workout workout) {
+    this.workouts.add(workout);
+}
+public void printWorkouts() {
+    for (Workout workout : this.workouts) {
+        System.out.println(workout);
+    }
+   
+}
 }
