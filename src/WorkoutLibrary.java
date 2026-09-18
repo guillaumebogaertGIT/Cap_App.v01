@@ -7,6 +7,10 @@ public class WorkoutLibrary {
         this.workouts = new ArrayList<Workout>();
     }
 
+    public ArrayList<Workout> getWorkouts() {
+        return this.workouts;
+    }
+
     public void addWorkout(Workout workout) {
         this.workouts.add(workout);
     }
