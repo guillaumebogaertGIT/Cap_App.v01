@@ -9,6 +9,7 @@ public class WorkoutFileManager {
         for (Workout workout : library.getWorkouts())  {
             filewriter.write(workout.toString() + "\n");
         }
+        filewriter.close();
 
     }
 }
