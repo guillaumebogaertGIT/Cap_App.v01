@@ -84,8 +84,12 @@ public class UserInterface {
         System.out.print("Workout name: ");
         String name = this.scanner.nextLine();
 
-        library.removeWorkout(name);
-        System.out.println("Workout removed if it existed.");
+        boolean removed = library.removeWorkout(name);
+        if (removed) {
+            System.out.println("Successfully removed.");
+        } else {
+            System.out.println("Workout not found.");
+        }
     }
 }
 

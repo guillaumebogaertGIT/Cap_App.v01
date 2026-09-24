@@ -11,11 +11,13 @@ public class WorkoutLibrary {
         this.workouts.add(workout);
     }
 
-    public void removeWorkout(String name) {
+    public boolean removeWorkout(String name) {
         Workout workout = findWorkout(name);
         if (workout != null) {
             this.workouts.remove(workout);
+            return true;
         }
+        return false;
     }
 
     public void printWorkouts() {
