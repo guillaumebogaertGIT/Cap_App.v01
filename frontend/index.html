@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cap App</title>
+    <script src="js/theme.js"></script>
 
     <link rel="stylesheet" href="css/style.css">
     <script src="js/navigation.js" defer></script>
@@ -25,6 +26,11 @@
     </svg>
 
     <div class="sidebar">
+        <button class="sidebar-toggle" type="button" aria-expanded="true" aria-controls="sidebar-navigation" aria-label="Zijbalk inklappen" title="Zijbalk inklappen">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+                <path d="m14 6-6 6 6 6" />
+            </svg>
+        </button>
 
         <h1 class="sidebar-brand">
             <img class="brand-logo" src="img/Cap-logo.png" alt="CAP - Complete Athletic Program">
@@ -34,23 +40,34 @@
         <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="sidebar-navigation">Menu</button>
 
         <nav id="sidebar-navigation" aria-label="Hoofdnavigatie">
-            <a class="active" href="#">Dashboard</a>
-            <a href="#">Workouts</a>
+            <a class="active" href="#dashboard" data-view-link="dashboard" aria-current="page">Dashboard</a>
+            <a href="#workouts" data-view-link="workouts">Workouts</a>
             <a href="#">Oefeningen</a>
             <a href="#">Basketball</a>
             <a href="#">Voeding</a>
             <a href="#">Recovery</a>
             <a href="#">Coaches</a>
             <a href="#">AI Coach</a>
+            <a class="settings-link" href="#settings" data-view-link="settings" aria-label="Instellingen">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+                    <path d="M9.67 4.14a2 2 0 0 1 3.66 0 2 2 0 0 0 2.82 1.16 2 2 0 0 1 2.59 2.59 2 2 0 0 0 1.16 2.82 2 2 0 0 1 0 3.66 2 2 0 0 0-1.16 2.82 2 2 0 0 1-2.59 2.59 2 2 0 0 0-2.82 1.16 2 2 0 0 1-3.66 0 2 2 0 0 0-2.82-1.16 2 2 0 0 1-2.59-2.59 2 2 0 0 0-1.16-2.82 2 2 0 0 1 0-3.66 2 2 0 0 0 1.16-2.82A2 2 0 0 1 6.85 5.3a2 2 0 0 0 2.82-1.16" transform="translate(.5 -.5)" />
+                    <circle cx="12" cy="12" r="3" />
+                </svg>
+                <span class="settings-tooltip" aria-hidden="true">Instellingen</span>
+            </a>
         </nav>
 
     </div>
 
     <main>
+        <section id="dashboard" data-view aria-labelledby="dashboard-title">
         <header class="dashboard-header">
             <div>
-                <h2>Dashboard</h2>
-                <p class="dashboard-intro">Jouw training, vooruitgang en herstel op één plek.</p>
+                <h2 id="dashboard-title" class="dashboard-title" tabindex="-1">
+                    Dashboard
+                    <img class="dashboard-title-logo" src="img/Cap-logo.png" alt="" aria-hidden="true">
+                </h2>
+                <p class="dashboard-intro">Jouw doelen. Jouw tempo. Samen sterker.</p>
             </div>
             <img class="dashboard-wordmark" src="img/Stronger-Together.png" alt="Stronger Together">
         </header>
@@ -58,14 +75,14 @@
         <div class="dashboard-cards">
             <div class="workout-card">
                 <span class="card-label">Jouw volgende stap</span>
-                <h3>Workout voor vandaag</h3>
-                <p>Selecteer een workout om te beginnen.</p>
-                <button>Kies een training</button>
+                <h3 id="selected-workout-title">Jouw training</h3>
+                <p id="selected-workout-description">Selecteer een workout om te beginnen.</p>
+                <a class="primary-button" href="#workouts">Kies jouw training</a>
             </div>
 
             <section class="history-card">
                 <span class="card-label">Terugblik</span>
-                <h3>Recente trainingen</h3>
+                <h3>Jouw afgelopen trainingen</h3>
                 <p>Je trainingsgeschiedenis verschijnt hier zodra deze beschikbaar is.</p>
             </section>
 
@@ -77,16 +94,70 @@
 
             <section class="recovery-card">
                 <span class="card-label">In balans</span>
-                <h3>Gezondheid &amp; herstel</h3>
-                <p>Hier krijg je later een overzicht van je slaap, activiteit en herstel.</p>
-                <span class="status-label">Apparaatkoppelingen gepland</span>
+                <h3>Tijd voor herstel</h3>
+                <p>Verbind straks je wearable en krijg meer inzicht in je activiteit, slaap en herstel.</p>
+                <span class="status-label">Binnenkort: koppel je wearable</span>
             </section>
             <section class="weekly-goal-card">
                 <span class="card-label">Blijf consistent</span>
-                <h3>Weekdoel</h3>
+                <h3>Jouw doel deze week</h3>
                 <p>Stel een wekelijks trainingsdoel in.</p>
             </section>
         </div>
+        </section>
+
+        <section id="workouts" data-view aria-labelledby="workouts-title" hidden>
+            <header class="dashboard-header">
+                <div>
+                    <h2 id="workouts-title" tabindex="-1">Workouts</h2>
+                    <p class="dashboard-intro">Kies een training voor vandaag.</p>
+                </div>
+            </header>
+            <p class="sample-notice">Voorbeeldtrainingen · Je keuze blijft alleen bewaard zolang deze pagina open is.</p>
+            <div class="workout-options">
+                <article class="workout-option">
+                    <span class="card-label">Voorbeeld · Kracht</span>
+                    <h3>Full body</h3>
+                    <p>Een training voor je hele lichaam.</p>
+                    <p class="workout-meta">45 minuten · 6 oefeningen</p>
+                    <button class="primary-button" type="button" data-workout="Full body" data-summary="45 minuten · 6 oefeningen">Kies Full body</button>
+                </article>
+                <article class="workout-option">
+                    <span class="card-label">Voorbeeld · Basketball</span>
+                    <h3>Voetenwerk &amp; conditie</h3>
+                    <p>Werk aan je bewegingen op het veld.</p>
+                    <p class="workout-meta">30 minuten · 5 oefeningen</p>
+                    <button class="primary-button" type="button" data-workout="Voetenwerk &amp; conditie" data-summary="30 minuten · 5 oefeningen">Kies voetenwerk</button>
+                </article>
+                <article class="workout-option">
+                    <span class="card-label">Voorbeeld · Herstel</span>
+                    <h3>Mobiliteit</h3>
+                    <p>Neem tijd voor rustig en soepel bewegen.</p>
+                    <p class="workout-meta">20 minuten · 4 oefeningen</p>
+                    <button class="primary-button" type="button" data-workout="Mobiliteit" data-summary="20 minuten · 4 oefeningen">Kies mobiliteit</button>
+                </article>
+            </div>
+        </section>
+        <section id="settings" data-view aria-labelledby="settings-title" hidden>
+            <header class="dashboard-header">
+                <div>
+                    <h2 id="settings-title" tabindex="-1">Instellingen</h2>
+                    <p class="dashboard-intro">Maak CAP jouw plek.</p>
+                </div>
+            </header>
+            <div class="settings-card">
+                <fieldset class="theme-options" aria-describedby="theme-help">
+                    <legend>Weergave</legend>
+                    <p id="theme-help">Kies je uitstraling. Systeem volgt de instelling van je telefoon of computer.</p>
+                    <div class="theme-choices">
+                        <label><input type="radio" name="theme" value="light"> Licht</label>
+                        <label><input type="radio" name="theme" value="dark"> Donker</label>
+                        <label><input type="radio" name="theme" value="system" checked> Systeem</label>
+                    </div>
+                </fieldset>
+                <p id="theme-status" role="status">Je voorkeur wordt in deze browser bewaard.</p>
+            </div>
+        </section>
     </main>
 
 </body>

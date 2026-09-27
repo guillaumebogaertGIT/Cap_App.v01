@@ -1,21 +1,110 @@
+:root {
+    color-scheme: dark;
+    --background: #151515;
+    --surface: #1c1c1c;
+    --sidebar: #111;
+    --text: #f5f5f5;
+    --muted: #bbb;
+    --border: #414141;
+    --hover: #252525;
+    --highlight: #30271b;
+    --highlight-border: #69502d;
+    --accent-text: #F5A623;
+    --logo-filter: url(#logo-white);
+}
+:root[data-theme="light"] {
+    color-scheme: light;
+    --background: #f4f5f7;
+    --surface: #fff;
+    --sidebar: #fff;
+    --text: #202020;
+    --muted: #565b63;
+    --border: #dce0e5;
+    --hover: #eef0f3;
+    --highlight: #fff5e6;
+    --highlight-border: #e7bc78;
+    --accent-text: #865000;
+    --logo-filter: none;
+}
 * {
     box-sizing: border-box;
+}
+
+.settings-card {
+    max-width: 42rem;
+    margin-top: 2rem;
+    padding: 1.25rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 1rem;
+}
+.theme-options {
+    min-width: 0;
+    padding: 0;
+    margin: 0;
+    border: 0;
+}
+.theme-options legend {
+    padding: 0;
+    font-size: 1.15rem;
+    font-weight: 600;
+}
+.theme-options p,
+#theme-status {
+    color: var(--muted);
+}
+#theme-status {
+    font-size: 0.85rem;
+    margin-bottom: 0;
+}
+.theme-choices {
+    display: grid;
+    gap: 0.75rem;
+}
+.theme-choices label {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    min-height: 3rem;
+    padding: 0.75rem;
+    border: 1px solid var(--border);
+    border-radius: 0.5rem;
+    cursor: pointer;
+}
+.theme-choices label:has(input:checked) {
+    background: var(--highlight);
+    border-color: var(--accent-text);
+}
+.theme-choices input {
+    width: 1.25rem;
+    height: 1.25rem;
+    margin: 0;
+    accent-color: var(--accent-text);
+}
+.theme-choices input:focus-visible {
+    outline: 2px solid var(--accent-text);
+    outline-offset: 4px;
+}
+@media (min-width: 600px) {
+    .theme-choices {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
 }
 body {
     margin: 0;
     display: flex;
     min-height: 100vh;
-    background-color: #151515;
-    color: #f5f5f5;
+    background-color: var(--background);
+    color: var(--text);
     font-family: "Segoe UI", Arial, sans-serif;
     line-height: 1.5;
 }
 .sidebar {
     width: 240px;
     flex-shrink: 0;
-    background-color: #111;
+    background-color: var(--sidebar);
     padding: 3rem 1.5rem;
-    border-right: 1px solid #2b2b2b;
+    border-right: 1px solid var(--border);
 }
 .sidebar > h1,
 .dashboard-header h2 {
@@ -25,23 +114,58 @@ body {
     letter-spacing: -0.04em;
 }
 .brand-logo {
-    filter: url(#logo-white);
+    filter: var(--logo-filter);
     display: block;
     width: 120px;
     max-width: 100%;
     height: auto;
 }
 .sidebar > p {
-    color: #aaa;
+    color: var(--muted);
     font-size: 0.85rem;
     margin: 0.75rem 0 3rem;
 }
 .menu-toggle {
     display: none;
 }
+.sidebar-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 3rem;
+    height: 3rem;
+    margin: 0 0 1.5rem auto;
+    padding: 0;
+    border: 1px solid var(--border);
+    border-radius: 0.5rem;
+    background: var(--surface);
+    color: var(--text);
+    cursor: pointer;
+}
+.sidebar-toggle:hover {
+    background: var(--hover);
+}
+.sidebar-toggle svg {
+    width: 1.5rem;
+    height: 1.5rem;
+}
+@media (min-width: 801px) {
+    .sidebar.is-collapsed {
+        width: 5rem;
+        padding: 3rem 1rem;
+    }
+    .sidebar.is-collapsed .sidebar-brand,
+    .sidebar.is-collapsed > p,
+    .sidebar.is-collapsed nav {
+        display: none;
+    }
+    .sidebar.is-collapsed .sidebar-toggle svg {
+        transform: rotate(180deg);
+    }
+}
 nav a {
     display: block;
-    color: #bbb;
+    color: var(--muted);
     text-decoration: none;
     padding: 0.8rem 1rem;
     margin-bottom: 0.4rem;
@@ -49,13 +173,46 @@ nav a {
     font-size: 0.95rem;
 }
 nav a:hover {
-    background-color: #252525;
-    color: white;
+    background-color: var(--hover);
+    color: var(--text);
 }
 nav a.active {
     background-color: #F5A623;
     color: #111;
     font-weight: 600;
+}
+nav .settings-link {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 3rem;
+    min-height: 3rem;
+    padding: 0.75rem;
+    margin-top: 1rem;
+}
+.settings-link svg {
+    width: 1.5rem;
+    height: 1.5rem;
+    flex-shrink: 0;
+}
+.settings-tooltip {
+    position: absolute;
+    left: 100%;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid var(--border);
+    border-radius: 0.5rem;
+    background: var(--surface);
+    color: var(--text);
+    font-size: 0.85rem;
+    font-weight: 400;
+    white-space: nowrap;
+    visibility: hidden;
+    z-index: 1;
+}
+.settings-link:hover .settings-tooltip,
+.settings-link:focus-visible .settings-tooltip {
+    visibility: visible;
 }
 main {
     flex: 1;
@@ -76,11 +233,23 @@ main {
     max-width: 100%;
     height: auto;
     margin-left: auto;
-    filter: url(#logo-white);
+    filter: var(--logo-filter);
 }
 .dashboard-intro {
-    color: #aaa;
+    color: var(--muted);
     margin: 0.75rem 0 0;
+}
+.dashboard-title {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+.dashboard-title-logo {
+    display: block;
+    width: 2.75rem;
+    height: auto;
+    flex-shrink: 0;
+    filter: var(--logo-filter);
 }
 .dashboard-cards {
     display: grid;
@@ -90,21 +259,21 @@ main {
 }
 .dashboard-cards > div,
 .dashboard-cards > section {
-    background-color: #1c1c1c;
-    border: 1px solid #303030;
+    background-color: var(--surface);
+    border: 1px solid var(--border);
     padding: 1.75rem;
     border-radius: 1rem;
 }
 .dashboard-cards .workout-card {
     grid-column: 1 / -1;
     padding: 2rem;
-    border-color: #69502d;
-    background: linear-gradient(115deg, #30271b, #1c1c1c 75%);
+    border-color: var(--highlight-border);
+    background: linear-gradient(115deg, var(--highlight), var(--surface) 75%);
 }
 .card-label {
     display: block;
     margin-bottom: 0.75rem;
-    color: #F5A623;
+    color: var(--accent-text);
     font-size: 0.7rem;
     font-weight: 700;
     letter-spacing: 0.12em;
@@ -119,19 +288,24 @@ main {
     font-size: 1.8rem;
 }
 .dashboard-cards p {
-    color: #aaa;
+    color: var(--muted);
     max-width: 48ch;
     margin: 0.75rem 0 1.25rem;
 }
 .status-label {
     display: inline-block;
     padding: 0.3rem 0.65rem;
-    border: 1px solid #414141;
+    border: 1px solid var(--border);
     border-radius: 0.4rem;
-    color: #bbb;
+    color: var(--muted);
     font-size: 0.75rem;
 }
-.workout-card button {
+.primary-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 3rem;
+    text-decoration: none;
     background-color: #F5A623;
     color: #111;
     border: none;
@@ -141,12 +315,12 @@ main {
     font-weight: 600;
     cursor: pointer;
 }
-.workout-card button:hover {
+.primary-button:hover {
     background-color: #ffb940;
 }
 a:focus-visible,
 button:focus-visible {
-    outline: 2px solid #F5A623;
+    outline: 2px solid var(--accent-text);
     outline-offset: 4px;
 }
 @media (max-width: 480px) {
@@ -159,13 +333,62 @@ button:focus-visible {
     .dashboard-cards .workout-card {
         padding: 1.25rem;
     }
-    .workout-card button {
+    .workout-card .primary-button {
         width: 100%;
         min-height: 3rem;
     }
 }
 
+/* Start with one column, then add columns when the content has room. */
+.workout-options {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1.25rem;
+    margin-top: 1.5rem;
+}
+.workout-option {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    padding: 1.25rem;
+    border: 1px solid var(--border);
+    border-radius: 1rem;
+    background-color: var(--surface);
+}
+.workout-option h3 {
+    margin: 0;
+}
+.workout-option p,
+.sample-notice {
+    color: var(--muted);
+}
+.workout-option .workout-meta {
+    color: var(--text);
+}
+.workout-option .primary-button {
+    margin-top: auto;
+    width: 100%;
+}
+@media (min-width: 600px) {
+    .workout-options {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+@media (min-width: 801px) and (max-width: 1000px) {
+    .workout-options {
+        grid-template-columns: 1fr;
+    }
+}
+@media (min-width: 1200px) {
+    .workout-options {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+}
+
 @media (max-width: 800px) {
+    .sidebar-toggle {
+        display: none;
+    }
     body {
         flex-direction: column;
     }
@@ -174,7 +397,7 @@ button:focus-visible {
         width: 100%;
         padding: 1.5rem;
         border-right: none;
-        border-bottom: 1px solid #2b2b2b;
+        border-bottom: 1px solid var(--border);
     }
     .sidebar > p {
         margin-bottom: 0;
@@ -191,8 +414,8 @@ button:focus-visible {
         padding: 0.65rem 1rem;
         border: 1px solid #F5A623;
         border-radius: 0.5rem;
-        background-color: #1c1c1c;
-        color: #f5f5f5;
+        background-color: var(--surface);
+        color: var(--text);
         font: inherit;
         cursor: pointer;
     }
