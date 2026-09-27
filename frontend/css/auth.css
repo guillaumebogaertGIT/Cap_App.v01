@@ -1,0 +1,19 @@
+.is-signed-out > .sidebar, .is-signed-out > main { display: none; }
+.auth-screen { width: min(72rem, 100%); margin: auto; padding: 1.25rem; display: grid; gap: 2rem; }
+.auth-story { padding: 1rem 0; }
+.auth-cap-logo { display: block; width: 7.5rem; max-width: 100%; height: auto; margin-bottom: 1.5rem; filter: var(--logo-filter); }
+.auth-wordmark { display: block; width: min(100%, 25rem); height: auto; margin-bottom: 1rem; filter: var(--logo-filter); }
+.auth-story h1 { font-size: clamp(2.2rem, 5vw, 4rem); line-height: 1.08; letter-spacing: -0.05em; }
+.auth-story p { color: var(--muted); max-width: 35ch; }
+.auth-card { min-width: 0; padding: 1.25rem; border: 1px solid var(--border); border-radius: 1.25rem; background: var(--surface); box-shadow: var(--card-shadow); }
+.auth-card > p { color: var(--muted); }
+.auth-tabs { display: flex; flex-wrap: wrap; gap: 0.75rem; }
+.auth-tabs [aria-pressed="true"] { border-color: var(--accent-text); background: var(--highlight); }
+.auth-text-button { min-height: 2.75rem; border: 0; background: none; color: var(--accent-text); font: inherit; text-decoration: underline; cursor: pointer; padding: 0.4rem 0; }
+.club-form .auth-check { flex-direction: row; align-items: start; gap: 0.75rem; font-weight: 400; padding: 0.65rem 0; }
+.club-form .auth-check input { min-height: 1.25rem; width: 1.25rem; height: 1.25rem; flex-shrink: 0; margin: 0.2rem 0 0; accent-color: var(--accent-text); }
+.access-preview { padding: 1rem; border: 1px dashed var(--border); border-radius: 0.75rem; margin-bottom: 1rem; }
+.access-preview label { display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem; font-weight: 600; }
+.access-preview select { max-width: 100%; min-height: 3rem; font: inherit; background: var(--surface); color: var(--text); border: 1px solid var(--border); border-radius: 0.5rem; padding: 0.5rem; }
+.access-preview p { margin: 0.5rem 0 0; font-size: 0.85rem; color: var(--muted); }
+@media (min-width: 900px) { .auth-screen { grid-template-columns: 1fr 1.1fr; align-items: center; padding: 3rem; } .auth-card { padding: 2rem; } }

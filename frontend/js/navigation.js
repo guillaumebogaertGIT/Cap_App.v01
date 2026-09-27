@@ -3,6 +3,20 @@ const sidebarNavigation = document.querySelector('#sidebar-navigation');
 const sidebar = document.querySelector('.sidebar');
 const sidebarToggle = document.querySelector('.sidebar-toggle');
 const mobileLayout = window.matchMedia('(max-width: 800px)');
+let previewRole = 'athlete';
+
+document.querySelectorAll('[name="preview-role"]').forEach((input) => {
+    input.checked = input.value === previewRole;
+    input.addEventListener('change', () => {
+        previewRole = input.value;
+        // Both roles use the dashboard route; the preview chooses its content.
+        if (window.location.hash !== '#dashboard') {
+            window.location.hash = 'dashboard';
+        } else {
+            showCurrentView();
+        }
+    });
+});
 
 sidebarToggle.addEventListener('click', () => {
     const isCollapsed = sidebar.classList.toggle('is-collapsed');
@@ -44,15 +58,23 @@ document.addEventListener('keydown', (event) => {
 // URL fragments let the browser's Back and Forward buttons switch screens too.
 function showCurrentView(moveFocus = true) {
     const requestedView = window.location.hash.slice(1);
-    const viewId = ['dashboard', 'workouts', 'settings'].includes(requestedView)
+    const allowedViews = previewRole === 'coach' ? ['dashboard', 'settings', 'create-workout', 'athletes', 'group-classes', 'planning', 'bookings', 'shop'] : ['dashboard', 'workouts', 'settings', 'planning', 'bookings', 'shop'];
+    const routeId = allowedViews.includes(requestedView)
         ? requestedView : 'dashboard';
+    const viewId = previewRole === 'coach' && routeId === 'dashboard' ? 'coach' : routeId;
+
+    sidebarNavigation.querySelectorAll('a').forEach((link) => {
+        link.hidden = previewRole === 'coach'
+            ? !['dashboard', 'settings', 'athletes', 'group-classes', 'planning', 'bookings', 'shop'].includes(link.dataset.viewLink)
+            : link.hasAttribute('data-coach-only');
+    });
 
     document.querySelectorAll('[data-view]').forEach((view) => {
         view.hidden = view.id !== viewId;
     });
 
     document.querySelectorAll('[data-view-link]').forEach((link) => {
-        const isActive = link.dataset.viewLink === viewId;
+        const isActive = link.dataset.viewLink === routeId;
         link.classList.toggle('active', isActive);
         if (isActive) {
             link.setAttribute('aria-current', 'page');
@@ -63,8 +85,9 @@ function showCurrentView(moveFocus = true) {
 
     setMenuOpen(false);
     if (moveFocus) {
-        document.querySelector(`#${viewId}-title`).focus();
+        document.querySelector(`#${viewId}-title`)?.focus();
     }
+    document.dispatchEvent(new CustomEvent('cap:viewchange'));
 }
 
 document.querySelectorAll('[data-workout]').forEach((button) => {

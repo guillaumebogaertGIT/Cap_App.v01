@@ -1,0 +1,161 @@
+/* Visual refinement of existing components; phone layouts are the base. */
+:root {
+    --background: #141619;
+    --surface: #1e2125;
+    --sidebar: #181a1d;
+    --border: #373c42;
+    --muted: #b7bcc4;
+    --highlight: #342a1e;
+    --hover: #292e34;
+    --card-shadow: 0 8px 24px #00000012;
+}
+:root[data-theme="light"] {
+    --background: #dcdedc;
+    --surface: #eeefeb;
+    --sidebar: #e6e8e3;
+    --border: #c9cec6;
+    --muted: #535c59;
+    --highlight: #f0dfc4;
+    --hover: #dfe3db;
+    --card-shadow: 0 8px 24px #28332a08;
+}
+body { font-family: "Segoe UI", Arial, sans-serif; }
+/* Dark CAP palette: graphite surfaces with restrained amber light. */
+:root[data-theme="dark"] {
+    --background: #101215;
+    --surface: #1b1f25;
+    --sidebar: #13161b;
+    --border: #353c46;
+    --text: #f2f3f5;
+    --muted: #b5becb;
+    --highlight: #35291d;
+    --highlight-border: #826039;
+    --hover: #262d36;
+    --accent-text: #ffbb62;
+    --card-shadow: 0 12px 28px #00000030, inset 0 1px 0 #ffffff05;
+}
+:root[data-theme="dark"] body {
+    background-image: radial-gradient(ellipse at 95% 0%, #f5a6230c, transparent 45%);
+}
+:root[data-theme="dark"] .sidebar {
+    background: linear-gradient(180deg, #1a1e25, var(--sidebar) 65%);
+    border-color: #323740;
+}
+:root[data-theme="dark"] .sidebar nav a.active {
+    background: linear-gradient(110deg, #ffb64d, #f59a28);
+    color: #17130d;
+    box-shadow: 0 4px 20px #f5a62325;
+}
+:root[data-theme="dark"] #welcome-name { color: #ffbb62; }
+:root[data-theme="dark"] .dashboard-overview {
+    background: radial-gradient(ellipse at 100% 0%, #79502366, transparent 65%), linear-gradient(120deg, #202935, #171b22);
+    border-color: #675038;
+    box-shadow: 0 16px 40px #0004, inset 0 1px 0 #ffcf8c15;
+}
+:root[data-theme="dark"] .dashboard-overview .overview-stats strong { color: #ffca81; }
+:root[data-theme="dark"] .dashboard-cards .workout-card,
+:root[data-theme="dark"] .dashboard-cards .coach-create-card {
+    background: linear-gradient(110deg, #33291f, #1d222a 75%);
+    border-left-color: #ffb64d;
+}
+:root[data-theme="dark"] .club-day { background: #15191f; border: 1px solid #2a3039; }
+:root[data-theme="dark"] .club-toolbar,
+:root[data-theme="dark"] .role-preview,
+:root[data-theme="dark"] .account-toggle { background: #1a1f26; }
+:root[data-theme="dark"] .status-label { background: #ffffff05; }
+:root[data-theme="dark"] .primary-button:not(:disabled) {
+    background: linear-gradient(110deg, #ffbd59, #f6a12d);
+    color: #18130c;
+    box-shadow: 0 4px 16px #f5a62318;
+}
+:root[data-theme="dark"] .primary-button:not(:disabled):hover {
+    background: #ffca76;
+    box-shadow: 0 4px 20px #f5a62330;
+}
+:root[data-theme="dark"] .account-links,
+:root[data-theme="dark"] .exercise-dropdown,
+:root[data-theme="dark"] .club-dialog {
+    background: #1d232c;
+    border-color: #46505d;
+    box-shadow: 0 20px 50px #0006;
+}
+main { width: 100%; max-width: 1600px; padding: 1.25rem; }
+.sidebar { background: var(--sidebar); }
+.sidebar > p { letter-spacing: 0.06em; font-size: 0.75rem; }
+.sidebar nav a { min-height: 3rem; border-radius: 0.75rem; }
+.sidebar nav a.active { box-shadow: 0 4px 16px #f5a62320; }
+.sidebar nav a[href="#"] { opacity: 0.65; }
+.sidebar nav a[href="#shop"] { border-top: 1px solid var(--border); margin-top: 1.25rem; }
+.account-bar { margin-bottom: 1rem; }
+.welcome-bar { gap: 1rem; margin-bottom: 1.5rem; }
+.welcome-heading h2 { font-weight: 750; }
+.role-preview { background: var(--surface); border-style: solid; font-size: 0.85rem; }
+.role-preview p { font-size: 0.75rem; }
+.club-preview-note { max-width: 80ch; font-size: 0.75rem; margin-bottom: 1.5rem; }
+.dashboard-header { gap: 1rem; }
+.dashboard-header h2 { font-size: clamp(1.65rem, 2.5vw, 2.25rem); }
+.dashboard-wordmark { width: 180px; }
+.dashboard-intro { max-width: 55ch; }
+.club-quick-links { gap: 0.5rem; }
+.club-quick-links a { border-radius: 2rem; font-size: 0.9rem; }
+.primary-button { border-radius: 0.75rem; box-shadow: 0 3px 0 #00000018; }
+.secondary-button { border-radius: 0.75rem; }
+.dashboard-cards { margin-top: 1.25rem; }
+.dashboard-cards > section, .dashboard-cards > div, .club-card, .athlete-card, .workout-option {
+    box-shadow: var(--card-shadow);
+    border-radius: 1.15rem;
+}
+:root[data-theme="light"] .dashboard-cards > section,
+:root[data-theme="light"] .dashboard-cards > div { border-top: 1px solid var(--border); }
+.dashboard-cards .workout-card, .dashboard-cards .coach-create-card {
+    border-left: 4px solid #F5A623;
+    background: linear-gradient(115deg, var(--highlight), var(--surface) 85%);
+}
+.card-label { font-size: 0.72rem; letter-spacing: 0.1em; }
+.status-label { border-radius: 2rem; font-size: 0.8rem; }
+.dashboard-overview {
+    display: grid;
+    gap: 1.5rem;
+    padding: 1.5rem;
+    border-radius: 1.25rem;
+    border: 1px solid #494333;
+    background: radial-gradient(ellipse at top right, #64471e 0, transparent 65%), #202522;
+    color: #f5f5ef;
+    box-shadow: var(--card-shadow);
+}
+.dashboard-overview .card-label { color: #ffc16b; }
+.overview-heading h3 { max-width: 24ch; font-size: clamp(1.5rem, 3vw, 2.2rem); line-height: 1.2; letter-spacing: -0.035em; margin: 0; }
+.overview-stats { display: flex; flex-wrap: wrap; gap: 1.5rem; }
+.overview-stats > div { display: flex; flex-direction: column; gap: 0.2rem; }
+.overview-stats strong { font-size: 2rem; font-weight: 650; line-height: 1; }
+.overview-stats span { color: #c8cec7; font-size: 0.85rem; }
+.next-session { min-width: 0; border-top: 1px solid #ffffff30; padding-top: 1.25rem; overflow-wrap: anywhere; }
+.next-session h4 { font-size: 1.2rem; margin: 0; }
+.next-session p { color: #d0d3cb; }
+.club-toolbar { padding: 1rem; border: 1px solid var(--border); border-radius: 1rem; background: var(--surface); }
+.club-toolbar label { flex: 1 1 10rem; }
+.club-day { padding: 0.65rem; background: var(--hover); border-radius: 1rem; }
+.club-day > h3 { text-transform: uppercase; font-size: 0.8rem; letter-spacing: 0.04em; }
+.club-card { border-top: 1px solid var(--border); padding: 1.15rem; }
+.club-calendar .club-card { border-left: 3px solid #F5A623; }
+.club-card .club-actions { flex-direction: column; align-items: stretch; }
+.club-card .card-label { line-height: 1.6; }
+.club-dialog { box-shadow: 0 24px 80px #0005; }
+.club-form h2 { letter-spacing: -0.035em; }
+.club-empty { border: 1px dashed var(--border); color: var(--muted); }
+@media (min-width: 801px) {
+    main { padding: 2rem; }
+    .sidebar { position: sticky; top: 0; height: 100dvh; overflow-y: auto; padding: 1.5rem 1rem; width: 220px; }
+    .sidebar-toggle { margin-bottom: 1rem; }
+    .sidebar > p { margin-bottom: 1.75rem; }
+}
+@media (min-width: 1100px) {
+    .dashboard-overview { grid-template-columns: 1.25fr 1fr; gap: 1rem 2rem; padding: 2rem; }
+    .overview-heading { grid-column: 1; }
+    .overview-stats { grid-column: 1; }
+    .next-session { grid-column: 2; grid-row: 1 / 3; border-top: 0; border-left: 1px solid #ffffff30; padding: 0 0 0 2rem; align-content: center; }
+    .club-agenda .club-card .club-actions { flex-direction: row; }
+}
+@media (prefers-reduced-motion: no-preference) {
+    .primary-button, .secondary-button, .sidebar nav a { transition: background-color 150ms ease, box-shadow 150ms ease; }
+}

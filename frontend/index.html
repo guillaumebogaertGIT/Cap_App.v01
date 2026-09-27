@@ -8,10 +8,16 @@
     <script src="js/theme.js"></script>
 
     <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/polish.css">
+    <link rel="stylesheet" href="css/auth.css">
+    <script src="js/auth-preview.js" defer></script>
     <script src="js/navigation.js" defer></script>
+    <script src="js/club.js" defer></script>
+    <script src="js/coach-workouts.js" defer></script>
+    <script src="js/account-menu.js" defer></script>
 </head>
 
-<body>
+<body class="is-signed-out">
 
     <!-- Recolor the logo for dark backgrounds without changing its transparency. -->
     <svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" aria-hidden="true" style="position: absolute;">
@@ -41,13 +47,18 @@
 
         <nav id="sidebar-navigation" aria-label="Hoofdnavigatie">
             <a class="active" href="#dashboard" data-view-link="dashboard" aria-current="page">Dashboard</a>
+            <a href="#planning" data-view-link="planning">Planning</a>
+            <a href="#bookings" data-view-link="bookings">Boekingen</a>
             <a href="#workouts" data-view-link="workouts">Workouts</a>
+            <a href="#athletes" data-view-link="athletes" data-coach-only hidden>Sporters</a>
+            <a href="#group-classes" data-view-link="group-classes" data-coach-only hidden>Groepslessen</a>
             <a href="#">Oefeningen</a>
             <a href="#">Basketball</a>
             <a href="#">Voeding</a>
             <a href="#">Recovery</a>
             <a href="#">Coaches</a>
             <a href="#">AI Coach</a>
+            <a href="#shop" data-view-link="shop">Shop</a>
             <a class="settings-link" href="#settings" data-view-link="settings" aria-label="Instellingen">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
                     <path d="M9.67 4.14a2 2 0 0 1 3.66 0 2 2 0 0 0 2.82 1.16 2 2 0 0 1 2.59 2.59 2 2 0 0 0 1.16 2.82 2 2 0 0 1 0 3.66 2 2 0 0 0-1.16 2.82 2 2 0 0 1-2.59 2.59 2 2 0 0 0-2.82 1.16 2 2 0 0 1-3.66 0 2 2 0 0 0-2.82-1.16 2 2 0 0 1-2.59-2.59 2 2 0 0 0-1.16-2.82 2 2 0 0 1 0-3.66 2 2 0 0 0 1.16-2.82A2 2 0 0 1 6.85 5.3a2 2 0 0 0 2.82-1.16" transform="translate(.5 -.5)" />
@@ -60,6 +71,186 @@
     </div>
 
     <main>
+        <div class="account-bar">
+            <div class="account-menu">
+                <button id="account-toggle" class="account-toggle" type="button" aria-expanded="false" aria-controls="account-links">
+                    <span class="account-avatar" aria-hidden="true">G</span>
+                    <span>Guillaume</span>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
+                </button>
+                <div id="account-links" class="account-links" hidden>
+                    <p class="account-preview-label">Voorbeeldaccount</p>
+                    <button type="button" data-account="profile">Profiel</button>
+                    <a href="#settings">Instellingen</a>
+                    <button type="button" data-account="notifications">Meldingen</button>
+                    <button type="button" data-account="password">Wachtwoord</button>
+                    <button type="button" data-account="messages">Berichten</button>
+                    <button type="button" data-account="chat">Chat</button>
+                    <button type="button" data-account="payment">Betalingen</button>
+                    <button type="button" data-account="logout" class="account-logout">Uitloggen</button>
+                </div>
+            </div>
+        </div>
+        <dialog id="account-dialog" class="club-dialog" aria-labelledby="account-dialog-title">
+            <h2 id="account-dialog-title"></h2>
+            <p id="account-dialog-description"></p>
+            <button id="account-dialog-close" class="secondary-button" type="button">Sluiten</button>
+        </dialog>
+        <div class="welcome-bar">
+            <header class="welcome-heading">
+                <!-- Replace the example name with the signed-in user's name when login is connected. -->
+                <h2>Welkom terug, <span id="welcome-name">Guillaume</span>!</h2>
+                <p>Voorbeeldnaam voor deze preview.</p>
+            </header>
+        <fieldset class="role-preview" aria-describedby="role-preview-help">
+            <legend>Bekijk als</legend>
+            <div class="role-preview-options">
+                <label><input type="radio" name="preview-role" value="athlete" checked> Sporter</label>
+                <label><input type="radio" name="preview-role" value="coach"> Coach</label>
+            </div>
+            <p id="role-preview-help">Ontwerpvoorbeeld · Geen echte login.</p>
+        </fieldset>
+        </div>
+
+        <section id="coach" data-view aria-labelledby="coach-title" hidden>
+            <header class="dashboard-header">
+                <div>
+                    <h2 id="coach-title" tabindex="-1">Coach dashboard</h2>
+                    <p class="dashboard-intro">Samen werken aan de vooruitgang van jouw sporters.</p>
+                </div>
+                <img class="dashboard-wordmark" src="img/Stronger-Together.png" alt="Stronger Together">
+            </header>
+            <div class="dashboard-cards coach-cards">
+                <section class="coach-create-card">
+                    <span class="card-label">Aan de slag</span>
+                    <h3>Een training op maat</h3>
+                    <p>Stel een workout samen met oefeningen, sets en herhalingen.</p>
+                    <a class="primary-button" href="#create-workout">Workout maken</a>
+                    <p class="preview-note">Maak een workout en wijs deze toe aan een voorbeeldsporter. Alles blijft alleen bewaard zolang deze pagina open is.</p>
+                </section>
+                <section>
+                    <span class="card-label">Trainingsbibliotheek</span>
+                    <h3>Jouw workouts</h3>
+                    <p id="coach-library-empty">Je hebt nog geen workouts gemaakt.</p>
+                    <p id="coach-workout-status" role="status"></p>
+                    <div id="coach-workout-library"></div>
+                </section>
+                <section>
+                    <span class="card-label">Persoonlijke begeleiding</span>
+                    <h3>Jouw sporters</h3>
+                    <p>Guillaume <span class="status-label">Voorbeeldsporter</span></p>
+                    <p id="athlete-assignment-status">Nog geen workout toegewezen.</p>
+                    <a class="secondary-button" href="#athletes">Bekijk sporters</a>
+                </section>
+            </div>
+        </section>
+
+        <section id="group-classes" data-view aria-labelledby="group-classes-title" hidden>
+            <header class="dashboard-header">
+                <div>
+                    <h2 id="group-classes-title" tabindex="-1">Groepslessen</h2>
+                    <p class="dashboard-intro">Samen trainen. Samen sterker.</p>
+                </div>
+            </header>
+            <div class="dashboard-cards coach-cards">
+                <section class="coach-create-card">
+                    <span class="card-label">Training in groep</span>
+                    <h3>Een workout voor de hele groep</h3>
+                    <p>Circuittraining, veel herhalingen of samen werken aan conditie: hier beheer je straks jouw groepslessen.</p>
+                    <span class="status-label">Ontwerpvoorbeeld</span>
+                </section>
+                <section>
+                    <span class="card-label">Lesoverzicht</span>
+                    <h3>Jouw groepslessen</h3>
+                    <p>Er zijn nog geen groepslessen aangemaakt. Hier komen de trainingen die je voor jouw groepen samenstelt.</p>
+                </section>
+                <section>
+                    <span class="card-label">Samen aan de slag</span>
+                    <h3>Deelnemers</h3>
+                    <p>Hier zie je straks welke sporters aan een groepsles deelnemen.</p>
+                </section>
+            </div>
+        </section>
+
+        <section id="athletes" data-view aria-labelledby="athletes-title" hidden>
+            <header class="dashboard-header">
+                <div>
+                    <h2 id="athletes-title" tabindex="-1">Sporters</h2>
+                    <p class="dashboard-intro">Jouw sporters en hun training voor vandaag.</p>
+                </div>
+            </header>
+            <p class="sample-notice">Voorbeeldlijst. Echte sporters worden later via hun account gekoppeld.</p>
+            <ul class="athlete-list" aria-label="Jouw sporters">
+                <li class="athlete-card">
+                    <div>
+                        <span class="card-label">Voorbeeldsporter</span>
+                        <h3>Guillaume</h3>
+                    </div>
+                    <div class="athlete-training">
+                        <h4>Training vandaag</h4>
+                        <p id="athlete-list-assignment">Nog geen workout toegewezen.</p>
+                    </div>
+                    <a class="secondary-button" href="#create-workout">Workout maken</a>
+                </li>
+            </ul>
+        </section>
+
+        <section id="create-workout" data-view aria-labelledby="create-workout-title" hidden>
+            <header class="dashboard-header">
+                <div>
+                    <h2 id="create-workout-title" tabindex="-1">Workout maken</h2>
+                    <p class="dashboard-intro">Bouw stap voor stap jouw training op.</p>
+                </div>
+            </header>
+            <form id="coach-workout-form" class="workout-editor">
+                <p class="sample-notice">Preview: na het vernieuwen van de pagina verdwijnen je workouts.</p>
+                <label>Naam training
+                    <input name="title" required maxlength="100" placeholder="Bijvoorbeeld: Full body">
+                </label>
+                <label>Beschrijving (optioneel)
+                    <textarea name="description" rows="3" maxlength="1000" placeholder="Wat is het doel van deze training?"></textarea>
+                </label>
+                <h3>Oefeningen</h3>
+                <div id="exercise-fields"></div>
+                <button id="add-exercise" class="secondary-button" type="button">+ Oefening toevoegen</button>
+                <p id="exercise-status" role="status"></p>
+                <label>Toewijzen voor vandaag
+                    <select name="athlete" aria-describedby="assignment-help">
+                        <option value="">Alleen bewaren in de bibliotheek</option>
+                        <option value="preview-guillaume">Guillaume (voorbeeldsporter)</option>
+                    </select>
+                </label>
+                <p id="assignment-help" class="sample-notice">Een toegewezen workout verschijnt in de Sporter-preview. Een nieuwe toewijzing vervangt de vorige workout voor vandaag.</p>
+                <div class="editor-actions">
+                    <button class="primary-button" type="submit">Bewaar in preview</button>
+                    <a class="secondary-button" href="#dashboard">Terug naar overzicht</a>
+                </div>
+            </form>
+            <template id="exercise-template">
+                <fieldset class="exercise-row">
+                    <legend>Oefening</legend>
+                    <div class="exercise-inputs">
+                        <div class="exercise-picker">
+                            <label class="exercise-input-label">Zoek een oefening</label>
+                            <div class="exercise-search-control">
+                                <input name="exercise" required maxlength="100" placeholder="Oefening: " autocomplete="off">
+                                <button class="exercise-dropdown-toggle" type="button" aria-expanded="false" aria-label="Oefeningen tonen">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
+                                </button>
+                                <div class="exercise-dropdown" hidden>
+                                    <p class="exercise-result-count" role="status"></p>
+                                    <ul class="exercise-results" aria-label="Beschikbare oefeningen"></ul>
+                                </div>
+                            </div>
+                        </div>
+                        <label>Sets<input name="sets" type="number" min="1" max="100" step="1" value="3" required inputmode="numeric"></label>
+                        <label>Herhalingen<input name="reps" type="number" min="1" max="1000" step="1" value="10" required inputmode="numeric"></label>
+                    </div>
+                    <button class="secondary-button remove-exercise" type="button">Verwijderen</button>
+                </fieldset>
+            </template>
+        </section>
+
         <section id="dashboard" data-view aria-labelledby="dashboard-title">
         <header class="dashboard-header">
             <div>
@@ -74,10 +265,18 @@
 
         <div class="dashboard-cards">
             <div class="workout-card">
+                <section id="assigned-workout" aria-labelledby="assigned-workout-heading" hidden>
+                    <span class="card-label">Jouw coachtraining</span>
+                    <h3 id="assigned-workout-heading">Caps workout voor jou vandaag</h3>
+                    <div id="assigned-workout-content"></div>
+                    <p class="preview-note">Toegewezen in deze preview. Geen echte accountkoppeling.</p>
+                </section>
+                <div id="self-selected-workout">
                 <span class="card-label">Jouw volgende stap</span>
                 <h3 id="selected-workout-title">Jouw training</h3>
                 <p id="selected-workout-description">Selecteer een workout om te beginnen.</p>
                 <a class="primary-button" href="#workouts">Kies jouw training</a>
+                </div>
             </div>
 
             <section class="history-card">
