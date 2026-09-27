@@ -1,0 +1,24 @@
+# Java compilation and build output
+*.class
+/bin/
+/out/
+/target/
+/build/
+/.gradle/
+
+# Local IDE metadata
+/.idea/
+*.iml
+/.classpath
+/.project
+/.settings/
+
+# Keep portable VS Code project configuration
+/.vscode/*
+!/.vscode/settings.json
+!/.vscode/extensions.json
+!/.vscode/tasks.json
+!/.vscode/launch.json
+
+# Local backups; workouts.txt remains tracked for this prototype
+/backups/

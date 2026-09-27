@@ -2,16 +2,28 @@ import java.io.IOException;
 import java.util.Scanner;
 
 public class App {
-    public static void main(String[] args) throws IOException{
-        Scanner scanner = new Scanner(System.in);
-
+    public static void main(String[] args) {
         WorkoutLibrary library = new WorkoutLibrary();
         WorkoutFileManager fileManager = new WorkoutFileManager();
 
-        UserInterface ui = new UserInterface(scanner, library);
-        ui.start();
+        try {
+            fileManager.loadWorkouts(library);
+        } catch (IOException e) {
+            System.err.println("Could not load workouts: " + e.getMessage());
+            System.err.println("The application will close without saving. workouts.txt was not changed.");
+            return;
+        }
 
-        fileManager.saveWorkouts(library);
+        try (Scanner scanner = new Scanner(System.in)) {
+            UserInterface ui = new UserInterface(scanner, library);
+            ui.start();
+
+            try {
+                fileManager.saveWorkouts(library);
+            } catch (IOException e) {
+                System.err.println("Could not save workouts: " + e.getMessage());
+            }
+        }
     }
 }
 
