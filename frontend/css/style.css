@@ -1,0 +1,212 @@
+* {
+    box-sizing: border-box;
+}
+body {
+    margin: 0;
+    display: flex;
+    min-height: 100vh;
+    background-color: #151515;
+    color: #f5f5f5;
+    font-family: "Segoe UI", Arial, sans-serif;
+    line-height: 1.5;
+}
+.sidebar {
+    width: 240px;
+    flex-shrink: 0;
+    background-color: #111;
+    padding: 3rem 1.5rem;
+    border-right: 1px solid #2b2b2b;
+}
+.sidebar > h1,
+.dashboard-header h2 {
+    margin: 0;
+    font-size: 2rem;
+    line-height: 1.2;
+    letter-spacing: -0.04em;
+}
+.brand-logo {
+    filter: url(#logo-white);
+    display: block;
+    width: 120px;
+    max-width: 100%;
+    height: auto;
+}
+.sidebar > p {
+    color: #aaa;
+    font-size: 0.85rem;
+    margin: 0.75rem 0 3rem;
+}
+.menu-toggle {
+    display: none;
+}
+nav a {
+    display: block;
+    color: #bbb;
+    text-decoration: none;
+    padding: 0.8rem 1rem;
+    margin-bottom: 0.4rem;
+    border-radius: 0.5rem;
+    font-size: 0.95rem;
+}
+nav a:hover {
+    background-color: #252525;
+    color: white;
+}
+nav a.active {
+    background-color: #F5A623;
+    color: #111;
+    font-weight: 600;
+}
+main {
+    flex: 1;
+    min-width: 0;
+    max-width: 1400px;
+    padding: 3rem;
+}
+.dashboard-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+}
+.dashboard-wordmark {
+    display: block;
+    width: 260px;
+    max-width: 100%;
+    height: auto;
+    margin-left: auto;
+    filter: url(#logo-white);
+}
+.dashboard-intro {
+    color: #aaa;
+    margin: 0.75rem 0 0;
+}
+.dashboard-cards {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.25rem;
+    margin-top: 2.5rem;
+}
+.dashboard-cards > div,
+.dashboard-cards > section {
+    background-color: #1c1c1c;
+    border: 1px solid #303030;
+    padding: 1.75rem;
+    border-radius: 1rem;
+}
+.dashboard-cards .workout-card {
+    grid-column: 1 / -1;
+    padding: 2rem;
+    border-color: #69502d;
+    background: linear-gradient(115deg, #30271b, #1c1c1c 75%);
+}
+.card-label {
+    display: block;
+    margin-bottom: 0.75rem;
+    color: #F5A623;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+}
+.dashboard-cards h3 {
+    margin: 0;
+    font-size: 1.15rem;
+    letter-spacing: -0.02em;
+}
+.workout-card h3 {
+    font-size: 1.8rem;
+}
+.dashboard-cards p {
+    color: #aaa;
+    max-width: 48ch;
+    margin: 0.75rem 0 1.25rem;
+}
+.status-label {
+    display: inline-block;
+    padding: 0.3rem 0.65rem;
+    border: 1px solid #414141;
+    border-radius: 0.4rem;
+    color: #bbb;
+    font-size: 0.75rem;
+}
+.workout-card button {
+    background-color: #F5A623;
+    color: #111;
+    border: none;
+    border-radius: 0.5rem;
+    padding: 0.85rem 1.25rem;
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+}
+.workout-card button:hover {
+    background-color: #ffb940;
+}
+a:focus-visible,
+button:focus-visible {
+    outline: 2px solid #F5A623;
+    outline-offset: 4px;
+}
+@media (max-width: 480px) {
+    .dashboard-cards {
+        gap: 1rem;
+        margin-top: 1.5rem;
+    }
+    .dashboard-cards > div,
+    .dashboard-cards > section,
+    .dashboard-cards .workout-card {
+        padding: 1.25rem;
+    }
+    .workout-card button {
+        width: 100%;
+        min-height: 3rem;
+    }
+}
+
+@media (max-width: 800px) {
+    body {
+        flex-direction: column;
+    }
+    .sidebar {
+        position: relative;
+        width: 100%;
+        padding: 1.5rem;
+        border-right: none;
+        border-bottom: 1px solid #2b2b2b;
+    }
+    .sidebar > p {
+        margin-bottom: 0;
+    }
+    .brand-logo {
+        width: 64px;
+    }
+    .menu-toggle {
+        display: block;
+        position: absolute;
+        top: 1.5rem;
+        right: 1.5rem;
+        min-height: 3rem;
+        padding: 0.65rem 1rem;
+        border: 1px solid #F5A623;
+        border-radius: 0.5rem;
+        background-color: #1c1c1c;
+        color: #f5f5f5;
+        font: inherit;
+        cursor: pointer;
+    }
+    .sidebar nav {
+        display: none;
+        margin-top: 1.5rem;
+    }
+    .sidebar nav.is-open {
+        display: block;
+    }
+    main {
+        padding: 2rem 1.5rem;
+    }
+    .dashboard-cards {
+        grid-template-columns: 1fr;
+    }
+}

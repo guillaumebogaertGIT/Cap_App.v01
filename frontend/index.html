@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="nl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cap App</title>
+
+    <link rel="stylesheet" href="css/style.css">
+    <script src="js/navigation.js" defer></script>
+</head>
+
+<body>
+
+    <!-- Recolor the logo for dark backgrounds without changing its transparency. -->
+    <svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" aria-hidden="true" style="position: absolute;">
+        <defs>
+            <filter id="logo-white" color-interpolation-filters="sRGB">
+                <feColorMatrix type="matrix" values="0 0 0 0 1
+                                                     -1 1 0 0 1
+                                                     -1 0 1 0 1
+                                                      0 0 0 1 0" />
+            </filter>
+        </defs>
+    </svg>
+
+    <div class="sidebar">
+
+        <h1 class="sidebar-brand">
+            <img class="brand-logo" src="img/Cap-logo.png" alt="CAP - Complete Athletic Program">
+        </h1>
+        <p>Training & Performance</p>
+
+        <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="sidebar-navigation">Menu</button>
+
+        <nav id="sidebar-navigation" aria-label="Hoofdnavigatie">
+            <a class="active" href="#">Dashboard</a>
+            <a href="#">Workouts</a>
+            <a href="#">Oefeningen</a>
+            <a href="#">Basketball</a>
+            <a href="#">Voeding</a>
+            <a href="#">Recovery</a>
+            <a href="#">Coaches</a>
+            <a href="#">AI Coach</a>
+        </nav>
+
+    </div>
+
+    <main>
+        <header class="dashboard-header">
+            <div>
+                <h2>Dashboard</h2>
+                <p class="dashboard-intro">Jouw training, vooruitgang en herstel op één plek.</p>
+            </div>
+            <img class="dashboard-wordmark" src="img/Stronger-Together.png" alt="Stronger Together">
+        </header>
+
+        <div class="dashboard-cards">
+            <div class="workout-card">
+                <span class="card-label">Jouw volgende stap</span>
+                <h3>Workout voor vandaag</h3>
+                <p>Selecteer een workout om te beginnen.</p>
+                <button>Kies een training</button>
+            </div>
+
+            <section class="history-card">
+                <span class="card-label">Terugblik</span>
+                <h3>Recente trainingen</h3>
+                <p>Je trainingsgeschiedenis verschijnt hier zodra deze beschikbaar is.</p>
+            </section>
+
+            <section class="records-card">
+                <span class="card-label">Jouw vooruitgang</span>
+                <h3>Persoonlijke records</h3>
+                <p>Je beste lifts verschijnen hier zodra je resultaten beschikbaar zijn.</p>
+            </section>
+
+            <section class="recovery-card">
+                <span class="card-label">In balans</span>
+                <h3>Gezondheid &amp; herstel</h3>
+                <p>Hier krijg je later een overzicht van je slaap, activiteit en herstel.</p>
+                <span class="status-label">Apparaatkoppelingen gepland</span>
+            </section>
+            <section class="weekly-goal-card">
+                <span class="card-label">Blijf consistent</span>
+                <h3>Weekdoel</h3>
+                <p>Stel een wekelijks trainingsdoel in.</p>
+            </section>
+        </div>
+    </main>
+
+</body>
+
+</html>
