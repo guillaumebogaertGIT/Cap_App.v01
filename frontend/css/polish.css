@@ -7,7 +7,9 @@
     --muted: #b7bcc4;
     --highlight: #342a1e;
     --hover: #292e34;
-    --card-shadow: 0 8px 24px #00000012;
+    --card-shadow: none;
+    --panel-radius: 0.75rem;
+    --control-radius: 0.5rem;
 }
 :root[data-theme="light"] {
     --background: #dcdedc;
@@ -17,10 +19,9 @@
     --muted: #535c59;
     --highlight: #f0dfc4;
     --hover: #dfe3db;
-    --card-shadow: 0 8px 24px #28332a08;
 }
 body { font-family: "Segoe UI", Arial, sans-serif; }
-/* Dark CAP palette: graphite surfaces with restrained amber light. */
+/* CAP graphite surfaces; amber is reserved for actions and training emphasis. */
 :root[data-theme="dark"] {
     --background: #101215;
     --surface: #1b1f25;
@@ -32,117 +33,109 @@ body { font-family: "Segoe UI", Arial, sans-serif; }
     --highlight-border: #826039;
     --hover: #262d36;
     --accent-text: #ffbb62;
-    --card-shadow: 0 12px 28px #00000030, inset 0 1px 0 #ffffff05;
-}
-:root[data-theme="dark"] body {
-    background-image: radial-gradient(ellipse at 95% 0%, #f5a6230c, transparent 45%);
 }
 :root[data-theme="dark"] .sidebar {
-    background: linear-gradient(180deg, #1a1e25, var(--sidebar) 65%);
+    background: var(--sidebar);
     border-color: #323740;
 }
 :root[data-theme="dark"] .sidebar nav a.active {
-    background: linear-gradient(110deg, #ffb64d, #f59a28);
+    background: #F5A623;
     color: #17130d;
-    box-shadow: 0 4px 20px #f5a62325;
 }
 :root[data-theme="dark"] #welcome-name { color: #ffbb62; }
-:root[data-theme="dark"] .dashboard-overview {
-    background: radial-gradient(ellipse at 100% 0%, #79502366, transparent 65%), linear-gradient(120deg, #202935, #171b22);
-    border-color: #675038;
-    box-shadow: 0 16px 40px #0004, inset 0 1px 0 #ffcf8c15;
-}
 :root[data-theme="dark"] .dashboard-overview .overview-stats strong { color: #ffca81; }
 :root[data-theme="dark"] .dashboard-cards .workout-card,
 :root[data-theme="dark"] .dashboard-cards .coach-create-card {
-    background: linear-gradient(110deg, #33291f, #1d222a 75%);
-    border-left-color: #ffb64d;
+    background: var(--highlight);
 }
-:root[data-theme="dark"] .club-day { background: #15191f; border: 1px solid #2a3039; }
 :root[data-theme="dark"] .club-toolbar,
 :root[data-theme="dark"] .role-preview,
 :root[data-theme="dark"] .account-toggle { background: #1a1f26; }
 :root[data-theme="dark"] .status-label { background: #ffffff05; }
 :root[data-theme="dark"] .primary-button:not(:disabled) {
-    background: linear-gradient(110deg, #ffbd59, #f6a12d);
+    background: #F5A623;
     color: #18130c;
-    box-shadow: 0 4px 16px #f5a62318;
 }
 :root[data-theme="dark"] .primary-button:not(:disabled):hover {
     background: #ffca76;
-    box-shadow: 0 4px 20px #f5a62330;
 }
 :root[data-theme="dark"] .account-links,
 :root[data-theme="dark"] .exercise-dropdown,
 :root[data-theme="dark"] .club-dialog {
     background: #1d232c;
     border-color: #46505d;
-    box-shadow: 0 20px 50px #0006;
+    box-shadow: 0 8px 20px #0003;
 }
 main { width: 100%; max-width: 1600px; padding: 1.25rem; }
 .sidebar { background: var(--sidebar); }
-.sidebar > p { letter-spacing: 0.06em; font-size: 0.75rem; }
+.sidebar > p { letter-spacing: normal; font-size: 0.85rem; }
 .sidebar nav a { min-height: 3rem; border-radius: 0.75rem; }
-.sidebar nav a.active { box-shadow: 0 4px 16px #f5a62320; }
 .sidebar nav a[href="#"] { opacity: 0.65; }
 .sidebar nav a[href="#shop"] { border-top: 1px solid var(--border); margin-top: 1.25rem; }
 .account-bar { margin-bottom: 1rem; }
 .welcome-bar { gap: 1rem; margin-bottom: 1.5rem; }
 .welcome-heading h2 { font-weight: 750; }
 .role-preview { background: var(--surface); border-style: solid; font-size: 0.85rem; }
-.role-preview p { font-size: 0.75rem; }
-.club-preview-note { max-width: 80ch; font-size: 0.75rem; margin-bottom: 1.5rem; }
+.role-preview p { font-size: 0.875rem; }
+.club-preview-note { max-width: 65ch; font-size: 0.875rem; margin-bottom: 1.25rem; }
 .dashboard-header { gap: 1rem; }
 .dashboard-header h2 { font-size: clamp(1.65rem, 2.5vw, 2.25rem); }
 .dashboard-wordmark { width: 180px; }
 .dashboard-intro { max-width: 55ch; }
 .club-quick-links { gap: 0.5rem; }
-.club-quick-links a { border-radius: 2rem; font-size: 0.9rem; }
-.primary-button { border-radius: 0.75rem; box-shadow: 0 3px 0 #00000018; }
-.secondary-button { border-radius: 0.75rem; }
+.club-quick-links a { border-radius: var(--control-radius); font-size: 1rem; }
+.primary-button, .secondary-button { border-radius: var(--control-radius); box-shadow: none; text-align: center; }
 .dashboard-cards { margin-top: 1.25rem; }
 .dashboard-cards > section, .dashboard-cards > div, .club-card, .athlete-card, .workout-option {
     box-shadow: var(--card-shadow);
-    border-radius: 1.15rem;
+    border-radius: var(--panel-radius);
 }
 :root[data-theme="light"] .dashboard-cards > section,
 :root[data-theme="light"] .dashboard-cards > div { border-top: 1px solid var(--border); }
 .dashboard-cards .workout-card, .dashboard-cards .coach-create-card {
-    border-left: 4px solid #F5A623;
-    background: linear-gradient(115deg, var(--highlight), var(--surface) 85%);
+    border: 1px solid var(--highlight-border);
+    background: var(--highlight);
 }
-.card-label { font-size: 0.72rem; letter-spacing: 0.1em; }
-.status-label { border-radius: 2rem; font-size: 0.8rem; }
+.card-label { font-size: 0.875rem; letter-spacing: normal; text-transform: none; margin-bottom: 0.5rem; color: var(--muted); font-weight: 500; }
+.status-label { border-radius: var(--control-radius); font-size: 0.875rem; }
 .dashboard-overview {
     display: grid;
     gap: 1.5rem;
     padding: 1.5rem;
-    border-radius: 1.25rem;
-    border: 1px solid #494333;
-    background: radial-gradient(ellipse at top right, #64471e 0, transparent 65%), #202522;
-    color: #f5f5ef;
+    border-radius: var(--panel-radius);
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
     box-shadow: var(--card-shadow);
 }
-.dashboard-overview .card-label { color: #ffc16b; }
+.dashboard-overview .card-label { color: var(--muted); }
 .overview-heading h3 { max-width: 24ch; font-size: clamp(1.5rem, 3vw, 2.2rem); line-height: 1.2; letter-spacing: -0.035em; margin: 0; }
 .overview-stats { display: flex; flex-wrap: wrap; gap: 1.5rem; }
 .overview-stats > div { display: flex; flex-direction: column; gap: 0.2rem; }
 .overview-stats strong { font-size: 2rem; font-weight: 650; line-height: 1; }
-.overview-stats span { color: #c8cec7; font-size: 0.85rem; }
-.next-session { min-width: 0; border-top: 1px solid #ffffff30; padding-top: 1.25rem; overflow-wrap: anywhere; }
+.overview-stats span { color: var(--muted); font-size: 0.875rem; }
+.next-session { min-width: 0; border-top: 1px solid var(--border); padding-top: 1.25rem; overflow-wrap: anywhere; }
 .next-session h4 { font-size: 1.2rem; margin: 0; }
-.next-session p { color: #d0d3cb; }
-.club-toolbar { padding: 1rem; border: 1px solid var(--border); border-radius: 1rem; background: var(--surface); }
+.next-session p { color: var(--muted); }
+.club-toolbar { padding: 0 0 1.25rem; border-bottom: 1px solid var(--border); }
 .club-toolbar label { flex: 1 1 10rem; }
-.club-day { padding: 0.65rem; background: var(--hover); border-radius: 1rem; }
-.club-day > h3 { text-transform: uppercase; font-size: 0.8rem; letter-spacing: 0.04em; }
-.club-card { border-top: 1px solid var(--border); padding: 1.15rem; }
-.club-calendar .club-card { border-left: 3px solid #F5A623; }
+.club-day { padding: 0; }
+.club-day > h3 { text-transform: none; font-size: 1rem; letter-spacing: normal; padding-inline: 0; }
+.club-card { border-top: 1px solid var(--border); padding: 1.25rem; }
 .club-card .club-actions { flex-direction: column; align-items: stretch; }
 .club-card .card-label { line-height: 1.6; }
-.club-dialog { box-shadow: 0 24px 80px #0005; }
+.club-dialog { box-shadow: 0 8px 20px #0003; border-radius: var(--panel-radius); }
 .club-form h2 { letter-spacing: -0.035em; }
-.club-empty { border: 1px dashed var(--border); color: var(--muted); }
+.club-empty { padding: 1.25rem 0; background: transparent; border-radius: 0; color: var(--muted); }
+/* Supporting coach sections read as sections, not more competing cards. */
+.dashboard-cards.coach-cards > section:not(.coach-create-card) {
+    padding: 1.25rem 0;
+    border: 0;
+    border-top: 1px solid var(--border);
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+}
 @media (min-width: 801px) {
     main { padding: 2rem; }
     .sidebar { position: sticky; top: 0; height: 100dvh; overflow-y: auto; padding: 1.5rem 1rem; width: 220px; }
@@ -153,9 +146,70 @@ main { width: 100%; max-width: 1600px; padding: 1.25rem; }
     .dashboard-overview { grid-template-columns: 1.25fr 1fr; gap: 1rem 2rem; padding: 2rem; }
     .overview-heading { grid-column: 1; }
     .overview-stats { grid-column: 1; }
-    .next-session { grid-column: 2; grid-row: 1 / 3; border-top: 0; border-left: 1px solid #ffffff30; padding: 0 0 0 2rem; align-content: center; }
+    .next-session { grid-column: 2; grid-row: 1 / 3; border-top: 0; border-left: 1px solid var(--border); padding: 0 0 0 2rem; align-content: center; }
     .club-agenda .club-card .club-actions { flex-direction: row; }
 }
 @media (prefers-reduced-motion: no-preference) {
     .primary-button, .secondary-button, .sidebar nav a { transition: background-color 150ms ease, box-shadow 150ms ease; }
+}
+
+/* Keep preview tools available without placing them ahead of every task. */
+.preview-tools { margin-bottom: 1rem; border-bottom: 1px solid var(--border); }
+.preview-tools > summary {
+    min-height: 3rem;
+    padding: 0.75rem 0;
+    color: var(--muted);
+    cursor: pointer;
+    overflow-wrap: anywhere;
+}
+.preview-tools > summary:focus-visible { outline: 2px solid var(--accent-text); outline-offset: 2px; }
+.preview-controls { display: grid; gap: 1rem; padding: 0.5rem 0 1rem; }
+.preview-controls > p { margin: 0; color: var(--muted); }
+.preview-controls .role-preview { width: 100%; }
+.preview-controls .access-preview { margin: 0; }
+.preview-controls .access-preview select { min-width: 0; font-size: 1rem; }
+
+/* Athlete dashboard: training first, supporting information without repeated cards. */
+#dashboard .dashboard-support {
+    display: grid;
+    gap: 1.5rem;
+    margin-top: 1.5rem;
+}
+#dashboard .dashboard-support > section {
+    min-width: 0;
+    padding: 1.25rem 0;
+    border: 0;
+    border-top: 1px solid var(--border);
+    border-radius: 0;
+    background: none;
+    box-shadow: none;
+    color: var(--text);
+}
+#dashboard .dashboard-overview { display: block; }
+#dashboard .dashboard-support h3 { margin: 0; font-size: 1.15rem; }
+#dashboard .dashboard-support p { color: var(--muted); }
+#dashboard .overview-stats { gap: 1rem; margin: 0.75rem 0; }
+#dashboard .overview-stats > div { flex-direction: row; align-items: baseline; gap: 0.35rem; }
+#dashboard .overview-stats strong { font-size: 1rem; color: var(--text); }
+#dashboard .overview-stats span { color: var(--muted); }
+#dashboard .next-session { border: 0; padding: 0; }
+#dashboard .next-session h4 { font-size: 1rem; }
+#dashboard .dashboard-text-link { display: flex; align-items: center; width: fit-content; min-height: 3rem; margin-top: 0.5rem; color: var(--accent-text); text-underline-offset: 0.2em; }
+.dashboard-future { margin-top: 1rem; color: var(--muted); }
+.dashboard-future summary { min-height: 3rem; padding: 0.75rem 0; cursor: pointer; }
+.dashboard-future summary:focus-visible { outline: 2px solid var(--accent-text); outline-offset: 2px; }
+.dashboard-future p { margin-top: 0.5rem; max-width: 65ch; }
+@media (min-width: 1100px) {
+    #dashboard .dashboard-support { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 2rem; }
+}
+
+@media (max-width: 800px) {
+    /* Reuse the existing menu, but keep the brand block short. */
+    .sidebar { padding: 0.75rem 1.25rem; }
+    .sidebar-brand { padding-right: 6rem; }
+    .sidebar > p { margin-top: 0.25rem; padding-right: 6rem; }
+    .menu-toggle { top: 0.75rem; right: 1.25rem; }
+    .account-bar { margin-bottom: 0.5rem; }
+    .welcome-bar { margin-bottom: 0.25rem; }
+    .welcome-heading h2 { font-size: 1.5rem; line-height: 1.25; letter-spacing: -0.02em; }
 }

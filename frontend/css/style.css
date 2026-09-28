@@ -28,16 +28,12 @@
 }
 
 /* CAP accents for the softer light palette. Dark mode keeps its own styling. */
-:root[data-theme="light"] .welcome-heading h2 {
-    border-left: 0.3rem solid #F5A623;
-    padding-left: 0.85rem;
-}
 :root[data-theme="light"] #welcome-name {
     color: var(--accent-text);
 }
 :root[data-theme="light"] .dashboard-cards > section,
 :root[data-theme="light"] .dashboard-cards > div {
-    border-top: 3px solid #F5A623;
+    border-top: 1px solid var(--border);
 }
 :root[data-theme="light"] nav a:hover:not(.active) {
     background-color: var(--highlight);
@@ -48,16 +44,28 @@
 }
 .training-timer { font-variant-numeric: tabular-nums; font-size: 2.5rem; font-weight: 700; color: var(--accent-text); }
 .training-form { padding: 1rem; background: var(--surface); border: 1px solid var(--border); border-radius: 1rem; }
-.training-set { display: grid; grid-template-columns: 1fr; gap: 0.75rem; padding: 1rem 0; border-bottom: 1px solid var(--border); margin-bottom: 1rem; }
+/* Two readable input columns, with set actions on a separate compact row. */
+.training-set {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.75rem;
+    align-items: end;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 0.75rem;
+}
+.training-set > span { grid-column: 1; grid-row: 1; align-self: center; }
+.training-set > label { grid-row: 2; }
+.training-set > button { grid-column: 2; grid-row: 1; min-width: 0; padding-inline: 0.5rem; }
 .training-pr { font-weight: 600; color: var(--accent-text); }
 #training-history, #finished-content, #active-training { overflow-wrap: anywhere; min-width: 0; }
-@media (min-width: 600px) {
-    .training-set { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: end; }
-    .training-set > span { grid-column: 1 / -1; }
+@media (max-width: 599px) {
+    .training-form { padding: 0.75rem; }
+    .training-form .exercise-row { padding: 0.5rem; }
 }
 @media (min-width: 1100px) {
     .training-set { grid-template-columns: 4rem repeat(2, minmax(0, 1fr)) auto; }
-    .training-set > span { grid-column: auto; }
+    .training-set > span, .training-set > label, .training-set > button { grid-column: auto; grid-row: auto; }
 }
 
 /* Club management uses the same palette and a stacked phone layout. */
@@ -67,7 +75,7 @@
 }
 .club-feedback:not(:empty) {
     padding: 1rem;
-    border-left: 3px solid #F5A623;
+    border: 1px solid var(--highlight-border);
     background: var(--highlight);
     color: var(--text);
 }
@@ -114,7 +122,6 @@
     padding: 1.25rem;
     margin-bottom: 0.75rem;
     border: 1px solid var(--border);
-    border-top: 3px solid #F5A623;
     border-radius: 0.85rem;
     background: var(--surface);
     overflow-wrap: anywhere;
@@ -164,7 +171,6 @@
     min-width: 0;
     padding: 1.25rem;
     border: 1px solid var(--border);
-    border-top: 3px solid #F5A623;
     border-radius: 1rem;
     background: var(--surface);
     overflow-wrap: anywhere;
@@ -201,7 +207,6 @@
     margin-top: 1.5rem;
     padding: 1.25rem;
     border: 1px solid var(--border);
-    border-top: 3px solid #F5A623;
     border-radius: 1rem;
     background: var(--surface);
 }
@@ -579,7 +584,7 @@
 }
 .coach-create-card {
     grid-column: 1 / -1;
-    background: linear-gradient(115deg, var(--highlight), var(--surface) 75%);
+    background: var(--highlight);
 }
 .dashboard-cards .preview-note {
     font-size: 0.85rem;
@@ -834,7 +839,7 @@ main {
     grid-column: 1 / -1;
     padding: 2rem;
     border-color: var(--highlight-border);
-    background: linear-gradient(115deg, var(--highlight), var(--surface) 75%);
+    background: var(--highlight);
 }
 .card-label {
     display: block;

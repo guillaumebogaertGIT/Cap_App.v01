@@ -103,8 +103,12 @@
             <header class="welcome-heading">
                 <!-- Replace the example name with the signed-in user's name when login is connected. -->
                 <h2>Welkom terug, <span id="welcome-name">Guillaume</span>!</h2>
-                <p>Voorbeeldnaam voor deze preview.</p>
             </header>
+        </div>
+        <details class="preview-tools">
+            <summary>Previewmodus · testinstellingen</summary>
+            <div id="preview-controls" class="preview-controls">
+                <p>Voorbeeldnaam voor deze preview.</p>
         <fieldset class="role-preview" aria-describedby="role-preview-help">
             <legend>Bekijk als</legend>
             <div class="role-preview-options">
@@ -113,7 +117,8 @@
             </div>
             <p id="role-preview-help">Ontwerpvoorbeeld · Geen echte login.</p>
         </fieldset>
-        </div>
+            </div>
+        </details>
 
         <section id="coach" data-view aria-labelledby="coach-title" hidden>
             <header class="dashboard-header">
@@ -264,7 +269,6 @@
                     Dashboard
                     <img class="dashboard-title-logo" src="img/Cap-logo.png" alt="" aria-hidden="true">
                 </h2>
-                <p class="dashboard-intro">Jouw doelen. Jouw tempo. Samen sterker.</p>
             </div>
             <img class="dashboard-wordmark" src="img/Stronger-Together.png" alt="Stronger Together">
         </header>
@@ -272,43 +276,29 @@
         <div class="dashboard-cards">
             <div class="workout-card">
                 <section id="assigned-workout" aria-labelledby="assigned-workout-heading" hidden>
-                    <span class="card-label">Jouw coachtraining</span>
                     <h3 id="assigned-workout-heading">Caps workout voor jou vandaag</h3>
                     <div id="assigned-workout-content"></div>
                     <p class="preview-note">Toewijzing opgeslagen in Java voor de voorbeeldsporter. Geen echte accountkoppeling.</p>
                 </section>
                 <div id="self-selected-workout">
-                <span class="card-label">Jouw volgende stap</span>
                 <h3 id="selected-workout-title">Jouw training</h3>
                 <p id="selected-workout-description">Selecteer een workout om te beginnen.</p>
                 <a class="primary-button" href="#workouts">Kies jouw training</a>
                 </div>
             </div>
 
-            <section class="history-card">
-                <span class="card-label">Terugblik</span>
-                <h3>Jouw afgelopen trainingen</h3>
-                <p>Je trainingsgeschiedenis verschijnt hier zodra deze beschikbaar is.</p>
-            </section>
-
-            <section class="records-card">
-                <span class="card-label">Jouw vooruitgang</span>
-                <h3>Persoonlijke records</h3>
-                <p>Je beste lifts verschijnen hier zodra je resultaten beschikbaar zijn.</p>
-            </section>
-
-            <section class="recovery-card">
-                <span class="card-label">In balans</span>
-                <h3>Tijd voor herstel</h3>
-                <p>Verbind straks je wearable en krijg meer inzicht in je activiteit, slaap en herstel.</p>
-                <span class="status-label">Binnenkort: koppel je wearable</span>
-            </section>
-            <section class="weekly-goal-card">
-                <span class="card-label">Blijf consistent</span>
-                <h3>Jouw doel deze week</h3>
-                <p>Stel een wekelijks trainingsdoel in.</p>
+        </div>
+        <div class="dashboard-support">
+            <section class="training-progress" aria-labelledby="training-progress-title">
+                <h3 id="training-progress-title">Trainingen &amp; records</h3>
+                <p>Afgeronde trainingen en persoonlijke records per aantal herhalingen.</p>
+                <a class="secondary-button" href="#training">Open trainingslog</a>
             </section>
         </div>
+        <details class="dashboard-future">
+            <summary>In ontwikkeling</summary>
+            <p>Wearables koppelen voor inzicht in activiteit, slaap en herstel. Wekelijkse trainingsdoelen instellen.</p>
+        </details>
         </section>
 
         <section id="workouts" data-view aria-labelledby="workouts-title" hidden>

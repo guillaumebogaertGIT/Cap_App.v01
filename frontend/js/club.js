@@ -193,7 +193,8 @@
             const relevant = isCoach ? upcoming : reserved;
             panel.replaceChildren();
             const heading = element('div', undefined, 'overview-heading');
-            heading.append(element('span', isCoach ? 'Jouw club in beeld' : 'Klaar voor je volgende stap?', 'card-label'), element('h3', isCoach ? 'Meer overzicht. Meer tijd voor coaching.' : 'Jouw volgende training begint hier.'));
+            if (isCoach) heading.append(element('span', 'Jouw club in beeld', 'card-label'));
+            heading.append(element('h3', isCoach ? 'Meer overzicht. Meer tijd voor coaching.' : 'Jouw planning'));
             panel.append(heading);
             const stats = element('div', undefined, 'overview-stats');
             const metrics = isCoach
@@ -205,10 +206,10 @@
             panel.append(stats);
             const next = relevant[0];
             const preview = element('div', undefined, 'next-session');
-            preview.append(element('span', isCoach ? 'Eerstvolgende les' : 'Jouw volgende boeking', 'card-label'));
+            if (isCoach) preview.append(element('span', 'Eerstvolgende les', 'card-label'));
             preview.append(element('h4', next ? next.title : isCoach ? 'Ruimte voor een nieuwe les' : 'Nog niets gepland'));
             preview.append(element('p', next ? `${dateLabel(next.date)} · ${next.start} · ${next.coach}` : 'Bekijk de planning en maak ruimte voor beweging.'));
-            const action = element('a', next ? 'Bekijk in planning →' : 'Naar de planning →', 'primary-button');
+            const action = element('a', next ? 'Bekijk in planning →' : 'Naar de planning →', isCoach ? 'primary-button' : 'secondary-button');
             action.href = '#planning';
             action.addEventListener('click', () => {
                 week = next ? next.date : today();
@@ -216,6 +217,11 @@
                 $('coach-filter').value = '';
             });
             preview.append(action); panel.append(preview);
+            if (!isCoach) {
+                const bookingsLink = element('a', 'Boekingen bekijken', 'dashboard-text-link');
+                bookingsLink.href = '#bookings';
+                preview.append(bookingsLink);
+            }
         });
     }
     function render() { renderPlanning(); renderBookings(); renderShop(); renderDashboard(); }
@@ -289,6 +295,12 @@
         groupCard.append(link);
     }
     ['dashboard', 'coach'].forEach((id) => {
+        if (id === 'dashboard') {
+            const overview = element('section', undefined, 'dashboard-overview');
+            overview.setAttribute('aria-label', 'Jouw planning in het kort');
+            document.querySelector('#dashboard .dashboard-support').prepend(overview);
+            return;
+        }
         const panel = element('div', undefined, 'club-quick-links');
         [['planning', 'Planning bekijken'], ['bookings', 'Boekingen'], ['shop', 'Shop']].forEach(([route, label]) => {
             const link = element('a', label, 'secondary-button'); link.href = `#${route}`; panel.append(link);

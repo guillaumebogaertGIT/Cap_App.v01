@@ -31,13 +31,6 @@
     document.querySelector('main').append(section);
     const navLink = node('a', 'Trainingslog'); navLink.href = '#training'; navLink.dataset.viewLink = 'training';
     document.querySelector('#sidebar-navigation [href="#shop"]').before(navLink);
-    ['.history-card', '.records-card'].forEach(selector => {
-        const card = document.querySelector(selector);
-        if (card) {
-            card.querySelector('p').textContent = 'Bekijk afgeronde trainingen en rep-specifieke records in je trainingslog.';
-            const link = node('a', 'Open trainingslog', 'secondary-button'); link.href = '#training'; card.append(link);
-        }
-    });
     const coachLink = node('a', 'Bekijk resultaten en PRs van Guillaume', 'secondary-button'); coachLink.href = '#training';
     document.querySelector('#athlete-list-assignment').after(coachLink);
     function persist() {

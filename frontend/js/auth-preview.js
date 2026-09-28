@@ -64,7 +64,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const controls = document.createElement('div');
     controls.className = 'access-preview';
     controls.innerHTML = `<label>Abonnement testen<select id="preview-plan"></select></label><p id="access-status" role="status"></p><p>Ontwerptest: rollen en rechten zijn hier vrij te wisselen. Dit zijn geen echte toegangscontroles of definitieve pakketten.</p>`;
-    document.querySelector('.welcome-bar').after(controls);
+    document.querySelector('#preview-controls').append(controls);
     Object.entries(access.plans).forEach(([key, plan]) => $('preview-plan').add(new Option(plan.label, key)));
     function updateAccess() {
         $('access-status').textContent = access.plan === 'none' ? 'Geen abonnement: workouts maken en sessies boeken zijn vergrendeld.' : `${access.plans[access.plan].label} actief in deze preview.`;
