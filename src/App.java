@@ -15,7 +15,7 @@ public class App {
         }
 
         try (Scanner scanner = new Scanner(System.in)) {
-            UserInterface ui = new UserInterface(scanner, library);
+            UserInterface ui = new UserInterface(scanner, library, fileManager);
             ui.start();
 
             try {

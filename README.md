@@ -4,20 +4,46 @@ A Java learning project building toward a coaching platform for CAP in Gistel, B
 
 ## Current status
 
-Early console prototype. No web interface, database, authentication, client assignments,
-workout completion history, nutrition system, or AI coach is implemented yet.
+Local web prototype with a responsive frontend and a Java 21 / Spring Boot backend.
+Workout creation, example-athlete assignment, timed completion, saved history and
+rep-specific PRs are connected. Coaches can prescribe fixed kg or percentages of
+a matching rep record. Real authentication, a database and payments are not yet
+implemented. Planning, bookings and shop still use browser-local preview data.
 
-Current functionality:
+Read the [development overview](docs/SESSION-2026-09-27.md) for the architecture,
+test results, limitations and next steps. Open [the printable overview](docs/CAP-overview.html)
+in a browser and use Print → Save as PDF for a handoff document.
+
+## Run the web application
+
+Use Java 21 and run from `backend`:
+
+```powershell
+.\mvnw.cmd spring-boot:run
+```
+
+Open `frontend/index.html` with VS Code Live Server at
+`http://127.0.0.1:5500/frontend/index.html`. Use the preview-entry button.
+The API runs locally on port 8080. Persistent prototype files in `backend/data`
+are ignored by Git; back them up separately. Do not expose the preview publicly.
+
+Run backend checks with `./mvnw test` (Windows: `.\mvnw.cmd test`).
+
+## Earlier console learning project
+
+Console functionality:
 
 - Create workouts with exercise names, sets, reps, and tempo.
 - List, find (case-insensitive), and remove workouts.
-- Load workouts at startup and save when choosing **5. Exit**.
+- Load workouts at startup, save on creation, and save when choosing **5. Exit**.
 - Stop without saving if loading fails, preserving the existing file.
 
 ## Structure
 
 ~~~text
 src/                    Java source files
+backend/                Spring Boot web API and tests
+frontend/               Responsive browser application
 bin/                    Compiled classes (generated, ignored)
 lib/                    Optional dependencies (currently empty)
 docs/PROJECT_PLAN.md     Canonical CAP master project plan
@@ -54,11 +80,11 @@ is not yet validated, and saving is not protected against a disk failure midway
 through writing. The tracked workout file is prototype data; do not put private
 client data in Git.
 
-## December 2026 goal
+## Roadmap
 
-Aim for a focused demonstration of coach workout creation and assignment, client
-performance logging, stored history, and a simple CAP interface. These are planned
-features, not current functionality. Nutrition and AI must not delay the core workflow.
+The core training flow is now demonstrated locally. Next: browser/device checks,
+real accounts and permissions, database storage, then shared planning and bookings.
+Nutrition and AI must not delay that work.
 
 See [the canonical master project plan](docs/PROJECT_PLAN.md) for scope and learning
 principles. Its original review-only task section is retained as historical context;

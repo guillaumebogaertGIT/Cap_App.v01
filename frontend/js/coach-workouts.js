@@ -161,68 +161,47 @@ addExerciseButton.addEventListener('click', () => addExercise());
 workoutForm.addEventListener('input', (event) => {
     event.target.setCustomValidity('');
 });
-workoutForm.addEventListener('submit', (event) => {
+workoutForm.addEventListener('submit', async (event) => {
     event.preventDefault();
     if (!window.capAccess.can('workouts') || previewRole !== 'coach') return;
-    const names = workoutForm.querySelectorAll('[name="title"], [name="exercise"]');
-    for (const input of names) {
-        input.setCustomValidity(input.value.trim() ? '' : 'Vul een naam in.');
-    }
     if (!workoutForm.reportValidity()) return;
-
-    const title = workoutForm.elements.namedItem('title').value.trim();
-    const description = workoutForm.elements.namedItem('description').value.trim();
-    const workout = document.createElement('details');
-    workout.className = 'saved-workout';
-    const summary = document.createElement('summary');
-    summary.textContent = title;
-    workout.append(summary);
-    if (description) {
-        const paragraph = document.createElement('p');
-        paragraph.textContent = description;
-        workout.append(paragraph);
-    }
-    const exercises = document.createElement('ol');
-    exerciseFields.querySelectorAll('.exercise-row').forEach((row) => {
-        const name = row.querySelector('[name="exercise"]').value.trim();
-        const sets = row.querySelector('[name="sets"]').value;
-        const reps = row.querySelector('[name="reps"]').value;
-        const item = document.createElement('li');
-        item.textContent = `${name} — ${sets} sets × ${reps} herhalingen`;
-        exercises.append(item);
-    });
-    workout.append(exercises);
-    const athlete = workoutForm.elements.namedItem('athlete').value;
-    if (athlete === 'preview-guillaume') {
-        const assignedContent = document.querySelector('#assigned-workout-content');
-        const assignedTitle = document.createElement('h4');
-        assignedTitle.textContent = title;
-        assignedContent.replaceChildren(assignedTitle);
-        if (description) {
-            const assignedDescription = document.createElement('p');
-            assignedDescription.textContent = description;
-            assignedContent.append(assignedDescription);
+    const submit = workoutForm.querySelector('[type="submit"]');
+    if (submit.disabled) return;
+    const status = document.querySelector('#exercise-status');
+    submit.disabled = true;
+    status.textContent = 'Workout opslaan…';
+    const payload = {
+        name: workoutForm.elements.namedItem('title').value.trim(),
+        description: workoutForm.elements.namedItem('description').value.trim(),
+        athleteId: workoutForm.elements.namedItem('athlete').value,
+        exercises: Array.from(exerciseFields.querySelectorAll('.exercise-row'), row => ({
+            name: row.querySelector('[name="exercise"]').value.trim(),
+            sets: Number(row.querySelector('[name="sets"]').value),
+            reps: Number(row.querySelector('[name="reps"]').value),
+            loadMode: row.querySelector('[name="loadMode"]').value,
+            loadValue: row.querySelector('[name="loadValue"]').value === '' ? null : Number(row.querySelector('[name="loadValue"]').value)
+        }))
+    };
+    try {
+        const response = await fetch('http://localhost:8080/api/workouts', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        if (!response.ok) {
+            const error = await response.json().catch(() => ({}));
+            throw new Error(error.message || 'Opslaan mislukt. Controleer de gegevens en probeer opnieuw.');
         }
-        assignedContent.append(exercises.cloneNode(true));
-        document.querySelector('#assigned-workout').hidden = false;
-        document.querySelector('#self-selected-workout').hidden = true;
-        document.querySelector('#athlete-assignment-status').textContent = `Vandaag: ${title}`;
-        document.querySelector('#athlete-list-assignment').textContent = title;
-        document.querySelectorAll('.assignment-badge').forEach((badge) => badge.remove());
-        const badge = document.createElement('p');
-        badge.className = 'assignment-badge status-label';
-        badge.textContent = 'Vandaag toegewezen aan Guillaume (preview)';
-        workout.append(badge);
-        document.querySelector('#exercise-status').textContent = '';
-    }
-    document.querySelector('#coach-workout-library').prepend(workout);
-    document.querySelector('#coach-library-empty').hidden = true;
-    document.querySelector('#coach-workout-status').textContent = `“${title}” bewaard in deze preview.`;
-    workoutForm.reset();
-    exerciseFields.replaceChildren();
-    document.querySelector('#exercise-status').textContent = '';
-    addExercise(false);
-    window.location.hash = 'dashboard';
+        await response.json();
+        workoutForm.reset();
+        exerciseFields.replaceChildren();
+        addExercise(false);
+        status.textContent = '';
+        document.querySelector('#coach-workout-status').textContent = 'Workout opgeslagen in Java.';
+        window.location.hash = 'dashboard';
+        document.dispatchEvent(new CustomEvent('cap:workouts-saved'));
+    } catch (error) {
+        status.textContent = `${error.message} Je invoer blijft behouden. Bij een verbindingsfout: controleer eerst de bibliotheek voordat je opnieuw opslaat.`;
+    } finally { submit.disabled = false; }
 });
 
 addExercise(false);

@@ -15,6 +15,9 @@
     <script src="js/club.js" defer></script>
     <script src="js/coach-workouts.js" defer></script>
     <script src="js/account-menu.js" defer></script>
+    <script src="js/backend-status.js" defer></script>
+    <script src="js/workouts-api.js" defer></script>
+    <script src="js/training.js" defer></script>
 </head>
 
 <body class="is-signed-out">
@@ -126,7 +129,7 @@
                     <h3>Een training op maat</h3>
                     <p>Stel een workout samen met oefeningen, sets en herhalingen.</p>
                     <a class="primary-button" href="#create-workout">Workout maken</a>
-                    <p class="preview-note">Maak een workout en wijs deze toe aan een voorbeeldsporter. Alles blijft alleen bewaard zolang deze pagina open is.</p>
+                    <p class="preview-note">Workouts en toewijzingen worden opgeslagen in de lokale Java-backend. Accounts zijn nog een preview.</p>
                 </section>
                 <section>
                     <span class="card-label">Trainingsbibliotheek</span>
@@ -203,7 +206,7 @@
                 </div>
             </header>
             <form id="coach-workout-form" class="workout-editor">
-                <p class="sample-notice">Preview: na het vernieuwen van de pagina verdwijnen je workouts.</p>
+                <p class="sample-notice">Workouts worden opgeslagen via Java en blijven bewaard na vernieuwen. Gebruik alleen voorbeeldgegevens.</p>
                 <label>Naam training
                     <input name="title" required maxlength="100" placeholder="Bijvoorbeeld: Full body">
                 </label>
@@ -222,7 +225,7 @@
                 </label>
                 <p id="assignment-help" class="sample-notice">Een toegewezen workout verschijnt in de Sporter-preview. Een nieuwe toewijzing vervangt de vorige workout voor vandaag.</p>
                 <div class="editor-actions">
-                    <button class="primary-button" type="submit">Bewaar in preview</button>
+                    <button class="primary-button" type="submit">Workout opslaan</button>
                     <a class="secondary-button" href="#dashboard">Terug naar overzicht</a>
                 </div>
             </form>
@@ -245,7 +248,10 @@
                         </div>
                         <label>Sets<input name="sets" type="number" min="1" max="100" step="1" value="3" required inputmode="numeric"></label>
                         <label>Herhalingen<input name="reps" type="number" min="1" max="1000" step="1" value="10" required inputmode="numeric"></label>
+                        <label>Gewicht voorschrijven<select name="loadMode"><option value="none">Geen doelgewicht</option><option value="fixed">Vast gewicht (kg)</option><option value="percent">Percentage van rep-PR</option></select></label>
+                        <label>Kg of percentage<input name="loadValue" type="number" min="0" max="2000" step="0.01" inputmode="decimal" placeholder="Bijvoorbeeld: 60 of 90"></label>
                     </div>
+                    <p class="sample-notice">Percentage gebruikt het PR met hetzelfde aantal herhalingen van de toegewezen sporter. Geen PR? Kies een vast gewicht. Gebruik dezelfde oefeningnaam en gewichtsnotatie (totaal of per dumbbell).</p>
                     <button class="secondary-button remove-exercise" type="button">Verwijderen</button>
                 </fieldset>
             </template>
@@ -269,7 +275,7 @@
                     <span class="card-label">Jouw coachtraining</span>
                     <h3 id="assigned-workout-heading">Caps workout voor jou vandaag</h3>
                     <div id="assigned-workout-content"></div>
-                    <p class="preview-note">Toegewezen in deze preview. Geen echte accountkoppeling.</p>
+                    <p class="preview-note">Toewijzing opgeslagen in Java voor de voorbeeldsporter. Geen echte accountkoppeling.</p>
                 </section>
                 <div id="self-selected-workout">
                 <span class="card-label">Jouw volgende stap</span>
@@ -312,30 +318,10 @@
                     <p class="dashboard-intro">Kies een training voor vandaag.</p>
                 </div>
             </header>
-            <p class="sample-notice">Voorbeeldtrainingen · Je keuze blijft alleen bewaard zolang deze pagina open is.</p>
-            <div class="workout-options">
-                <article class="workout-option">
-                    <span class="card-label">Voorbeeld · Kracht</span>
-                    <h3>Full body</h3>
-                    <p>Een training voor je hele lichaam.</p>
-                    <p class="workout-meta">45 minuten · 6 oefeningen</p>
-                    <button class="primary-button" type="button" data-workout="Full body" data-summary="45 minuten · 6 oefeningen">Kies Full body</button>
-                </article>
-                <article class="workout-option">
-                    <span class="card-label">Voorbeeld · Basketball</span>
-                    <h3>Voetenwerk &amp; conditie</h3>
-                    <p>Werk aan je bewegingen op het veld.</p>
-                    <p class="workout-meta">30 minuten · 5 oefeningen</p>
-                    <button class="primary-button" type="button" data-workout="Voetenwerk &amp; conditie" data-summary="30 minuten · 5 oefeningen">Kies voetenwerk</button>
-                </article>
-                <article class="workout-option">
-                    <span class="card-label">Voorbeeld · Herstel</span>
-                    <h3>Mobiliteit</h3>
-                    <p>Neem tijd voor rustig en soepel bewegen.</p>
-                    <p class="workout-meta">20 minuten · 4 oefeningen</p>
-                    <button class="primary-button" type="button" data-workout="Mobiliteit" data-summary="20 minuten · 4 oefeningen">Kies mobiliteit</button>
-                </article>
-            </div>
+            <p class="sample-notice">Workouts uit de Java-backend. Je eigen trainingskeuze is tijdelijk; coachtoewijzingen worden opgeslagen.</p>
+            <p id="workouts-status" role="status">Workouts worden geladen zodra je dit overzicht opent.</p>
+            <button id="reload-workouts" class="secondary-button" type="button">Opnieuw laden</button>
+            <div class="workout-options" id="api-workouts" aria-busy="false"></div>
         </section>
         <section id="settings" data-view aria-labelledby="settings-title" hidden>
             <header class="dashboard-header">

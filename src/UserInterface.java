@@ -1,12 +1,15 @@
+import java.io.IOException;
 import java.util.Scanner;
 
 public class UserInterface {
     private Scanner scanner;
     private WorkoutLibrary library;
+    private WorkoutFileManager fileManager;
 
-    public UserInterface(Scanner scanner, WorkoutLibrary library) {
+    public UserInterface(Scanner scanner, WorkoutLibrary library, WorkoutFileManager fileManager) {
         this.scanner = scanner;
         this.library = library;
+        this.fileManager = fileManager;
     }
 
     public void start() {
@@ -64,7 +67,14 @@ public class UserInterface {
         }
 
         library.addWorkout(workout);
-        System.out.println("Workout added successfully.");
+        try {
+            fileManager.saveWorkouts(library);
+            System.out.println("Workout added successfully.");
+         } catch (IOException e) {
+            System.err.println("Workout added in memory but could not be saved.");
+         }
+
+
     }
 
     private void findWorkout() {
@@ -91,5 +101,7 @@ public class UserInterface {
             System.out.println("Workout not found.");
         }
     }
+
+
 }
 

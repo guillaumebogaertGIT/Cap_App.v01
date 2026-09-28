@@ -1,0 +1,208 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>CAP development overview ? 27 September 2026</title><style>body{font:16px/1.6 Arial,sans-serif;color:#202824;background:#e3e5e1;margin:0}main{max-width:880px;margin:32px auto;padding:48px;background:#fff;border-top:8px solid #ee9624}h1{font-size:32px;line-height:1.2}h2{font-size:23px;margin-top:32px;border-bottom:1px solid #ddd;padding-bottom:8px}h3{font-size:18px}table{width:100%;border-collapse:collapse;font-size:14px}th,td{border:1px solid #ddd;text-align:left;padding:9px;vertical-align:top}th{background:#f8eedf}pre{background:#f1f2f0;padding:14px;white-space:pre-wrap}code{overflow-wrap:anywhere}a{color:#8b5200}h1,h2,h3{break-after:avoid}tr,pre{break-inside:avoid}@media(max-width:600px){main{margin:0;padding:20px}}@media print{@page{size:A4;margin:18mm}body{background:white;font-size:10pt}main{max-width:none;margin:0;padding:0;border-top:4px solid #ee9624}h1{font-size:23pt}h2{font-size:16pt}h3{font-size:12pt}table{font-size:9pt}a{color:inherit;text-decoration:none}}</style><main><h1>CAP App — development overview</h1>
+<p>27 September 2026 · Local working prototype</p>
+<h2>What we achieved</h2>
+<p>CAP now has a working connection between its browser interface and a Java Spring
+Boot backend. A coach can create a workout, assign it to the example athlete,
+and have that athlete record a timed training session. Finished sessions are
+saved with their actual sets, repetitions and weights. Records are tracked by
+exercise and rep count, and coaches can use those records to prescribe weights.</p>
+<p>The project is still a local demonstration, not a production service. The coach
+and athlete accounts are simulated. Planning, bookings and shop management are
+browser previews; they are not yet connected to the Java backend.</p>
+<h2>Frontend work</h2>
+<p>We built one responsive HTML/CSS/JavaScript application for phones, tablets and
+desktops, with Dutch interface text and English code identifiers. CAP&#39;s existing
+site and the supplied Trainin screenshots informed the feature list. The app has
+its own styling, light and dark themes, CAP branding and a Stronger Together
+welcome screen.</p>
+<p>The frontend includes:</p>
+<ul>
+<li>Athlete and coach preview dashboards with useful session summaries.</li>
+<li>A sidebar with Planning, Bookings, Workouts, athlete/group overviews, a training
+log and Shop. Available links depend on the preview role.</li>
+<li>A profile dropdown with Settings and clearly labelled account-feature previews.</li>
+<li>Login and signup design previews, draft terms/privacy panels and optional
+marketing controls. No real registrations or credentials are stored.</li>
+<li>Coach forms to create workouts, search exercises and assign a workout to the
+example athlete, Guillaume.</li>
+<li>Local-browser previews for managing class times, capacity, bookings,
+attendance, products and prices.</li>
+<li>An actual Java connection indicator under Settings.</li>
+</ul>
+<p>Mobile layouts stack fields and cards, use readable inputs and comfortable touch
+targets, and retain the existing compact Menu control. Real-device testing,
+including the iPhone keyboard and long dropdowns, remains outstanding.</p>
+<h2>Backend work</h2>
+<p>We introduced a separate Maven/Spring Boot project in <code>backend</code>, using Java 21.
+The Java 11/21 mismatch was diagnosed and the workspace&#39;s new VS Code terminals
+were configured for the installed Java 21 JDK.</p>
+<p>The original <code>src</code> folder remains the earlier console learning project. Its
+workout classes and file-saving exercises helped establish the data flow. The
+Spring Boot code now uses structured API models suited to the web application.
+The console <code>workouts.txt</code> is not automatically imported into the web backend.</p>
+<h3>How the pieces communicate</h3>
+<ol>
+<li>A person clicks a button or fills in a form in the frontend.</li>
+<li>JavaScript uses <code>fetch()</code> to send an HTTP request to Spring Boot.</li>
+<li>A Java controller receives the request as structured data.</li>
+<li>The storage/service code validates it, computes any records or percentage
+targets, and saves it.</li>
+<li>Spring returns JSON and the frontend displays a Dutch result.</li>
+</ol>
+<p>Terminal <code>System.out.println</code> messages are developer output. They are not the
+messages displayed in the website. The frontend controls the user-facing text.</p>
+<table>
+<thead>
+<tr>
+<th>Endpoint</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>GET /api/health</code></td>
+<td>Test the connection</td>
+</tr>
+<tr>
+<td><code>GET /api/workouts</code></td>
+<td>Load saved workout plans</td>
+</tr>
+<tr>
+<td><code>POST /api/workouts</code></td>
+<td>Validate and save a plan and optional assignment</td>
+</tr>
+<tr>
+<td><code>GET /api/training</code></td>
+<td>Load completed session history</td>
+</tr>
+<tr>
+<td><code>POST /api/training</code></td>
+<td>Validate and save a finished session</td>
+</tr>
+<tr>
+<td><code>GET /api/records</code></td>
+<td>Calculate best weight for each exercise/rep count</td>
+</tr>
+</tbody></table>
+<p>CORS allows the local frontend origin <code>http://127.0.0.1:5500</code>. This is a browser
+access rule, not authentication. The backend binds to the local computer.</p>
+<h2>Training flow</h2>
+<h3>Coach</h3>
+<p>Create a workout with a name, description and exercises. Each exercise has
+planned sets and reps, plus one of three weight choices:</p>
+<ul>
+<li>No target weight.</li>
+<li>A fixed weight in kilograms.</li>
+<li>A percentage of the assigned athlete&#39;s record for the same exercise and rep count.</li>
+</ul>
+<p>Assigning a new workout for today replaces today&#39;s previous assignment, while
+keeping the older workout in the library. Coaches need no subscription to use
+their tools. Actual staff authorization still needs to be implemented server-side.</p>
+<h3>Athlete</h3>
+<p>Open an assigned workout or a workout from the library and click Start training.
+The timer uses a saved start timestamp, so it continues across navigation and
+refreshes rather than depending on the browser counting every second.</p>
+<p>Enter actual reps and kilograms for each completed set. Add or remove sets as
+needed. Planned figures stay separate: leaving an exercise with no sets means
+it was skipped. At least one completed set is required to finish. A running draft
+can also be explicitly discarded without changing completed history.</p>
+<p>Click Training afronden to stop the timer and save. The overview shows elapsed
+time, original prescription, actual results and new records/first registrations.
+The same information remains in Trainingslog for the athlete and coach.</p>
+<p>If saving fails, the draft stays available. Retrying uses the same session ID,
+which prevents a lost response from creating duplicate completed sessions.</p>
+<h2>PR and percentage rules</h2>
+<p>Records are per exercise name and exact rep count, for the one example athlete.
+A 60 kg squat for 5 reps is separate from a 70 kg squat for 3 reps. A later 62.5 kg
+set for 5 reps improves the five-rep record. Equal or lower weights do not beat it.
+Only finished sessions count. A first recorded result establishes the baseline.</p>
+<p>Example: 90% of a 60 kg five-rep squat record is 54 kg. Java calculates and saves
+both the reference record and the resulting target when the coach saves the plan.
+Later PRs do not silently change that saved prescription. Targets are rounded to
+two decimal places, not to equipment increments. A coach can choose a practical
+fixed weight instead.</p>
+<p>If no matching rep record exists, the percentage plan is rejected with an
+explanation; the coach can use a fixed weight. These are rep-specific records,
+not estimated one-rep maxes. Use consistent exercise names and weight conventions
+(for example, total barbell weight versus weight per dumbbell). Name matching
+ignores letter case and repeated whitespace, but different exercise names remain
+different records. Zero kilograms means no added weight, not measured body mass.</p>
+<h2>Where information is saved</h2>
+<table>
+<thead>
+<tr>
+<th>Information</th>
+<th>Current location</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Workouts and assignments</td>
+<td><code>backend/data/workouts.json</code></td>
+</tr>
+<tr>
+<td>Completed sessions and plan snapshots</td>
+<td><code>backend/data/training.json</code></td>
+</tr>
+<tr>
+<td>PRs</td>
+<td>Calculated from completed sessions</td>
+</tr>
+<tr>
+<td>Unfinished training</td>
+<td>Browser local storage on this device/origin</td>
+</tr>
+<tr>
+<td>Planning, bookings and shop previews</td>
+<td>Browser local storage</td>
+</tr>
+<tr>
+<td>Real accounts, subscriptions and payments</td>
+<td>Not implemented</td>
+</tr>
+</tbody></table>
+<p>Backend writes use a temporary file and an atomic replacement. The in-memory
+state updates only after writing succeeds. Backend data, build outputs and test
+logs are excluded from Git; they are not published to GitHub. Back up <code>backend/data</code>
+separately if you want to preserve local example workouts and results.</p>
+<h2>Verification completed</h2>
+<ul>
+<li>Seven Java tests pass: Spring startup, workout persistence and validation,
+assignment replacement, training persistence, exact-rep records, duplicate-save
+protection, percentage resolution and invalid results.</li>
+<li>An HTTP integration test creates a workout, saves completion, retries it,
+retrieves history and creates a percentage-based follow-up. It uses temporary
+test data and does not change the example athlete&#39;s real local files.</li>
+<li>JavaScript syntax checks pass.</li>
+<li>The existing workout connection was manually confirmed by the user earlier.</li>
+<li>The newly added timer, history screens and responsive appearance have not been
+visually verified in a browser or on real phones; no browser automation was
+available in this session.</li>
+</ul>
+<h2>How to run it</h2>
+<p>From the <code>backend</code> folder, with Java 21 selected:</p>
+<pre><code class="language-powershell">.\mvnw.cmd spring-boot:run
+</code></pre>
+<p>Wait for <code>Started BackendApplication</code>. Open <code>frontend/index.html</code> with VS Code
+Live Server, then visit <code>http://127.0.0.1:5500/frontend/index.html</code>. Use Open
+ontwerp-preview zonder gegevens. Choose Coach to create/assign workouts and
+Sporter to start and finish them. View Trainingslog for history and PRs.</p>
+<p>Spring Boot runs until stopped with Ctrl+C or the process/computer closes.
+Restart it after Java changes. Refresh the frontend after JavaScript changes.
+The old <code>src/ApiServer.java</code> is a learning experiment; do not run it alongside
+Spring Boot because both use port 8080.</p>
+<h2>Next steps before business use</h2>
+<ol>
+<li>Visually test the full flow on phone, tablet and desktop, including refresh,
+server-offline saving and keyboard navigation.</li>
+<li>Add real authentication, athlete-specific data ownership, coach authorization
+and server-enforced subscription entitlements.</li>
+<li>Agree with CAP on membership rules, bookings, minors, privacy, cancellation
+and payment requirements. Finalize the legal documents with qualified review.</li>
+<li>Move from local JSON to a database with migrations, backups and transactional
+multi-user behavior.</li>
+<li>Connect planning, bookings and products to Java. Add payment integration only
+after its provider and business rules are agreed.</li>
+<li>Deploy with HTTPS, protected secrets, monitoring and a managed restart policy.</li>
+</ol>
+<p>This prototype must not be exposed publicly as a real account-based service yet.
+It proves the core training workflow while keeping the remaining work explicit.</p>
+</main></html>
