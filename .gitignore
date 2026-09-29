@@ -22,3 +22,5 @@
 
 # Local backups; workouts.txt remains tracked for this prototype
 /backups/
+# Obsidian local configuration
+.obsidian/

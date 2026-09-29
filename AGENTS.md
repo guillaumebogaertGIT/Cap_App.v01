@@ -27,3 +27,13 @@ Most athletes are expected to use phones, especially iPhones. Coaches/admins and
 - Point out additions that will not work well on mobile and explain how to make them responsive.
 - Validate layout changes at phone, tablet, and desktop sizes when possible; clearly distinguish code checks from actual browser verification.
 - Continue in small teaching steps, explaining important CSS concepts and allowing visual review instead of generating the entire responsive application at once.
+
+## Project Brain / Persistent Memory
+
+- Read `brain/PROJECT.md` at the beginning of significant CAP work.
+- Read relevant memory files for the task: `ARCHITECTURE.md` for system structure/backend/frontend questions; `DECISIONS.md` before architectural or design decisions; `TODO.md` when choosing next work; `LEARNINGS.md` when teaching or introducing unfamiliar concepts; `SESSION_LOG.md` when recent history matters. All are in `brain/`.
+- Treat `/brain` as persistent project context. Verify details against actual code when accuracy matters; code is the source of truth.
+- After significant work, update the relevant files: architecture changes → `ARCHITECTURE.md`; important decisions → `DECISIONS.md`; meaningful task/progress changes → `TODO.md`; significant work sessions → `SESSION_LOG.md`.
+- Never automatically claim the user learned or understands something. Record their understanding in `LEARNINGS.md` only when our interaction provides evidence of it.
+- Keep brain files concise; do not dump logs, entire conversations, code output, or temporary details into them.
+- Do not update brain files for tiny changes such as typo fixes, formatting changes, or trivial code edits.
