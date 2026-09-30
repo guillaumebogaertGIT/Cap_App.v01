@@ -1,14 +1,7 @@
 {
-    "java.configuration.runtimes": [
-        {
-            "name": "JavaSE-21",
-            "path": "C:/Program Files/Eclipse Adoptium/jdk-21.0.12.8-hotspot",
-            "default": true
-        }
-    ],
     "terminal.integrated.env.windows": {
-        "JAVA_HOME": "C:/Program Files/Eclipse Adoptium/jdk-21.0.12.8-hotspot",
-        "PATH": "C:/Program Files/Eclipse Adoptium/jdk-21.0.12.8-hotspot/bin;${env:PATH}"
+        "JAVA_HOME": "${env:JAVA25_HOME}",
+        "PATH": "${env:JAVA25_HOME}/bin;${env:PATH}"
     },
     "java.project.sourcePaths": ["src"],
     "java.project.outputPath": "bin",

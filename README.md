@@ -4,7 +4,7 @@ A Java learning project building toward a coaching platform for CAP in Gistel, B
 
 ## Current status
 
-Local web prototype with a responsive frontend and a Java 21 / Spring Boot backend.
+Local web prototype with a responsive frontend and a Java 25 / Spring Boot backend.
 Workout creation, example-athlete assignment, timed completion, saved history and
 rep-specific PRs are connected. Coaches can prescribe fixed kg or percentages of
 a matching rep record. Real authentication, a database and payments are not yet
@@ -16,7 +16,7 @@ in a browser and use Print → Save as PDF for a handoff document.
 
 ## Run the web application
 
-Use Java 21 and run from `backend`:
+Use JDK 25 and run from `backend`:
 
 ```powershell
 .\mvnw.cmd spring-boot:run
@@ -27,7 +27,25 @@ Open `frontend/index.html` with VS Code Live Server at
 The API runs locally on port 8080. Persistent prototype files in `backend/data`
 are ignored by Git; back them up separately. Do not expose the preview publicly.
 
-Run backend checks with `./mvnw test` (Windows: `.\mvnw.cmd test`).
+Run backend checks with `./mvnw clean test` (Windows: `.\mvnw.cmd clean test`).
+
+For Windows VS Code, set the user environment variable `JAVA25_HOME` to your
+installed JDK 25 directory, then fully restart VS Code and create a new terminal.
+CAP's workspace settings use this variable for terminal `JAVA_HOME` and prepend
+its `bin` directory to `PATH`; other projects keep their existing Java defaults.
+Register JDK 25 as `JavaSE-25` in **user** `java.configuration.runtimes` settings,
+retaining valid entries for older JDKs. Maven takes the backend language level
+from `backend/pom.xml`. Keep machine-specific JDK paths out of workspace settings.
+
+In a PowerShell terminal outside VS Code, select Java 25 for that session before
+running Maven (this does not change Windows' default Java):
+
+```powershell
+$env:JAVA_HOME = $env:JAVA25_HOME
+$env:Path = "$env:JAVA_HOME/bin;$env:Path"
+java -version
+.\mvnw.cmd -version
+```
 
 ## Earlier console learning project
 
