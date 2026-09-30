@@ -11,7 +11,7 @@ Basketball belongs to the separate RAW Hoops scope and is explicitly excluded fr
 ## Current state
 
 - One responsive HTML/CSS/JavaScript application with Dutch interface text, CAP images, light/dark/system themes and athlete/coach previews.
-- Java 21 / Spring Boot 4.1.1 API: workout creation, assignment to example athlete Guillaume, timed completion, saved history and exact-rep personal records. Prescriptions support no target, fixed kg or a percentage of a matching record.
+- Java 25 / Spring Boot 4.1.1 API: workout creation, assignment to example athlete Guillaume, timed completion, saved history and exact-rep personal records. Prescriptions support no target, fixed kg or a percentage of a matching record.
 - Planning, bookings, attendance and shop use browser-local example data. Login, registration, roles and subscriptions are simulations; no real accounts or payments exist.
 - Backend storage is local JSON, not a database. The earlier Java console application remains separately in `src/`.
 - Nutrition, recovery, coaches and AI are not implemented feature areas. “Coach Glenn” is a provisional future AI name.
@@ -28,4 +28,4 @@ Maintain one responsive codebase for phones (especially iPhones), tablets and de
 - `docs/PROJECT_PLAN.md`: canonical scope and learning principles. Its original review-only task is historical, as clarified by README.
 - `docs/SESSION-2026-09-27.md`: prior handoff; `docs/CAP-overview.html`: printable companion.
 - `docs/account-access-plan.md`: provisional access design and unresolved CAP decisions.
-- From `backend/`, with Java 21: `.\mvnw.cmd spring-boot:run`. Open `http://127.0.0.1:5500/frontend/index.html` through Live Server and enter the design preview. API port: 8080. Current access controls are not production security; use example data.
+- From `backend/`, with JDK 25: `.\mvnw.cmd spring-boot:run`. Windows VS Code terminals use the user `JAVA25_HOME` variable; see README for setup. Open `http://127.0.0.1:5500/frontend/index.html` through Live Server and enter the design preview. API port: 8080. Current access controls are not production security; use example data.

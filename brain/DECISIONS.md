@@ -10,7 +10,8 @@ Reviewed: September 29, 2026. Explicit rules and implemented choices only; undoc
 
 ## Implemented choices
 
-- Plain HTML/CSS/JavaScript and separate Java 21 / Spring Boot 4.1.1 Maven backend; retain the earlier console project. Sources: frontend, `backend/pom.xml`, `src/`.
+- Plain HTML/CSS/JavaScript and separate Java 25 / Spring Boot 4.1.1 Maven backend; retain the earlier console project. Sources: frontend, `backend/pom.xml`, `src/`.
+- CAP's Windows VS Code terminals select JDK 25 through `JAVA25_HOME`. Machine-specific JDK paths belong in user environment/runtime settings, preserving other projects' Java defaults.
 - Local JSON with atomic replacement; completed sessions retain plan snapshots. Browser storage holds drafts and club previews. Sources: store services, frontend scripts.
 - One example athlete. Assignments use today in Europe/Brussels; a new same-day assignment clears the old assignment but keeps its workout in the library. Source: `WorkoutStore`.
 - Records use normalized exercise names and exact reps, not estimated one-rep maxes. Only completed sets count; equal weights do not improve a record. Zero kg means no added weight. Sources: `TrainingStore`, training UI.

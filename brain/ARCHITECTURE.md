@@ -21,7 +21,7 @@ Scripts communicate through globals (`previewRole`, `capAccess`, `capTraining`),
 
 UI event → `fetch()` to `http://localhost:8080` → Spring controller → store service → JSON response → DOM update.
 
-`backend/` is a separate Maven project. `BackendApplication` starts Spring Boot. Constructor injection connects controllers to `WorkoutStore`/`TrainingStore`; these services combine validation, domain logic and file persistence. Java records model requests/results; Jackson serializes JSON. `ApiErrors` maps validation/storage failures to HTTP messages. No database/repository layer exists.
+`backend/` is a separate Maven project targeting Java 25. `BackendApplication` starts Spring Boot. Constructor injection connects controllers to `WorkoutStore`/`TrainingStore`; these services combine validation, domain logic and file persistence. Java records model requests/results; Jackson serializes JSON. `ApiErrors` maps validation/storage failures to HTTP messages. No database/repository layer exists.
 
 | Endpoint | Operation |
 | --- | --- |
