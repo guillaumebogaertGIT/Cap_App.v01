@@ -28,6 +28,16 @@ public class WorkoutStore {
     public synchronized List<Workout> list() { return List.copyOf(workouts); }
 
     public synchronized Workout create(Workout input) throws IOException {
+        return write(input, null);
+    }
+
+    public synchronized Workout update(String id, Workout input) throws IOException {
+        return write(input, id);
+    }
+
+    private Workout write(Workout input, String id) throws IOException {
+        Workout existing = id == null ? null : workouts.stream().filter(w -> w.id().equals(id)).findFirst()
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Workout niet gevonden."));
         if (input == null || input.name() == null || input.name().isBlank() || input.name().length() > 100
             || input.description() != null && input.description().length() > 1000
             || input.exercises() == null || input.exercises().isEmpty() || input.exercises().size() > 100) {
@@ -36,20 +46,37 @@ public class WorkoutStore {
         for (Workout.Exercise exercise : input.exercises()) {
             if (exercise == null || exercise.name() == null || exercise.name().isBlank()
                 || exercise.name().length() > 100 || exercise.sets() < 1 || exercise.sets() > 100
-                || exercise.reps() < 1 || exercise.reps() > 1000) throw invalid();
+                || exercise.reps() < 1 || exercise.reps() > 1000
+                || exercise.restSeconds() != null && (exercise.restSeconds() < 0 || exercise.restSeconds() > 3600)
+                || exercise.tempo() != null && exercise.tempo().length() > 40) throw invalid();
         }
-        String athlete = input.athleteId() == null ? "" : input.athleteId();
+        String athlete = existing != null ? existing.athleteId() : input.athleteId() == null ? "" : input.athleteId();
         if (!athlete.isEmpty() && !athlete.equals("preview-guillaume")) throw invalid();
-        String date = athlete.isEmpty() ? "" : LocalDate.now(ZoneId.of("Europe/Brussels")).toString();
-        Workout saved = new Workout(UUID.randomUUID().toString(), input.name().trim(),
+        String date = existing != null ? existing.assignedDate() : athlete.isEmpty() ? "" : LocalDate.now(ZoneId.of("Europe/Brussels")).toString();
+        Workout saved = new Workout(id == null ? UUID.randomUUID().toString() : id, input.name().trim(),
             input.description() == null ? "" : input.description().trim(),
             input.exercises().stream().map(e -> new Workout.Exercise(e.name().trim(), e.sets(), e.reps(),
-                e.loadMode(), e.loadValue(), e.targetKg(), e.referenceKg())).toList(), athlete, date);
+                e.loadMode(), e.loadValue(), e.targetKg(), e.referenceKg(), e.restSeconds(),
+                e.tempo() == null ? null : e.tempo().trim())).toList(), athlete, date);
         List<Workout> updated = new ArrayList<>(workouts);
         // One assigned workout per example athlete per day; older workouts stay in the library.
-        if (!athlete.isEmpty()) updated.replaceAll(w -> athlete.equals(w.athleteId()) && date.equals(w.assignedDate())
+        if (existing == null && !athlete.isEmpty()) updated.replaceAll(w -> athlete.equals(w.athleteId()) && date.equals(w.assignedDate())
             ? new Workout(w.id(), w.name(), w.description(), w.exercises(), "", "") : w);
-        updated.add(saved);
+        if (existing == null) updated.add(saved);
+        else updated.replaceAll(w -> w.id().equals(id) ? saved : w);
+        save(updated);
+        return saved;
+    }
+
+    public synchronized void delete(String id) throws IOException {
+        List<Workout> updated = new ArrayList<>(workouts);
+        if (!updated.removeIf(workout -> workout.id().equals(id))) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Workout niet gevonden.");
+        }
+        save(updated);
+    }
+
+    private void save(List<Workout> updated) throws IOException {
         Files.createDirectories(file.getParent());
         Path temporary = Files.createTempFile(file.getParent(), "workouts-", ".tmp");
         try {
@@ -57,7 +84,6 @@ public class WorkoutStore {
             Files.move(temporary, file, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
         } finally { Files.deleteIfExists(temporary); }
         workouts = updated;
-        return saved;
     }
 
     private ResponseStatusException invalid() {

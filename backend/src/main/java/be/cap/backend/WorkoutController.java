@@ -4,6 +4,10 @@ import java.util.List;
 import java.io.IOException;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.server.ResponseStatusException;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.CrossOrigin;
@@ -27,5 +31,19 @@ public class WorkoutController {
     @ResponseStatus(HttpStatus.CREATED)
     public Workout createWorkout(@RequestBody Workout workout) throws IOException {
         return store.create(training.resolveTargets(workout));
+    }
+
+    @DeleteMapping("/api/workouts/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteWorkout(@PathVariable("id") String id) throws IOException {
+        store.delete(id);
+    }
+
+    @PutMapping("/api/workouts/{id}")
+    public Workout updateWorkout(@PathVariable("id") String id, @RequestBody Workout workout) throws IOException {
+        Workout existing = store.list().stream().filter(w -> w.id().equals(id)).findFirst()
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Workout niet gevonden."));
+        Workout input = new Workout(id, workout.name(), workout.description(), workout.exercises(), existing.athleteId(), existing.assignedDate());
+        return store.update(id, training.resolveTargets(input));
     }
 }

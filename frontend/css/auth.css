@@ -1,4 +1,4 @@
-.is-signed-out > .sidebar, .is-signed-out > main { display: none; }
+.is-signed-out > .sidebar, .is-signed-out > main, .is-signed-out > .mobile-bottom-nav { display: none; }
 .auth-screen { width: min(72rem, 100%); margin: auto; padding: 1.25rem; display: grid; gap: 2rem; }
 .auth-story { padding: 1rem 0; }
 .auth-cap-logo { display: block; width: 7.5rem; max-width: 100%; height: auto; margin-bottom: 1.5rem; filter: var(--logo-filter); }
@@ -7,6 +7,10 @@
 .auth-story p { color: var(--muted); max-width: 35ch; }
 .auth-card { min-width: 0; padding: 1.25rem; border: 1px solid var(--border); border-radius: var(--panel-radius); background: var(--surface); }
 .auth-card > p { color: var(--muted); }
+.profile-fields { display: grid; grid-template-columns: minmax(0, 1fr); gap: 0.75rem; }
+.profile-fields label { min-width: 0; }
+.profile-fields input, .profile-fields select { min-width: 0; max-width: 100%; }
+@media (min-width: 600px) { .profile-fields { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 .auth-tabs { display: flex; flex-wrap: wrap; gap: 0.75rem; }
 .auth-tabs [aria-pressed="true"] { border-color: var(--accent-text); background: var(--highlight); }
 .auth-text-button { min-height: 2.75rem; border: 0; background: none; color: var(--accent-text); font: inherit; text-decoration: underline; cursor: pointer; padding: 0.4rem 0; }

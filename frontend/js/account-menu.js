@@ -5,7 +5,6 @@
     const links = document.querySelector('#account-links');
     const dialog = document.querySelector('#account-dialog');
     const previews = {
-        profile: ['Profiel', 'Guillaume is het voorbeeldaccount. Hier kun je later je naam, profielfoto en persoonlijke gegevens beheren.'],
         notifications: ['Meldingen', 'Hier verschijnen later meldingen over jouw trainingen en boekingen. Meldingen zijn nog niet gekoppeld.'],
         password: ['Wachtwoord', 'Een wachtwoord wijzigen wordt beschikbaar zodra echte accounts zijn aangesloten.'],
         messages: ['Berichten', 'Hier komt je inbox voor berichten van de club en coaches. Berichten versturen is nog niet beschikbaar.'],
@@ -44,6 +43,11 @@
     });
     links.querySelectorAll('[data-account]').forEach((button) => {
         button.addEventListener('click', () => {
+            if (button.dataset.account === 'profile' && window.capOpenProfile) {
+                closeMenu();
+                window.capOpenProfile();
+                return;
+            }
             if (button.dataset.account === 'logout' && window.capSignOut) {
                 closeMenu();
                 window.capSignOut();

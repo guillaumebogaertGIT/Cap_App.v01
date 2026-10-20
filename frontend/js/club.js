@@ -30,6 +30,12 @@
         storageMessage = 'Browseropslag niet beschikbaar of onleesbaar. Wijzigingen blijven alleen tijdens deze pagina beschikbaar.';
     }
     let week = today();
+    // Supply example content for older preview data without replacing saved sessions.
+    data.sessions.forEach(session => {
+        if (session.program === undefined) session.program = session.id === 'demo-group'
+            ? 'Opwarming · 10 minuten mobiliteit en rustig bewegen\nCircuit · 3 rondes: 12 air squats, 10 push-ups en 250 m roeien\nCooling-down · 5 minuten rustig bewegen en stretchen'
+            : '';
+    });
     let layout = 'calendar';
     const coach = () => previewRole === 'coach';
     const element = (tag, text, className) => {
@@ -71,14 +77,21 @@
         <dialog id="session-dialog" class="club-dialog" aria-labelledby="session-dialog-title">
             <form id="session-form" class="club-form"><h2 id="session-dialog-title">Les toevoegen</h2><input name="id" type="hidden">
                 <label>Naam<input name="title" required maxlength="100"></label>
+                <label>Programma voor sporters<textarea name="program" rows="5" maxlength="3000" placeholder="Bijvoorbeeld: opwarming, oefeningen en cooling-down"></textarea></label>
+                <p class="sample-notice">Sporters kunnen dit programma bekijken voor ze boeken. Na inschrijving verschijnt de sessie ook bij hun workouts.</p>
                 <div class="club-form-grid"><label>Datum<input name="date" type="date" required></label><label>Type<select name="type"><option>Groep</option><option>Privé</option></select></label><label>Start<input name="start" type="time" required></label><label>Einde<input name="end" type="time" required></label><label>Coach<input name="coach" required maxlength="80"></label><label>Locatie<input name="location" required maxlength="120"></label><label>Max. deelnemers<input name="capacity" type="number" min="1" max="200" required value="8"></label><label>Wekelijks herhalen<select name="repeat"><option value="1">Eenmalig</option><option value="4">4 weken</option><option value="8">8 weken</option></select></label></div>
-                <p class="sample-notice">Herhalingen worden losse lessen. Wijzigingen gelden alleen voor de gekozen les.</p><p id="session-error" role="alert"></p><div class="editor-actions"><button class="primary-button" type="submit">Les bewaren</button><button class="secondary-button" type="button" data-close="session-dialog">Sluiten</button></div>
+                <p class="sample-notice">Herhalingen worden losse lessen. Wijzigingen gelden alleen voor de gekozen les.</p><p id="session-error" role="alert"></p><div class="editor-actions"><button class="primary-button" type="submit">Les bewaren</button><button class="secondary-button" type="submit" id="session-add-workout">Workout toevoegen</button><button class="secondary-button" type="button" data-close="session-dialog">Sluiten</button></div>
+                <p class="sample-notice">Workout toevoegen bewaart eerst de les. Daarna kun je een nieuwe workout maken of een opgeslagen workout aanpassen voor deze sessie.</p>
             </form>
         </dialog>
         <dialog id="product-dialog" class="club-dialog" aria-labelledby="product-dialog-title">
             <form id="product-form" class="club-form"><h2 id="product-dialog-title">Product toevoegen</h2><input name="id" type="hidden"><label>Naam<input name="title" required maxlength="100"></label><label>Beschrijving<textarea name="description" rows="3" required maxlength="1000"></textarea></label><div class="club-form-grid"><label>Categorie<select name="category"><option>Abonnement</option><option>Beurtenkaart</option><option>Personal training</option><option>Artikel</option></select></label><label>Prijs (€)<input name="price" type="number" required min="0" max="100000" step="0.01"></label><label>Zichtbaarheid<select name="available"><option value="true">Beschikbaar</option><option value="false">Verborgen voor sporters</option></select></label></div><div class="editor-actions"><button class="primary-button" type="submit">Product bewaren</button><button class="secondary-button" type="button" data-close="product-dialog">Sluiten</button></div></form>
         </dialog>`);
     const $ = (id) => document.getElementById(id);
+    const sessionWorkouts = element('section');
+    sessionWorkouts.id = 'booked-session-workouts';
+    sessionWorkouts.setAttribute('aria-labelledby', 'booked-session-workouts-title');
+    $('api-workouts').before(sessionWorkouts);
     document.querySelector('.welcome-bar').after($('club-storage-note'), $('club-feedback'));
     $('club-storage-note').textContent = storageMessage;
     const announce = (message) => { $('club-feedback').textContent = message; };
@@ -90,12 +103,40 @@
     }
     const bookingsFor = (session) => data.bookings.filter((booking) => booking.sessionId === session.id && !booking.cancelled);
     const past = (session) => `${session.date}T${session.start}` <= new Intl.DateTimeFormat('sv-SE', { timeZone: 'Europe/Brussels', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(new Date()).replace(' ', 'T');
+    function programPreview(session) {
+        const preview = element('details', undefined, 'saved-workout session-program');
+        preview.append(element('summary', 'Bekijk sessieprogramma'));
+        preview.append(element('p', session.program?.trim() || 'De coach heeft het programma nog niet toegevoegd.', 'session-program-text'));
+        return preview;
+    }
+    function renderSessionWorkouts() {
+        sessionWorkouts.replaceChildren();
+        sessionWorkouts.hidden = coach();
+        if (coach()) return;
+        const heading = element('h3', 'Mijn geboekte sessies');
+        heading.id = 'booked-session-workouts-title';
+        sessionWorkouts.append(heading);
+        const sessions = data.sessions.filter(session => !session.cancelled && !past({ ...session, start: session.end })
+            && bookingsFor(session).some(booking => booking.athlete === 'Guillaume'))
+            .sort((a, b) => `${a.date}${a.start}`.localeCompare(`${b.date}${b.start}`));
+        const list = element('div', undefined, 'club-grid');
+        sessions.forEach(session => {
+            const card = element('article', undefined, 'club-card');
+            card.append(element('span', `${dateLabel(session.date)} · ${session.start} – ${session.end}`, 'card-label'),
+                element('h3', session.title), element('p', `${session.coach} · ${session.location}`), programPreview(session));
+            const link = element('a', 'Bekijk boekingen', 'secondary-button');
+            link.href = '#bookings'; card.append(link); list.append(card);
+        });
+        if (!sessions.length) list.append(element('p', 'Nog geen komende sessies geboekt. Bekijk eerst het programma in Planning en schrijf je in.', 'club-empty'));
+        sessionWorkouts.append(list);
+    }
     function sessionCard(session) {
         const card = element('article', undefined, 'club-card');
         card.append(element('span', `${session.start} – ${session.end} · ${session.type}`, 'card-label'), element('h3', session.title), element('p', `${session.coach} · ${session.location}`));
         const active = bookingsFor(session);
         card.append(element('span', session.cancelled ? 'Geannuleerd' : `${active.length} / ${session.capacity} deelnemers`, 'status-label'));
         const actions = element('div', undefined, 'club-actions');
+        card.append(programPreview(session));
         if (coach()) {
             actions.append(button('Bewerken', () => openSession(session)));
             actions.append(button(session.cancelled ? 'Herstellen' : 'Les annuleren', () => {
@@ -114,7 +155,7 @@
                 }
                 if (booked) active.filter((booking) => booking.athlete === 'Guillaume').forEach((booking) => { booking.cancelled = true; });
                 else if (!session.cancelled && !past(session) && bookingsFor(session).length < session.capacity) data.bookings.push({ id: uid(), sessionId: session.id, athlete: 'Guillaume', cancelled: false, attendance: 'Onbekend' });
-                save(booked ? 'Boeking geannuleerd in de preview.' : 'Geboekt voor Guillaume in de preview. Bekijk Boekingen.');
+                save(booked ? 'Boeking geannuleerd. De sessie staat niet meer bij je workouts.' : 'Geboekt voor Guillaume in de preview. De sessie staat nu ook bij Workouts.');
             }, !booked);
             control.disabled = unavailable;
             if (!booked && !unavailable && !permitted) control.textContent = 'Abonnement nodig';
@@ -154,6 +195,7 @@
             if (history !== ($('booking-filter').value === 'history')) return;
             const card = element('article', undefined, 'club-card');
             card.append(element('span', dateLabel(session.date), 'card-label'), element('h3', session.title), element('p', `${session.start} – ${session.end} · ${session.location}`), element('p', `${booking.athlete} · ${booking.cancelled || session.cancelled ? 'Geannuleerd' : 'Geboekt'}`));
+            card.append(programPreview(session));
             if (coach() && !booking.cancelled && !session.cancelled) {
                 const label = element('label', 'Aanwezigheid');
                 const select = document.createElement('select');
@@ -224,7 +266,7 @@
             }
         });
     }
-    function render() { renderPlanning(); renderBookings(); renderShop(); renderDashboard(); }
+    function render() { renderPlanning(); renderBookings(); renderShop(); renderDashboard(); renderSessionWorkouts(); }
     function openSession(session) {
         if (!coach()) return;
         const form = $('session-form'); form.reset();
@@ -249,20 +291,31 @@
         form.addEventListener('submit', (event) => {
             event.preventDefault();
             if (!coach()) return;
-            form.querySelectorAll('input:not([type]), textarea').forEach((input) => input.setCustomValidity(input.value.trim() ? '' : 'Vul dit veld in.'));
+            form.querySelectorAll('input:not([type])[required], textarea[required]').forEach((input) => input.setCustomValidity(input.value.trim() ? '' : 'Vul dit veld in.'));
             if (!form.reportValidity()) return;
             const values = Object.fromEntries(new FormData(form));
             Object.keys(values).forEach((key) => { values[key] = values[key].trim(); });
-            if (form.id === 'session-form') {
+            // A control named "id" shadows form.id; read the HTML attribute instead.
+            if (form.getAttribute('id') === 'session-form') {
                 const existing = data.sessions.find((session) => session.id === values.id);
                 if (values.end <= values.start) { $('session-error').textContent = 'De eindtijd moet na de starttijd liggen.'; return; }
                 if (existing && Number(values.capacity) < bookingsFor(existing).length) { $('session-error').textContent = 'De capaciteit kan niet lager zijn dan het aantal boekingen.'; return; }
                 const session = { ...values, capacity: Number(values.capacity), cancelled: existing?.cancelled || false };
                 delete session.repeat;
-                if (existing) Object.assign(existing, session);
-                else for (let index = 0; index < Number(values.repeat); index++) data.sessions.push({ ...session, id: uid(), date: shiftDate(values.date, index * 7) });
+                const targetIds = [];
+                if (existing) { Object.assign(existing, session); targetIds.push(existing.id); }
+                else for (let index = 0; index < Number(values.repeat); index++) {
+                    const created = { ...session, id: uid(), date: shiftDate(values.date, index * 7) };
+                    data.sessions.push(created); targetIds.push(created.id);
+                }
                 week = values.date;
+                $('session-filter').value = '';
+                $('coach-filter').value = '';
                 $('session-dialog').close(); save('Les bewaard. De planning is bijgewerkt voor beide rollen.');
+                if (event.submitter?.id === 'session-add-workout') {
+                    location.hash = 'create-workout';
+                    document.dispatchEvent(new CustomEvent('cap:workout-for-sessions', { detail: targetIds }));
+                }
             } else {
                 const product = { ...values, price: Number(values.price), available: values.available === 'true' };
                 const existing = data.products.find((item) => item.id === product.id);
@@ -310,5 +363,25 @@
         overview.setAttribute('aria-label', id === 'coach' ? 'Cluboverzicht' : 'Jouw planning in het kort');
         panel.after(overview);
     });
+    window.capClub = {
+        sessions() {
+            return data.sessions.filter(session => !session.cancelled && !past(session))
+                .sort((a, b) => `${a.date}${a.start}`.localeCompare(`${b.date}${b.start}`))
+                .map(session => ({ id: session.id, title: session.title, date: session.date, start: session.start, coach: session.coach }));
+        },
+        assignWorkout(ids, workout) {
+            if (!coach() || !ids.length || ids.some(id => !this.sessions().some(session => session.id === id))) {
+                throw new Error('Kies opnieuw een beschikbare sessie in de planning.');
+            }
+            const program = [workout.name, workout.description, ...workout.exercises.map(exercise =>
+                `${exercise.name} · ${exercise.sets} sets × ${exercise.reps} herhalingen${exercise.targetKg != null ? ` · ${exercise.targetKg} kg` : ''}${exercise.restSeconds != null ? ` · Rust: ${exercise.restSeconds} s` : ''}${exercise.tempo ? ` · Tempo: ${exercise.tempo}` : ''}`)]
+                .filter(Boolean).join('\n');
+            const updated = { ...data, sessions: data.sessions.map(session => ids.includes(session.id) ? { ...session, program } : session) };
+            // Persist before changing the screen so failed storage does not look like a saved assignment.
+            localStorage.setItem(storageKey, JSON.stringify(updated));
+            data = updated;
+            render();
+        }
+    };
     showCurrentView(false);
 })();

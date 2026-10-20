@@ -17,7 +17,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.body.insertAdjacentHTML('afterbegin', `
         <section id="auth-screen" class="auth-screen" aria-labelledby="auth-title">
             <div class="auth-story"><img class="auth-cap-logo" src="img/Cap-logo.png" alt="CAP"><span class="card-label">Complete Athletic Program</span><h1><img class="auth-wordmark" src="img/Stronger-Together.png" alt="Stronger together"><span>Elke dag opnieuw.</span></h1><p>Jouw trainingen, jouw club en jouw vooruitgang. Allemaal op één plek.</p><span class="status-label">Ontwerpvoorbeeld · Geen echte accounts</span></div>
-            <div class="auth-card">
+            <div class="auth-card" id="signup-card">
                 <div class="auth-tabs"><button type="button" id="show-login" class="secondary-button" aria-pressed="true">Inloggen</button><button type="button" id="show-signup" class="secondary-button" aria-pressed="false">Registreren</button></div>
                 <h2 id="auth-title" tabindex="-1">Welkom bij CAP</h2>
                 <p>Test deze schermen met fictieve gegevens. Je invoer wordt niet opgeslagen of verzonden. Er wordt geen account aangemaakt.</p>
@@ -40,10 +40,109 @@ document.addEventListener('DOMContentLoaded', () => {
                 <p class="sample-notice">De demo opent als voorbeeldsporter Guillaume, zonder abonnement. Naam en e-mail zijn alleen bedoeld om het formulier te testen.</p>
                 <div class="auth-tabs"><button type="button" class="auth-text-button" data-legal="terms">Voorwaarden</button><button type="button" class="auth-text-button" data-legal="privacy">Privacy</button></div>
             </div>
+            <div class="auth-card" id="profile-card" hidden>
+                <h2 id="profile-title" tabindex="-1">Vertel iets over jezelf</h2>
+                <p>Een korte start voor jouw begeleiding. Alles is optioneel.</p>
+                <form id="profile-form" class="club-form">
+                    <div class="profile-fields">
+                        <label>Geboortedatum<input name="birthDate" type="date" min="1900-01-01"></label>
+                        <label>Geslacht<select name="sex"><option value="">Zeg ik liever niet</option><option value="female">Vrouw</option><option value="male">Man</option><option value="other">Anders</option></select></label>
+                        <label>Lengte (cm)<input name="heightCm" type="number" min="50" max="300" step="0.1" inputmode="decimal" placeholder="Bijv. 175"></label>
+                        <label>Gewicht (kg)<input name="weightKg" type="number" min="20" max="500" step="0.1" inputmode="decimal" placeholder="Bijv. 75"></label>
+                        <label>Trainingsdoel<select name="goal"><option value="">Kies je doel</option><option value="strength">Sterker worden</option><option value="fitness">Conditie verbeteren</option><option value="weight-loss">Afvallen</option><option value="health">Algemene gezondheid</option></select></label>
+                        <label>Ervaring<select name="experience"><option value="">Kies je niveau</option><option value="beginner">Beginner</option><option value="intermediate">Gemiddeld</option><option value="advanced">Ervaren</option></select></label>
+                    </div>
+                    <p class="sample-notice">Ontwerpvoorbeeld: gebruik fictieve gegevens. Je profiel blijft alleen tijdens deze preview beschikbaar via Profiel. Bij vernieuwen of uitloggen wordt het gewist; er wordt niets verzonden. Geslacht kan later helpen bij voedingsberekeningen.</p>
+                    <button type="submit" class="primary-button">Verder naar CAP</button>
+                    <button type="button" class="secondary-button" id="skip-profile">Later invullen</button>
+                    <button type="button" class="auth-text-button" id="back-to-signup">Terug naar registratie</button>
+                </form>
+            </div>
         </section>
         <dialog id="legal-dialog" class="club-dialog" aria-labelledby="legal-title"><h2 id="legal-title"></h2><div id="legal-content"></div><button type="button" class="secondary-button" id="close-legal">Sluiten</button></dialog>`);
     const $ = (id) => document.getElementById(id);
     const form = $('auth-form');
+    const profileForm = $('profile-form');
+    const profileValues = {};
+    const weightHistory = [];
+    const bodyMeasurements = [];
+    const profileChanged = () => document.dispatchEvent(new CustomEvent('cap:profile-changed'));
+    window.capProfile = {
+        get() { return { ...profileValues }; },
+        weights() { return weightHistory.map(entry => ({ ...entry })); },
+        measurements() { return bodyMeasurements.map(entry => ({ ...entry })); },
+        logMeasurement(values) {
+            if (!access.signedIn) throw new Error('Open eerst de preview.');
+            const entry = { recordedAt: new Date().toISOString() };
+            let count = 0;
+            for (const metric of window.capBodyMetrics) {
+                const raw = values[metric.key];
+                if (raw == null || String(raw).trim() === '') continue;
+                const value = Number(raw);
+                if (!Number.isFinite(value) || value < (metric.key === 'weightKg' ? 20 : 0) || value > metric.max) {
+                    throw new Error(`Controleer ${metric.label.toLowerCase()}.`);
+                }
+                entry[metric.key] = value; count++;
+            }
+            if (!count) throw new Error('Vul minstens één meetwaarde in.');
+            bodyMeasurements.unshift(entry);
+            if (entry.weightKg != null) this.logWeight(entry.weightKg);
+            else profileChanged();
+        },
+        logWeight(value) {
+            const kg = Number(value);
+            if (!access.signedIn || !Number.isFinite(kg) || kg < 20 || kg > 500) throw new Error('Vul een gewicht tussen 20 en 500 kg in.');
+            const recordedAt = new Date().toISOString();
+            weightHistory.unshift({ kg, recordedAt });
+            profileValues.weightKg = String(kg);
+            profileChanged();
+        }
+    };
+    profileForm.elements.namedItem('birthDate').max = new Intl.DateTimeFormat('sv-SE', { timeZone: 'Europe/Brussels' }).format(new Date());
+    const profileDialog = document.createElement('dialog');
+    profileDialog.className = 'club-dialog';
+    profileDialog.id = 'edit-profile-dialog';
+    profileDialog.setAttribute('aria-labelledby', 'edit-profile-title');
+    const profileHeading = document.createElement('h2');
+    profileHeading.id = 'edit-profile-title'; profileHeading.textContent = 'Profiel';
+    const editProfileForm = profileForm.cloneNode(true);
+    editProfileForm.id = 'edit-profile-form';
+    editProfileForm.querySelectorAll('button').forEach(button => button.remove());
+    const profileStatus = document.createElement('p');
+    profileStatus.setAttribute('role', 'status');
+    const saveProfile = document.createElement('button');
+    saveProfile.type = 'submit'; saveProfile.className = 'primary-button'; saveProfile.textContent = 'Profiel bewaren';
+    const closeProfile = document.createElement('button');
+    closeProfile.type = 'button'; closeProfile.className = 'secondary-button'; closeProfile.textContent = 'Sluiten';
+    closeProfile.addEventListener('click', () => profileDialog.close());
+    editProfileForm.append(profileStatus, saveProfile, closeProfile);
+    profileDialog.append(profileHeading, editProfileForm);
+    document.body.append(profileDialog);
+    function retainProfile(source) {
+        const previousWeight = profileValues.weightKg;
+        Object.assign(profileValues, Object.fromEntries(new FormData(source)));
+        if (profileValues.weightKg && profileValues.weightKg !== previousWeight) {
+            weightHistory.unshift({ kg: Number(profileValues.weightKg), recordedAt: new Date().toISOString() });
+        }
+        profileChanged();
+    }
+    window.capOpenProfile = () => {
+        if (!access.signedIn) return;
+        editProfileForm.reset();
+        Object.entries(profileValues).forEach(([name, value]) => { editProfileForm.elements.namedItem(name).value = value; });
+        profileStatus.textContent = '';
+        profileDialog.showModal();
+    };
+    editProfileForm.addEventListener('submit', event => {
+        event.preventDefault();
+        if (!editProfileForm.reportValidity()) return;
+        retainProfile(editProfileForm);
+        profileStatus.textContent = 'Profiel bijgewerkt voor deze preview. Bij vernieuwen of uitloggen worden deze gegevens gewist.';
+    });
+    profileDialog.addEventListener('close', () => {
+        editProfileForm.reset();
+        document.querySelector('#account-toggle').focus();
+    });
     let signup = false;
     function mode(register) {
         signup = register;
@@ -74,6 +173,9 @@ document.addEventListener('DOMContentLoaded', () => {
         document.dispatchEvent(new CustomEvent('cap:viewchange'));
     }
     function enter() {
+        profileForm.reset();
+        $('profile-card').hidden = true;
+        $('signup-card').hidden = false;
         access.signedIn = true;
         access.plan = 'none';
         $('preview-plan').value = 'none';
@@ -87,6 +189,10 @@ document.addEventListener('DOMContentLoaded', () => {
         updateAccess();
     }
     window.capSignOut = () => {
+        Object.keys(profileValues).forEach(key => delete profileValues[key]);
+        weightHistory.length = 0;
+        bodyMeasurements.length = 0;
+        profileChanged();
         document.querySelectorAll('dialog[open]').forEach((dialog) => dialog.close());
         access.signedIn = false;
         access.plan = 'none';
@@ -102,7 +208,24 @@ document.addEventListener('DOMContentLoaded', () => {
     form.addEventListener('submit', (event) => {
         event.preventDefault();
         if (signup && !form.elements.name.value.trim()) { $('auth-status').textContent = 'Vul een naam in.'; return; }
-        if (form.reportValidity()) enter();
+        if (!form.reportValidity()) return;
+        if (signup) {
+            form.reset();
+            $('signup-card').hidden = true;
+            $('profile-card').hidden = false;
+            $('profile-title').focus();
+        } else enter();
+    });
+    profileForm.addEventListener('submit', event => {
+        event.preventDefault();
+        if (profileForm.reportValidity()) { retainProfile(profileForm); enter(); }
+    });
+    $('skip-profile').addEventListener('click', enter);
+    $('back-to-signup').addEventListener('click', () => {
+        profileForm.reset();
+        $('profile-card').hidden = true;
+        $('signup-card').hidden = false;
+        mode(true);
     });
     $('forgot-password').addEventListener('click', () => { $('auth-status').textContent = 'Wachtwoordherstel is nog niet aangesloten. Er wordt geen e-mail verstuurd.'; });
     const drafts = {

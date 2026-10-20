@@ -6,7 +6,7 @@ Reviewed: September 29, 2026. This is not a new roadmap.
 
 - No real accounts, password recovery, server roles/entitlements or per-user ownership; training belongs to one example athlete. Profile/messages/chat/notifications/payments are explanatory dialogs.
 - Planning, bookings, attendance and shop are browser-local previews without shared backend storage or checkout.
-- Exercise search is a hardcoded starter catalog plus custom names, not a managed library. Web API lists/creates workouts; editing/deletion, templates and multi-workout programs are absent.
+- Exercise search is a hardcoded starter catalog plus custom names, not a managed library. Web API lists/creates/edits/deletes workouts. Saved workouts can be loaded as editable copies; multi-workout programs remain absent. Coach-library editing/deletion and local session assignment were added October 19; browser/device verification remains outstanding.
 - Sidebar exercises, Basketball, nutrition, recovery, coaches and AI links point to `#`, without screens. Basketball placeholders/catalog entries conflict with documented MVP scope. Some group-overview cards remain static despite the separate planning preview.
 - JSON persistence has no database layer; no production deployment setup or automated frontend tests are present.
 - Earlier console app: invalid numeric input can throw; saves overwrite directly; removal is persisted on normal exit. Sources: `src/`, README.

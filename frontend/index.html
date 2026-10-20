@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Cap App</title>
     <script src="js/theme.js"></script>
 
@@ -18,6 +18,7 @@
     <script src="js/backend-status.js" defer></script>
     <script src="js/workouts-api.js" defer></script>
     <script src="js/training.js" defer></script>
+    <script src="js/health.js" defer></script>
 </head>
 
 <body class="is-signed-out">
@@ -53,12 +54,14 @@
             <a href="#planning" data-view-link="planning">Planning</a>
             <a href="#bookings" data-view-link="bookings">Boekingen</a>
             <a href="#workouts" data-view-link="workouts">Workouts</a>
+            <a href="#create-workout" data-view-link="create-workout" data-coach-only hidden>Workout maken</a>
             <a href="#athletes" data-view-link="athletes" data-coach-only hidden>Sporters</a>
             <a href="#group-classes" data-view-link="group-classes" data-coach-only hidden>Groepslessen</a>
-            <a href="#">Oefeningen</a>
-            <a href="#">Basketball</a>
-            <a href="#">Voeding</a>
-            <a href="#">Recovery</a>
+            <a href="#" data-coach-only>Oefeningen</a>
+            <a href="#" data-coach-only>Basketball</a>
+            <a href="#" data-coach-only>Voeding</a>
+            <a href="#" data-coach-only>Recovery</a>
+            <a href="#health" data-view-link="health" data-athlete-only>Gezondheid &amp; Progress</a>
             <a href="#">Coaches</a>
             <a href="#">AI Coach</a>
             <a href="#shop" data-view-link="shop">Shop</a>
@@ -211,6 +214,12 @@
                 </div>
             </header>
             <form id="coach-workout-form" class="workout-editor">
+                <label>Begin met een opgeslagen workout (optioneel)
+                    <select id="workout-template"><option value="">Nieuwe workout</option></select>
+                </label>
+                <button id="load-workout-template" class="secondary-button" type="button">Gekozen workout laden</button>
+                <p class="sample-notice">Een opgeslagen workout wordt als kopie geladen. Pas de oefeningen aan en sla op voor je gekozen sessie of sporter. Het origineel blijft bewaard.</p>
+                <p id="workout-template-status" role="status"></p>
                 <p class="sample-notice">Workouts worden opgeslagen via Java en blijven bewaard na vernieuwen. Gebruik alleen voorbeeldgegevens.</p>
                 <label>Naam training
                     <input name="title" required maxlength="100" placeholder="Bijvoorbeeld: Full body">
@@ -222,15 +231,35 @@
                 <div id="exercise-fields"></div>
                 <button id="add-exercise" class="secondary-button" type="button">+ Oefening toevoegen</button>
                 <p id="exercise-status" role="status"></p>
-                <label>Toewijzen voor vandaag
+                <fieldset class="workout-destination">
+                    <legend>Voor wie is deze workout?</legend>
+                    <label>Bestemming
+                        <select name="destination" id="workout-destination">
+                            <option value="library">Alleen bibliotheek</option>
+                            <option value="sessions">Groepsles / sessie</option>
+                            <option value="athlete">Persoonlijke training</option>
+                        </select>
+                    </label>
+                    <div id="workout-session-assignment" hidden>
+                        <h3>Kies de sessies in je planning</h3>
+                        <p class="sample-notice">Kies één of meerdere datums, bijvoorbeeld je wekelijkse HYROX-lessen. Het programma vervangt de huidige tekst van elke gekozen sessie en verschijnt bij ingeschreven sporters.</p>
+                        <div id="workout-session-options" class="workout-session-options"></div>
+                        <a class="secondary-button" href="#planning">Eerst een sessie inplannen</a>
+                        <p class="sample-notice">Sessietoewijzingen blijven voorlopig in deze browser. Gebruik voor groepen geen percentage van een persoonlijk PR.</p>
+                    </div>
+                    <div id="workout-athlete-assignment" hidden>
+                <label>Sporter · voor vandaag
                     <select name="athlete" aria-describedby="assignment-help">
-                        <option value="">Alleen bewaren in de bibliotheek</option>
                         <option value="preview-guillaume">Guillaume (voorbeeldsporter)</option>
                     </select>
                 </label>
                 <p id="assignment-help" class="sample-notice">Een toegewezen workout verschijnt in de Sporter-preview. Een nieuwe toewijzing vervangt de vorige workout voor vandaag.</p>
+                    </div>
+                </fieldset>
                 <div class="editor-actions">
                     <button class="primary-button" type="submit">Workout opslaan</button>
+                    <button class="secondary-button" type="submit" id="save-workout-copy" hidden>Opslaan als kopie</button>
+                    <button class="secondary-button" type="button" id="cancel-workout-edit" hidden>Bewerken annuleren</button>
                     <a class="secondary-button" href="#dashboard">Terug naar overzicht</a>
                 </div>
             </form>
@@ -253,9 +282,12 @@
                         </div>
                         <label>Sets<input name="sets" type="number" min="1" max="100" step="1" value="3" required inputmode="numeric"></label>
                         <label>Herhalingen<input name="reps" type="number" min="1" max="1000" step="1" value="10" required inputmode="numeric"></label>
-                        <label>Gewicht voorschrijven<select name="loadMode"><option value="none">Geen doelgewicht</option><option value="fixed">Vast gewicht (kg)</option><option value="percent">Percentage van rep-PR</option></select></label>
+                        <label>Gewicht voorschrijven<select name="loadMode"><option value="none">Geen specifiek percentage</option><option value="fixed">Vast gewicht (kg)</option><option value="percent">Percentage van rep-PR</option></select></label>
                         <label>Kg of percentage<input name="loadValue" type="number" min="0" max="2000" step="0.01" inputmode="decimal" placeholder="Bijvoorbeeld: 60 of 90"></label>
+                        <label>Rust tussen sets (seconden, optioneel)<input name="restSeconds" type="number" min="0" max="3600" step="1" inputmode="numeric" placeholder="Bijvoorbeeld: 90"></label>
+                        <label>Tempo (optioneel)<input name="tempo" maxlength="40" placeholder="Bijvoorbeeld: 3-0-1-0"></label>
                     </div>
+                    <p class="sample-notice">Tempo: omlaag – pauze – omhoog – pauze (seconden).</p>
                     <p class="sample-notice">Percentage gebruikt het PR met hetzelfde aantal herhalingen van de toegewezen sporter. Geen PR? Kies een vast gewicht. Gebruik dezelfde oefeningnaam en gewichtsnotatie (totaal of per dumbbell).</p>
                     <button class="secondary-button remove-exercise" type="button">Verwijderen</button>
                 </fieldset>
@@ -313,6 +345,26 @@
             <button id="reload-workouts" class="secondary-button" type="button">Opnieuw laden</button>
             <div class="workout-options" id="api-workouts" aria-busy="false"></div>
         </section>
+        <section id="health" data-view aria-labelledby="health-title" hidden>
+            <header class="dashboard-header"><div><h2 id="health-title" tabindex="-1">Gezondheid &amp; Progress</h2><p class="dashboard-intro">Jouw gegevens en je vooruitgang op één plek.</p></div></header>
+            <p class="sample-notice">Lokale preview: gebruik fictieve gegevens. Profiel en gewichtslog worden gewist bij vernieuwen of uitloggen.</p>
+            <div class="club-grid">
+                <article class="club-card health-overview"><div class="health-overview-heading"><h3>Jouw metingen</h3><button type="button" class="secondary-button" id="health-edit-profile">Profiel aanpassen</button></div><div class="health-tile-grid"><dl class="health-metrics"><div data-metric="height"><dt>Lengte</dt><dd id="health-height">—</dd></div><div data-metric="weight"><dt>Gewicht</dt><dd id="health-weight">—</dd></div></dl><div id="health-composition-metrics"></div></div><details class="saved-workout"><summary>Alle metingen &amp; lichaamsdelen</summary><div id="health-extra-metrics"></div></details>                <details class="saved-workout"><summary>+ Lichaamsmeting toevoegen</summary>
+                    <form id="body-measurement-form" class="club-form">
+                        <div id="body-total-fields" class="profile-fields"></div>
+                        <details class="saved-workout"><summary>Per arm, been en romp (optioneel)</summary><div id="body-segment-fields" class="profile-fields"></div></details>
+                        <p class="sample-notice">Gebruik de aangegeven eenheden. NEO Health Onyx Pro is nog niet gekoppeld; dit is handmatige invoer voor deze preview.</p>
+                        <button type="submit" class="primary-button">Meting bewaren</button><p id="body-measurement-status" role="status"></p>
+                    </form>
+                </details>
+<details class="saved-workout"><summary>Meetgeschiedenis</summary><div id="body-latest"></div><div id="body-history"></div></details></article>
+                <article class="club-card"><details><summary>Gewicht bijhouden</summary><form id="weight-log-form" class="club-form"><label>Nieuw gewicht (kg)<input name="weightKg" type="number" min="20" max="500" step="0.1" required inputmode="decimal" placeholder="Bijv. 75,5"></label><button type="submit" class="primary-button">Gewicht toevoegen</button><p id="weight-log-status" role="status"></p></form></details></article>
+                <article class="club-card"><details><summary>Apple Health · niet gekoppeld</summary><p>Nog niet gekoppeld. Je kunt metingen alvast handmatig toevoegen.</p></details></article>
+                <article class="club-card"><h3>Trainingsprogress</h3><p>Bekijk je afgeronde trainingen en persoonlijke records.</p><a class="secondary-button" href="#training">Trainingen &amp; PRs bekijken</a></article>
+            </div>
+
+            <details class="saved-workout"><summary>Gewichtslog</summary><ul id="weight-history" class="weight-history"></ul></details>
+        </section>
         <section id="settings" data-view aria-labelledby="settings-title" hidden>
             <header class="dashboard-header">
                 <div>
@@ -334,6 +386,26 @@
             </div>
         </section>
     </main>
+    <nav class="mobile-bottom-nav" aria-label="Snelle navigatie">
+        <a href="#dashboard" data-view-link="dashboard">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 10 9-7 9 7v11h-6v-7H9v7H3Z"/></svg><span>Home</span>
+        </a>
+        <a href="#planning" data-view-link="planning">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4m10-4v4M3 11h18m-13 4h2m4 0h2"/></svg><span>Planning</span>
+        </a>
+        <a href="#workouts" data-view-link="workouts" data-mobile-role="athlete">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 5v14M3 8v8m15-11v14m3-11v8M6 12h12"/></svg><span>Workouts</span>
+        </a>
+        <a href="#health" data-view-link="health" data-mobile-role="athlete">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 3v18h17M7 16l4-5 4 2 5-7"/></svg><span>Progress</span>
+        </a>
+        <a href="#create-workout" data-view-link="create-workout" data-mobile-role="coach" hidden>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M12 8v8m-4-4h8"/></svg><span>Workout maken</span>
+        </a>
+        <a href="#athletes" data-view-link="athletes" data-mobile-role="coach" hidden>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="7" r="3"/><path d="M3 21v-3a6 6 0 0 1 12 0v3m1-17a3 3 0 0 1 0 6m2 4a5 5 0 0 1 3 4v3"/></svg><span>Sporters</span>
+        </a>
+    </nav>
 
 </body>
 

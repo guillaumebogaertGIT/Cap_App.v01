@@ -32,17 +32,20 @@ class TrainingApiTests {
     @Test void completeWorkoutThroughHttpThenUseItsRepRecord() throws Exception {
         var created = post("/api/workouts", """
             {"name":"API test", "description":"", "athleteId":"preview-guillaume",
-             "exercises":[{"name":"Squat","sets":3,"reps":5,"loadMode":"fixed","loadValue":60}]}
+             "exercises":[{"name":"Squat","sets":3,"reps":5,"loadMode":"fixed","loadValue":60,"restSeconds":90,"tempo":"3-0-1-0"}]}
             """);
         assertEquals(201, created.statusCode());
         assertEquals("http://127.0.0.1:5500", created.headers().firstValue("Access-Control-Allow-Origin").orElseThrow());
         String id = mapper.readTree(created.body()).get("id").asText();
+        assertEquals(90, mapper.readTree(created.body()).get("exercises").get(0).get("restSeconds").asInt());
+        assertEquals("3-0-1-0", mapper.readTree(created.body()).get("exercises").get(0).get("tempo").asText());
         String body = """
             {"id":"%s","workoutId":"%s","startedAt":"%s","finishedAt":"%s",
              "exercises":[{"exerciseIndex":0,"sets":[{"reps":5,"kg":60}]}]}
             """.formatted(UUID.randomUUID(), id, Instant.now().minusSeconds(60), Instant.now());
         var finished = post("/api/training", body);
         assertEquals(200, finished.statusCode());
+        assertEquals(90, mapper.readTree(finished.body()).get("planned").get("exercises").get(0).get("restSeconds").asInt());
         assertEquals(1, mapper.readTree(finished.body()).get("newRecords").size());
         assertEquals(finished.body(), post("/api/training", body).body());
         var target = post("/api/workouts", """
@@ -57,5 +60,25 @@ class TrainingApiTests {
             """).statusCode());
         var history = client.send(HttpRequest.newBuilder(URI.create("http://127.0.0.1:" + port + "/api/training")).GET().build(), HttpResponse.BodyHandlers.ofString());
         assertEquals(1, mapper.readTree(history.body()).size());
+        var edited = client.send(HttpRequest.newBuilder(URI.create("http://127.0.0.1:" + port + "/api/workouts/" + id))
+            .header("Content-Type", "application/json").header("Origin", "http://127.0.0.1:5500")
+            .PUT(HttpRequest.BodyPublishers.ofString("""
+                {"name":"Edited API workout","exercises":[{"name":"Row","sets":4,"reps":8,"restSeconds":120,"tempo":"2-0-1-0"}]}
+                """)).build(), HttpResponse.BodyHandlers.ofString());
+        assertEquals(200, edited.statusCode());
+        assertEquals(id, mapper.readTree(edited.body()).get("id").asText());
+        assertEquals("Edited API workout", mapper.readTree(edited.body()).get("name").asText());
+        assertEquals(120, mapper.readTree(edited.body()).get("exercises").get(0).get("restSeconds").asInt());
+        var deleted = client.send(HttpRequest.newBuilder(URI.create("http://127.0.0.1:" + port + "/api/workouts/" + id))
+            .header("Origin", "http://127.0.0.1:5500").DELETE().build(), HttpResponse.BodyHandlers.ofString());
+        assertEquals(204, deleted.statusCode());
+        assertEquals("http://127.0.0.1:5500", deleted.headers().firstValue("Access-Control-Allow-Origin").orElseThrow());
+        var remaining = client.send(HttpRequest.newBuilder(URI.create("http://127.0.0.1:" + port + "/api/workouts")).GET().build(), HttpResponse.BodyHandlers.ofString());
+        assertFalse(mapper.readTree(remaining.body()).valueStream().anyMatch(w -> id.equals(w.get("id").asText())));
+        var preserved = client.send(HttpRequest.newBuilder(URI.create("http://127.0.0.1:" + port + "/api/training")).GET().build(), HttpResponse.BodyHandlers.ofString());
+        assertEquals(history.body(), preserved.body());
+        assertEquals(finished.body(), post("/api/training", body).body());
+        var records = client.send(HttpRequest.newBuilder(URI.create("http://127.0.0.1:" + port + "/api/records")).GET().build(), HttpResponse.BodyHandlers.ofString());
+        assertEquals(60.0, mapper.readTree(records.body()).get(0).get("kg").asDouble());
     }
 }

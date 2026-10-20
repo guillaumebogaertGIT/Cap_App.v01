@@ -47,16 +47,16 @@ public class TrainingStore {
         if (input == null || input.exercises() == null || input.exercises().stream().anyMatch(Objects::isNull)) throw invalid("Oefeningen ontbreken.");
         List<Workout.Exercise> exercises = input.exercises().stream().map(e -> {
             String mode = e.loadMode() == null ? "none" : e.loadMode();
-            if (mode.equals("none")) return new Workout.Exercise(e.name(), e.sets(), e.reps());
+            if (mode.equals("none")) return new Workout.Exercise(e.name(), e.sets(), e.reps(), mode, null, null, null, e.restSeconds(), e.tempo());
             Double value = e.loadValue();
             if (value == null || !Double.isFinite(value) || value < 0 || value > 2000) throw invalid("Ongeldig gewicht of percentage.");
-            if (mode.equals("fixed")) return new Workout.Exercise(e.name(), e.sets(), e.reps(), mode, value, value, null);
+            if (mode.equals("fixed")) return new Workout.Exercise(e.name(), e.sets(), e.reps(), mode, value, value, null, e.restSeconds(), e.tempo());
             if (!mode.equals("percent") || value <= 0 || value > 200 || e.name() == null
                 || !"preview-guillaume".equals(input.athleteId())) throw invalid("Een percentage vereist een toegewezen sporter en een waarde van 1 tot 200.");
             Record reference = records().stream().filter(r -> key(r.exercise(), r.reps()).equals(key(e.name(), e.reps()))).findFirst()
                 .orElseThrow(() -> invalid("Geen PR voor " + e.name() + " met " + e.reps() + " herhalingen. Kies een vast gewicht."));
             double target = Math.round(reference.kg() * value) / 100.0;
-            return new Workout.Exercise(e.name(), e.sets(), e.reps(), mode, value, target, reference.kg());
+            return new Workout.Exercise(e.name(), e.sets(), e.reps(), mode, value, target, reference.kg(), e.restSeconds(), e.tempo());
         }).toList();
         return new Workout(input.id(), input.name(), input.description(), exercises, input.athleteId(), input.assignedDate());
     }

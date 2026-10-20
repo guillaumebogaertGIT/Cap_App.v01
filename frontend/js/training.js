@@ -46,7 +46,7 @@
     }
     setInterval(tick, 1000);
     function target(exercise) {
-        return `${exercise.sets} × ${exercise.reps}${exercise.targetKg != null ? ` · ${exercise.targetKg} kg` : ''}${exercise.loadMode === 'percent' ? ` (${exercise.loadValue}% van ${exercise.referenceKg} kg bij ${exercise.reps} reps)` : ''}`;
+        return `${exercise.sets} × ${exercise.reps}${exercise.targetKg != null ? ` · ${exercise.targetKg} kg` : ''}${exercise.restSeconds != null ? ` · Rust: ${exercise.restSeconds} s` : ''}${exercise.tempo ? ` · Tempo: ${exercise.tempo}` : ''}${exercise.loadMode === 'percent' ? ` (${exercise.loadValue}% van ${exercise.referenceKg} kg bij ${exercise.reps} reps)` : ''}`;
     }
     function renderActive() {
         const container = $('active-training'); container.replaceChildren();
@@ -163,6 +163,7 @@
         finally { historyLoading = false; $('reload-training').disabled = false; }
     }
     window.capTraining = {
+        isActive(workoutId) { return active?.planned.id === workoutId; },
         start(workout) {
             if (previewRole !== 'athlete' || !window.capAccess.signedIn) return;
             if (!active) {
