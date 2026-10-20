@@ -3,9 +3,9 @@ window.capAccess = {
     signedIn: false,
     plan: 'none',
     plans: {
-        none: { label: 'Geen abonnement', workouts: false, group: false, private: false },
-        group: { label: 'Groepslessen (voorbeeld)', workouts: false, group: true, private: false },
-        complete: { label: 'Uitgebreid (voorbeeld)', workouts: true, group: true, private: true }
+        none: { label: 'Geen abonnement', workouts: false, group: false, private: false, openGym: false },
+        group: { label: 'Groepslessen (voorbeeld)', workouts: false, group: true, private: false, openGym: false },
+        complete: { label: 'Uitgebreid (voorbeeld)', workouts: true, group: true, private: true, openGym: true }
     },
     can(feature) {
         // Staff access comes from the coach role, never a paid athlete plan.
@@ -165,11 +165,22 @@ document.addEventListener('DOMContentLoaded', () => {
     controls.innerHTML = `<label>Abonnement testen<select id="preview-plan"></select></label><p id="access-status" role="status"></p><p>Ontwerptest: rollen en rechten zijn hier vrij te wisselen. Dit zijn geen echte toegangscontroles of definitieve pakketten.</p>`;
     document.querySelector('#preview-controls').append(controls);
     Object.entries(access.plans).forEach(([key, plan]) => $('preview-plan').add(new Option(plan.label, key)));
+    function updateWorkoutLinkLabels() {
+        const label = access.can('workouts') ? 'Workout maken' : 'Workout maken · abonnement nodig';
+        document.querySelectorAll('a[href="#create-workout"]').forEach((link) => {
+            // Change only the label, preserving tile captions and navigation icons.
+            const labelElement = link.querySelector('strong, span');
+            if (labelElement) {
+                labelElement.textContent = label;
+            } else {
+                const textNode = Array.from(link.childNodes).find(node => node.nodeType === Node.TEXT_NODE && node.textContent.trim());
+                if (textNode) textNode.textContent = ` ${label}`;
+            }
+        });
+    }
     function updateAccess() {
         $('access-status').textContent = access.plan === 'none' ? 'Geen abonnement: workouts maken en sessies boeken zijn vergrendeld.' : `${access.plans[access.plan].label} actief in deze preview.`;
-        document.querySelectorAll('a[href="#create-workout"]').forEach((link) => {
-            link.textContent = access.can('workouts') ? 'Workout maken' : 'Workout maken · abonnement nodig';
-        });
+        updateWorkoutLinkLabels();
         document.dispatchEvent(new CustomEvent('cap:viewchange'));
     }
     function enter() {
@@ -240,9 +251,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Prevent accessing the editor through direct links as well as its buttons.
     document.addEventListener('cap:viewchange', () => {
         controls.hidden = previewRole === 'coach';
-        document.querySelectorAll('a[href="#create-workout"]').forEach((link) => {
-            link.textContent = access.can('workouts') ? 'Workout maken' : 'Workout maken · abonnement nodig';
-        });
+        updateWorkoutLinkLabels();
         const editor = document.querySelector('#coach-workout-form');
         editor.hidden = !access.can('workouts');
         let notice = $('workout-access-note');

@@ -16,7 +16,10 @@ public class TrainingController {
     public List<TrainingStore.Record> records() { return training.records(); }
     @PostMapping("/api/training")
     public TrainingStore.Session finish(@RequestBody TrainingStore.Completion completion) throws IOException {
-        Workout plan = workouts.list().stream().filter(w -> w.id().equals(completion.workoutId())).findFirst().orElse(null);
+        Workout plan = completion.assignmentId() == null
+            ? workouts.list().stream().filter(w -> w.id().equals(completion.workoutId())).findFirst().orElse(null)
+            : workouts.assignments().stream().filter(a -> a.assignmentId().equals(completion.assignmentId()))
+                .map(WorkoutStore.DatedWorkout::planned).findFirst().orElse(null);
         return training.finish(completion, plan);
     }
 }

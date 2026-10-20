@@ -13,10 +13,16 @@ import tools.jackson.databind.json.JsonMapper;
 /** Completed sessions are immutable snapshots. This prototype has one example athlete. */
 @Service
 public class TrainingStore {
-    public record SetResult(int reps, Double kg) {}
+    public record SetResult(int reps, Double kg, Integer rir) {
+        public SetResult(int reps, Double kg) { this(reps, kg, null); }
+    }
     public record ExerciseResult(int exerciseIndex, List<SetResult> sets) {}
     public record Completion(String id, String workoutId, String startedAt, String finishedAt,
-                             List<ExerciseResult> exercises) {}
+                             List<ExerciseResult> exercises, String assignmentId) {
+        public Completion(String id, String workoutId, String startedAt, String finishedAt, List<ExerciseResult> exercises) {
+            this(id, workoutId, startedAt, finishedAt, exercises, null);
+        }
+    }
     public record Record(String exercise, int reps, double kg) {}
     public record Session(String id, String athleteId, Workout planned, Instant startedAt, Instant finishedAt,
                           long durationSeconds, List<ExerciseResult> exercises, List<Record> newRecords) {}
@@ -47,18 +53,18 @@ public class TrainingStore {
         if (input == null || input.exercises() == null || input.exercises().stream().anyMatch(Objects::isNull)) throw invalid("Oefeningen ontbreken.");
         List<Workout.Exercise> exercises = input.exercises().stream().map(e -> {
             String mode = e.loadMode() == null ? "none" : e.loadMode();
-            if (mode.equals("none")) return new Workout.Exercise(e.name(), e.sets(), e.reps(), mode, null, null, null, e.restSeconds(), e.tempo());
+            if (mode.equals("none")) return new Workout.Exercise(e.name(), e.sets(), e.reps(), mode, null, null, null, e.restSeconds(), e.tempo(), e.supersetGroup());
             Double value = e.loadValue();
             if (value == null || !Double.isFinite(value) || value < 0 || value > 2000) throw invalid("Ongeldig gewicht of percentage.");
-            if (mode.equals("fixed")) return new Workout.Exercise(e.name(), e.sets(), e.reps(), mode, value, value, null, e.restSeconds(), e.tempo());
+            if (mode.equals("fixed")) return new Workout.Exercise(e.name(), e.sets(), e.reps(), mode, value, value, null, e.restSeconds(), e.tempo(), e.supersetGroup());
             if (!mode.equals("percent") || value <= 0 || value > 200 || e.name() == null
                 || !"preview-guillaume".equals(input.athleteId())) throw invalid("Een percentage vereist een toegewezen sporter en een waarde van 1 tot 200.");
             Record reference = records().stream().filter(r -> key(r.exercise(), r.reps()).equals(key(e.name(), e.reps()))).findFirst()
                 .orElseThrow(() -> invalid("Geen PR voor " + e.name() + " met " + e.reps() + " herhalingen. Kies een vast gewicht."));
             double target = Math.round(reference.kg() * value) / 100.0;
-            return new Workout.Exercise(e.name(), e.sets(), e.reps(), mode, value, target, reference.kg(), e.restSeconds(), e.tempo());
+            return new Workout.Exercise(e.name(), e.sets(), e.reps(), mode, value, target, reference.kg(), e.restSeconds(), e.tempo(), e.supersetGroup());
         }).toList();
-        return new Workout(input.id(), input.name(), input.description(), exercises, input.athleteId(), input.assignedDate());
+        return new Workout(input.id(), input.name(), input.description(), exercises, input.athleteId(), input.assignedDate(), input.category(), input.workoutType());
     }
 
     public synchronized Session finish(Completion input, Workout planned) throws IOException {
@@ -84,6 +90,7 @@ public class TrainingStore {
             String name = planned.exercises().get(exercise.exerciseIndex()).name();
             totalSets += exercise.sets().size();
             for (SetResult set : exercise.sets()) {
+                if (set != null && set.rir() != null && (set.rir() < 0 || set.rir() > 10)) throw invalid("RIR moet tussen 0 en 10 liggen.");
                 if (set == null || set.reps() < 1 || set.reps() > 1000 || set.kg() == null || !Double.isFinite(set.kg()) || set.kg() < 0 || set.kg() > 2000) throw invalid("Controleer gewicht en herhalingen.");
                 String key = key(name, set.reps());
                 double best = previous.containsKey(key) ? previous.get(key).kg() : -1;

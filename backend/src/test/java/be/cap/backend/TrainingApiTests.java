@@ -60,6 +60,10 @@ class TrainingApiTests {
             """).statusCode());
         var history = client.send(HttpRequest.newBuilder(URI.create("http://127.0.0.1:" + port + "/api/training")).GET().build(), HttpResponse.BodyHandlers.ofString());
         assertEquals(1, mapper.readTree(history.body()).size());
+        String scheduledDate = java.time.LocalDate.now(java.time.ZoneId.of("Europe/Brussels")).plusDays(1).toString();
+        assertEquals(200, post("/api/workouts/" + id + "/assignment", """
+            {"athleteId":"preview-guillaume","date":"%s"}
+            """.formatted(scheduledDate)).statusCode());
         var edited = client.send(HttpRequest.newBuilder(URI.create("http://127.0.0.1:" + port + "/api/workouts/" + id))
             .header("Content-Type", "application/json").header("Origin", "http://127.0.0.1:5500")
             .PUT(HttpRequest.BodyPublishers.ofString("""
@@ -69,6 +73,30 @@ class TrainingApiTests {
         assertEquals(id, mapper.readTree(edited.body()).get("id").asText());
         assertEquals("Edited API workout", mapper.readTree(edited.body()).get("name").asText());
         assertEquals(120, mapper.readTree(edited.body()).get("exercises").get(0).get("restSeconds").asInt());
+        var assignments = client.send(HttpRequest.newBuilder(URI.create("http://127.0.0.1:" + port + "/api/workout-assignments")).GET().build(), HttpResponse.BodyHandlers.ofString());
+        assertEquals(200, assignments.statusCode());
+        assertTrue(mapper.readTree(assignments.body()).valueStream().anyMatch(a ->
+            scheduledDate.equals(a.get("planned").get("assignedDate").asText())
+                && "Squat".equals(a.get("planned").get("exercises").get(0).get("name").asText())));
+        String assignmentId = mapper.readTree(assignments.body()).valueStream()
+            .filter(a -> scheduledDate.equals(a.get("planned").get("assignedDate").asText()))
+            .findFirst().orElseThrow().get("assignmentId").asText();
+        var scheduledFinish = post("/api/training", """
+            {"id":"%s","workoutId":"%s","assignmentId":"%s","startedAt":"%s","finishedAt":"%s",
+             "exercises":[{"exerciseIndex":0,"sets":[{"reps":5,"kg":60,"rir":2}]}]}
+            """.formatted(UUID.randomUUID(), id, assignmentId, Instant.now().minusSeconds(60), Instant.now()));
+        assertEquals(200, scheduledFinish.statusCode());
+        assertEquals("Squat", mapper.readTree(scheduledFinish.body()).get("planned").get("exercises").get(0).get("name").asText());
+        history = client.send(HttpRequest.newBuilder(URI.create("http://127.0.0.1:" + port + "/api/training")).GET().build(), HttpResponse.BodyHandlers.ofString());
+        var reassigned = post("/api/workouts/" + id + "/assignment", """
+            {"athleteId":"preview-guillaume"}
+            """);
+        assertEquals(200, reassigned.statusCode());
+        assertEquals(id, mapper.readTree(reassigned.body()).get("id").asText());
+        assertEquals("preview-guillaume", mapper.readTree(reassigned.body()).get("athleteId").asText());
+        assertEquals(400, post("/api/workouts/" + id + "/assignment", """
+            {"athleteId":"unknown"}
+            """).statusCode());
         var deleted = client.send(HttpRequest.newBuilder(URI.create("http://127.0.0.1:" + port + "/api/workouts/" + id))
             .header("Origin", "http://127.0.0.1:5500").DELETE().build(), HttpResponse.BodyHandlers.ofString());
         assertEquals(204, deleted.statusCode());

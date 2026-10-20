@@ -20,3 +20,5 @@ Reviewed: September 29, 2026. This is not a new roadmap.
 - **Open choices:** athlete workout-creation entitlement and eventual mobile navigation. Do not build the complete mobile navigation system without a request. Sources: account plan, `AGENTS.md`.
 
 Possible post-MVP integrations/wearables and other ideas are not commitments. `docs/TODO.md` is empty. History and PRs already exist, despite being described as future work in older master-plan sections.
+
+- Coach Gezondheid & Progress preview added October 20: visually review phone/tablet/desktop picker, measurement form and histories. Real roster/health persistence and per-athlete training/record API support remain absent; current backend training data is Guillaume-only.

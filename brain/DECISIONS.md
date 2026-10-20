@@ -10,6 +10,10 @@ Reviewed: September 29, 2026. Explicit rules and implemented choices only; undoc
 
 ## Implemented choices
 
+- October 20: categories organise saved workouts (CAP HYROX/Hybrid/Move/Lift & HIT), not automatic assignments to all matching sessions. Coach chooses dates and specific sessions. Personal workouts support independent dated snapshots; athlete list shows name/date, expandable blocks and Start training, with earlier dates separately selectable. This supersedes today's-single-workout-only display/storage assumptions.
+
+- October 20: busy Planning starts in compact day view (expandable time/title/capacity rows), with week/list views retained. Open gym represents a booked place, not a session workout: no programme/assignment entry and no booked-workout card. Seven places is an editable preview default, not a business limit. Open gym access is provisionally in the Uitgebreid preview plan; real entitlements await CAP.
+
 - October 19 visual direction: user approved compact styling, then requested CAP orange across shared accents instead of teal/blue-green. Current palette uses CAP orange actions/navigation/highlights with neutral charcoal dark surfaces and warm off-white light surfaces. Reduced card/header gaps and type sizes retain phone touch targets.
 
 - October 19: user requested phone bottom navigation. First version uses existing routes: Home, Planning, Workouts and Voortgang (training history/PRs); coach shortcuts use Home, Planning, Workout maken and Sporters. Desktop sidebar and mobile Menu remain; Social/AI wait for working screens.
@@ -28,3 +32,7 @@ Reviewed: September 29, 2026. Explicit rules and implemented choices only; undoc
 - October 19: session programmes should be visible in Planning before signup, with booked sessions appearing in the sporter's Workouts. Implemented as a browser-local text preview; subscription-based client grouping and shared/backend session workout tracking remain future work. Broader booking rules still await the coach's input.
 
 Public athlete signup, administrator-granted staff roles and separate subscription entitlements await CAP agreement. Packages/prices are examples. Athlete-created workouts, legal terms, booking/payment rules and providers remain unresolved (`docs/account-access-plan.md`). PostgreSQL is only a likely future direction in the master plan, not an implemented database choice.
+
+- October 20: User confirmed CAP Lift & HIT remains a single category. Coach creation starts with a Home-style category grid before the shared editor; category selection does not automatically assign sessions.
+
+- October 20: First coach Gezondheid & Progress page uses the existing example roster and a searchable athlete picker. Manual measurements are per-athlete, session-only; Guillaume shares the athlete preview. No invented health/training measurements or automatic health interpretations. Multi-athlete backend integration remains separate work.

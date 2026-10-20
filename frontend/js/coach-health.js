@@ -1,0 +1,199 @@
+// Coach preview: roster from Sporters; measurements remain in memory per athlete.
+document.addEventListener('DOMContentLoaded', () => {
+    const $ = id => document.getElementById(id);
+    const node = (tag, text, className) => {
+        const item = document.createElement(tag);
+        if (text != null) item.textContent = text;
+        if (className) item.className = className;
+        return item;
+    };
+    const format = value => new Intl.NumberFormat('nl-BE', { maximumFractionDigits: 1 }).format(value);
+    const dateLabel = value => new Intl.DateTimeFormat('nl-BE', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Europe/Brussels' }).format(new Date(value));
+    const isOpen = () => window.capAccess.signedIn && previewRole === 'coach' && location.hash === '#coach-health';
+    const metrics = window.capBodyMetrics;
+    const primaryKeys = ['weightKg', 'bodyFatPercent', 'muscleKg', 'waterPercent', 'boneKg', 'fatFreeKg'];
+    const roster = [];
+    document.querySelectorAll('#athletes .membership-group').forEach(group => {
+        const membership = group.querySelector('summary').firstChild.textContent.trim();
+        group.querySelectorAll('.membership-athlete, .athlete-card').forEach(item => {
+            const name = item.classList.contains('athlete-card') ? item.querySelector('h3').textContent.trim() : item.querySelectorAll('span')[1].textContent.trim();
+            roster.push({ id: name === 'Guillaume' ? 'preview-guillaume' : `example-${name.toLocaleLowerCase('nl-BE').replaceAll(' ', '-')}`, name, membership });
+        });
+    });
+    roster.sort((a, b) => a.name.localeCompare(b.name, 'nl-BE'));
+    const measurementsByAthlete = new Map();
+    let selectedId = roster.find(athlete => athlete.id === 'preview-guillaume')?.id || roster[0]?.id;
+    let request = null;
+    const selected = () => roster.find(athlete => athlete.id === selectedId);
+    const dialog = $('coach-measurement-dialog');
+    const form = $('coach-measurement-form');
+
+    // Read Guillaume's existing athlete preview rather than creating a second copy.
+    function measurements() {
+        if (selectedId !== 'preview-guillaume') return measurementsByAthlete.get(selectedId) || [];
+        const entries = window.capProfile.measurements();
+        window.capProfile.weights().forEach(weight => {
+            const alreadyIncluded = entries.some(entry => entry.weightKg === weight.kg && Math.abs(Date.parse(entry.recordedAt) - Date.parse(weight.recordedAt)) < 1000);
+            if (!alreadyIncluded) entries.push({ recordedAt: weight.recordedAt, weightKg: weight.kg });
+        });
+        return entries.sort((a, b) => Date.parse(b.recordedAt) - Date.parse(a.recordedAt));
+    }
+    function renderPicker() {
+        const query = $('coach-health-search').value.trim().toLocaleLowerCase('nl-BE');
+        const matches = roster.filter(athlete => athlete.name.toLocaleLowerCase('nl-BE').includes(query));
+        const list = $('coach-health-athletes'); list.replaceChildren();
+        matches.forEach(athlete => {
+            const button = node('button', null, 'coach-athlete-option'); button.type = 'button';
+            button.setAttribute('aria-pressed', String(athlete.id === selectedId));
+            const avatar = node('span', athlete.name.charAt(0), 'membership-avatar'); avatar.setAttribute('aria-hidden', 'true');
+            const label = node('span'); label.append(node('strong', athlete.name), node('small', athlete.membership));
+            button.append(avatar, label);
+            button.addEventListener('click', () => {
+                selectedId = athlete.id;
+                form.reset(); $('coach-measurement-status').textContent = '';
+                renderPicker(); renderMeasurements(); loadTraining();
+                $('coach-health-name').focus();
+            });
+            list.append(button);
+        });
+        $('coach-health-search-count').textContent = `${matches.length} van ${roster.length} sporters`;
+        if (!matches.length) list.append(node('p', 'Geen sporter gevonden. Probeer een andere naam.', 'sample-notice'));
+    }
+    function appendMetric(container, label, value, note, key) {
+        const group = node('div'); if (key) group.dataset.metric = key;
+        group.append(node('dt', label), node('dd', value));
+        if (note) group.append(node('small', note));
+        container.append(group);
+    }
+    function renderMeasurements() {
+        const athlete = selected(); if (!athlete) return;
+        $('coach-health-name').textContent = athlete.name;
+        $('coach-health-membership').textContent = `${athlete.membership} · Voorbeeldsporter`;
+        const profile = selectedId === 'preview-guillaume' ? window.capProfile.get() : {};
+        $('coach-health-goal').textContent = profile.goal ? `Doel: ${profile.goal}` : 'Nog geen doel ingevuld.';
+        const entries = measurements();
+        $('coach-health-metrics').replaceChildren(); $('coach-health-extra').replaceChildren();
+        metrics.forEach(metric => {
+            const available = entries.filter(entry => entry[metric.key] != null);
+            const latest = available[0];
+            const value = latest?.[metric.key] ?? (metric.key === 'weightKg' && profile.weightKg ? Number(profile.weightKg) : null);
+            let note = latest ? dateLabel(latest.recordedAt) : value != null ? 'Uit het profiel' : 'Nog niet gemeten';
+            if (available.length > 1) {
+                const difference = latest[metric.key] - available[1][metric.key];
+                note += ` · ${difference > 0 ? '+' : ''}${format(difference)} ${metric.unit} t.o.v. vorige`;
+            }
+            const container = $(primaryKeys.includes(metric.key) ? 'coach-health-metrics' : 'coach-health-extra');
+            appendMetric(container, metric.label, value != null ? `${format(value)} ${metric.unit}` : '—', note, metric.key);
+        });
+        if (profile.heightCm) appendMetric($('coach-health-extra'), 'Lengte', `${format(Number(profile.heightCm))} cm`, 'Uit het profiel');
+        const history = $('coach-health-history'); history.replaceChildren();
+        if (!entries.length) history.append(node('p', 'Nog geen metingen. Voeg de eerste meting toe om veranderingen te volgen.', 'sample-notice'));
+        entries.forEach(entry => {
+            const row = node('details', null, 'saved-workout'); row.append(node('summary', dateLabel(entry.recordedAt)));
+            const values = node('dl', null, 'body-metric-values');
+            metrics.filter(metric => entry[metric.key] != null).forEach(metric => appendMetric(values, metric.label, `${format(entry[metric.key])} ${metric.unit}`));
+            row.append(values); history.append(row);
+        });
+    }
+    function clearTraining() {
+        ['coach-health-training-stats', 'coach-health-records', 'coach-health-training-history'].forEach(id => $(id).replaceChildren());
+    }
+    async function loadTraining() {
+        request?.abort(); request = null;
+        clearTraining();
+        const athlete = selected(); if (!athlete || !isOpen()) return;
+        const connected = athlete.id === 'preview-guillaume';
+        $('coach-health-reload').hidden = !connected;
+        if (!connected) {
+            $('coach-health-training-status').textContent = 'Nog geen trainingsgegevens gekoppeld voor deze voorbeeldsporter.';
+            $('coach-health-records').append(node('p', 'Nog geen records.'));
+            $('coach-health-training-history').append(node('p', 'Nog geen afgeronde trainingen.'));
+            return;
+        }
+        const controller = new AbortController(); request = controller;
+        $('coach-health-training-status').textContent = 'Trainingsgegevens laden…';
+        const timeout = setTimeout(() => controller.abort(), 6000);
+        try {
+            const responses = await Promise.all(['/api/training', '/api/records'].map(path => fetch(`http://localhost:8080${path}`, { signal: controller.signal, cache: 'no-store' })));
+            if (responses.some(response => !response.ok)) throw new Error('Load failed');
+            const [history, records] = await Promise.all(responses.map(response => response.json()));
+            if (!Array.isArray(history) || !Array.isArray(records)) throw new Error('Invalid data');
+            // A late response must never appear under a different athlete's name.
+            if (request !== controller || selectedId !== athlete.id || !isOpen()) return;
+            const sessions = history.filter(session => session.athleteId === athlete.id).sort((a, b) => Date.parse(b.finishedAt) - Date.parse(a.finishedAt));
+            const stats = $('coach-health-training-stats');
+            appendMetric(stats, 'Afgeronde trainingen', String(sessions.length));
+            appendMetric(stats, 'Persoonlijke records', String(records.length));
+            appendMetric(stats, 'Laatste training', sessions.length ? dateLabel(sessions[0].finishedAt) : 'Nog geen');
+            records.forEach(record => $('coach-health-records').append(node('p', `${record.exercise} · ${record.reps} herhalingen · ${format(record.kg)} kg`)));
+            if (!records.length) $('coach-health-records').append(node('p', 'Nog geen records.'));
+            sessions.forEach(session => {
+                const row = node('details', null, 'saved-workout');
+                row.append(node('summary', `${session.planned.name} · ${dateLabel(session.finishedAt)}`));
+                row.append(node('p', `${Math.round(session.durationSeconds / 60)} minuten · ${session.exercises.length} oefeningen uitgevoerd`));
+                session.exercises.forEach(result => {
+                    const exercise = session.planned.exercises[result.exerciseIndex];
+                    const sets = result.sets.map(set => `${set.reps} × ${set.kg == null ? '—' : format(set.kg)} kg`).join(' · ');
+                    row.append(node('p', `${exercise?.name || 'Oefening'}: ${sets}`));
+                });
+                $('coach-health-training-history').append(row);
+            });
+            if (!sessions.length) $('coach-health-training-history').append(node('p', 'Nog geen afgeronde trainingen.'));
+            $('coach-health-training-status').textContent = 'Opgeslagen trainingen en records van Guillaume.';
+        } catch {
+            if (request === controller && selectedId === athlete.id && isOpen()) {
+                clearTraining();
+                $('coach-health-training-status').textContent = 'Trainingsgegevens niet geladen. Controleer de backend en kies Vernieuwen.';
+            }
+        } finally { clearTimeout(timeout); if (request === controller) request = null; }
+    }
+    metrics.forEach(metric => {
+        const label = node('label', `${metric.label} (${metric.unit})`);
+        const input = document.createElement('input'); input.type = 'number'; input.name = metric.key;
+        input.min = metric.key === 'weightKg' ? '20' : '0'; input.max = String(metric.max);
+        input.step = ['bmr', 'metabolicAge'].includes(metric.key) ? '1' : '0.1'; input.inputMode = 'decimal'; input.placeholder = 'Optioneel';
+        label.append(input); $(primaryKeys.includes(metric.key) ? 'coach-measurement-primary' : 'coach-measurement-extra').append(label);
+    });
+    $('coach-health-add').addEventListener('click', () => {
+        if (!isOpen() || !selected()) return;
+        form.reset(); $('coach-measurement-status').textContent = '';
+        $('coach-measurement-athlete').textContent = `Voor ${selected().name}`;
+        dialog.showModal();
+    });
+    $('coach-measurement-close').addEventListener('click', () => dialog.close());
+    form.addEventListener('submit', event => {
+        event.preventDefault();
+        if (!isOpen() || !selected() || !form.reportValidity()) return;
+        try {
+            const values = Object.fromEntries(new FormData(form));
+            if (selectedId === 'preview-guillaume') window.capProfile.logMeasurement(values);
+            else {
+                const entry = { recordedAt: new Date().toISOString() };
+                metrics.forEach(metric => {
+                    if (!String(values[metric.key] ?? '').trim()) return;
+                    const value = Number(values[metric.key]);
+                    if (!Number.isFinite(value) || value < (metric.key === 'weightKg' ? 20 : 0) || value > metric.max) throw new Error(`Controleer ${metric.label.toLowerCase()}.`);
+                    entry[metric.key] = value;
+                });
+                if (Object.keys(entry).length === 1) throw new Error('Vul minstens één meetwaarde in.');
+                measurementsByAthlete.set(selectedId, [entry, ...(measurementsByAthlete.get(selectedId) || [])]);
+            }
+            dialog.close(); renderMeasurements(); $('coach-health-add').focus();
+        } catch (error) { $('coach-measurement-status').textContent = error.message; }
+    });
+    $('coach-health-search').addEventListener('input', renderPicker);
+    $('coach-health-change').addEventListener('click', () => { $('coach-health-search').value = ''; renderPicker(); $('coach-health-search').focus(); });
+    $('coach-health-reload').addEventListener('click', loadTraining);
+    document.addEventListener('cap:profile-changed', () => { if (isOpen() && selectedId === 'preview-guillaume') renderMeasurements(); });
+    document.addEventListener('cap:viewchange', () => {
+        if (!isOpen()) { request?.abort(); request = null; if (dialog.open) dialog.close(); }
+        if (!window.capAccess.signedIn) {
+            measurementsByAthlete.clear(); selectedId = roster.find(athlete => athlete.id === 'preview-guillaume')?.id || roster[0]?.id;
+            $('coach-health-search').value = ''; form.reset(); $('coach-measurement-status').textContent = '';
+            renderPicker(); renderMeasurements(); clearTraining(); $('coach-health-training-status').textContent = '';
+        }
+        if (isOpen()) { renderPicker(); renderMeasurements(); loadTraining(); }
+    });
+    renderPicker(); renderMeasurements();
+    if (isOpen()) loadTraining();
+});

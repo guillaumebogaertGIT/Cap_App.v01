@@ -5,6 +5,25 @@ const addExerciseButton = document.querySelector('#add-exercise');
 const destination = document.querySelector('#workout-destination');
 const sessionOptions = document.querySelector('#workout-session-options');
 const templateSelect = document.querySelector('#workout-template');
+const categorySelect = document.querySelector('#workout-category');
+const sessionDate = document.querySelector('#workout-session-date');
+const athleteDate = document.querySelector('#workout-athlete-date');
+const clubToday = () => new Intl.DateTimeFormat('sv-SE', { timeZone: 'Europe/Brussels' }).format(new Date());
+// Group the available example athletes by first name, ready for a larger roster.
+const athleteSelect = workoutForm.elements.namedItem('athlete');
+const athletes = Array.from(athleteSelect.options).map(option => ({ value: option.value, name: option.textContent }));
+athleteSelect.replaceChildren();
+const athleteLetters = new Map();
+athletes.sort((a, b) => a.name.localeCompare(b.name, 'nl-BE')).forEach(athlete => {
+    const letter = athlete.name.trim().charAt(0).toUpperCase();
+    if (!athleteLetters.has(letter)) {
+        const group = document.createElement('optgroup'); group.label = letter;
+        athleteLetters.set(letter, group); athleteSelect.append(group);
+    }
+    athleteLetters.get(letter).append(new Option(athlete.name, athlete.value));
+});
+athleteDate.min = clubToday(); athleteDate.value = clubToday();
+sessionDate.min = clubToday();
 let savedTemplates = [];
 let templatesLoading = false;
 let editingWorkoutId = null;
@@ -17,6 +36,7 @@ function setEditMode(workout = null) {
     copySubmit.hidden = !workout; cancelEdit.hidden = !workout;
     destination.disabled = Boolean(workout);
     workoutForm.elements.namedItem('athlete').disabled = Boolean(workout);
+    athleteDate.disabled = Boolean(workout);
     document.querySelector('#create-workout-title').textContent = workout ? 'Workout bewerken' : 'Workout maken';
 }
 async function refreshTemplates() {
@@ -40,21 +60,120 @@ async function refreshTemplates() {
         status.textContent = 'Opgeslagen workouts niet geladen. Controleer de backend en open Workout maken opnieuw om te vernieuwen.';
     } finally { clearTimeout(timeout); templatesLoading = false; }
 }
-// Choose an audience before building the workout, using the same editor for all destinations.
-workoutForm.prepend(document.querySelector('.workout-destination'));
+// Keep building focused on exercises; classification and assignment happen on save.
+const saveDialog = document.createElement('dialog'); saveDialog.className = 'club-dialog workout-save-dialog';
+saveDialog.setAttribute('aria-labelledby', 'workout-save-title');
+const saveHeading = document.createElement('h2'); saveHeading.id = 'workout-save-title'; saveHeading.textContent = 'Workout bewaren';
+const saveStatus = document.createElement('p'); saveStatus.setAttribute('role', 'status');
+const typeLabel = document.createElement('label'); typeLabel.textContent = 'Workout type';
+const typeSelect = document.createElement('select'); typeSelect.name = 'workoutType'; typeSelect.id = 'workout-kind';
+[['other','Overig'],['full-body','Full body'],['lower-body','Lower body'],['upper-body','Upper body'],['conditioning','Conditioning']].forEach(([value,label]) => typeSelect.add(new Option(label,value)));
+typeLabel.append(typeSelect);
+const confirmSave = document.createElement('button'); confirmSave.type = 'button'; confirmSave.className = 'primary-button'; confirmSave.textContent = 'Bewaren';
+const closeSave = document.createElement('button'); closeSave.type = 'button'; closeSave.className = 'secondary-button'; closeSave.textContent = 'Verder bewerken';
+closeSave.addEventListener('click', () => saveDialog.close());
+const destinationFieldset = document.querySelector('.workout-destination');
+const nameLabel = workoutForm.elements.namedItem('title').closest('label');
+const descriptionLabel = workoutForm.elements.namedItem('description').closest('label');
+const categoryLabel = categorySelect.closest('label');
+saveDialog.append(saveHeading, nameLabel, typeLabel, destinationFieldset, categoryLabel, descriptionLabel, saveStatus, confirmSave, closeSave);
+// Maintain form ownership after moving inputs into the dialog.
+saveDialog.querySelectorAll('input, select, textarea').forEach(input => input.setAttribute('form', workoutForm.id));
+document.body.append(saveDialog);
+workoutForm.noValidate = true;
+let saveConfirmed = false;
+let pendingSubmitter = primarySubmit;
+confirmSave.addEventListener('click', () => { saveConfirmed = true; workoutForm.requestSubmit(pendingSubmitter); });
+const isAthleteDestination = () => ['athlete', 'private', 'openGym'].includes(destination.value);
+const linksSessions = () => destination.value === 'sessions' && document.querySelector('#link-sessions-now').checked;
+
+// Choose a category first, then keep using the shared workout editor.
+const categoryChooser = document.createElement('section');
+categoryChooser.setAttribute('aria-labelledby', 'workout-category-title');
+const categoryHeading = document.createElement('h3');
+categoryHeading.id = 'workout-category-title'; categoryHeading.tabIndex = -1;
+categoryHeading.textContent = 'Voor wie maak je een workout?';
+const categoryTiles = document.createElement('div'); categoryTiles.className = 'home-tiles';
+categoryChooser.append(categoryHeading, categoryTiles);
+const editorPanel = document.createElement('div'); editorPanel.hidden = true;
+workoutForm.before(categoryChooser, editorPanel);
+const categoryToolbar = document.createElement('div'); categoryToolbar.className = 'workout-category-toolbar';
+const categorySummary = document.createElement('strong'); categorySummary.setAttribute('role', 'status');
+const changeCategory = document.createElement('button'); changeCategory.type = 'button';
+changeCategory.className = 'secondary-button'; changeCategory.textContent = 'Categorie wijzigen';
+categoryToolbar.append(categorySummary, changeCategory);
+editorPanel.append(categoryToolbar, workoutForm);
+function showCategoryChooser(moveFocus = true) {
+    categoryChooser.hidden = false;
+    editorPanel.hidden = true;
+    if (moveFocus) categoryHeading.focus();
+}
+function showWorkoutEditor(moveFocus = true) {
+    categoryChooser.hidden = true;
+    editorPanel.hidden = false;
+    categorySummary.textContent = categorySelect.value || (destination.value === 'sessions' ? 'Groepsles' : 'Overig');
+    changeCategory.hidden = Boolean(editingWorkoutId);
+    if (moveFocus) document.querySelector('#create-workout-title').focus();
+}
+changeCategory.addEventListener('click', () => showCategoryChooser());
+const workoutChoices = [
+    ['CAP HYROX', 'sessions', 'CAP HYROX', 'Training voor jouw HYROX-groep', 'M4 18 9 6l4 8 3-5 4 9M3 21h18'],
+    ['CAP Lift & HIT', 'sessions', 'CAP Lift & HIT', 'Kracht en intensiteit', 'M6 5v14M3 8v8m15-11v14m3-11v8M6 12h12'],
+    ['CAP Hybrid', 'sessions', 'CAP Hybrid', 'Kracht en conditie combineren', 'M4 12h16m-5-5 5 5-5 5M9 7l-5 5 5 5'],
+    ['CAP Move', 'sessions', 'CAP Move', 'Samen in beweging', 'M13 3a2 2 0 1 0 0 4 2 2 0 0 0 0-4M4 12l5-3 4 2 5-2m-9 0-2 7-3 5m7-10 3 5 6 2'],
+    ['Specifieke sporter', 'athlete', 'Athlete', 'Persoonlijke workout op naam', 'M12 3a4 4 0 1 0 0 8 4 4 0 0 0 0-8M4 21v-2a8 8 0 0 1 16 0v2'],
+    ['Privétraining', 'private', 'Private', 'Individuele begeleiding', 'M9 3a3 3 0 1 0 0 6 3 3 0 0 0 0-6M3 21v-3a6 6 0 0 1 12 0v3m3-11v6m-3-3h6'],
+    ['Overig', 'library', '', 'Een algemene workout maken', 'M4 4h6v6H4zm10 0h6v6h-6zM4 14h6v6H4zm13 0v6m-3-3h6']
+];
+workoutChoices.forEach(([label, target, category, caption, path]) => {
+    const tile = document.createElement('button'); tile.type = 'button'; tile.className = 'home-tile';
+    tile.dataset.workoutCategory = category;
+    const icon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    icon.setAttribute('viewBox', '0 0 24 24'); icon.setAttribute('aria-hidden', 'true');
+    const drawing = document.createElementNS('http://www.w3.org/2000/svg', 'path'); drawing.setAttribute('d', path); icon.append(drawing);
+    const title = document.createElement('strong'); title.textContent = label;
+    const description = document.createElement('span'); description.textContent = caption;
+    tile.append(icon, title, description);
+    tile.addEventListener('click', () => {
+        setEditMode();
+        destination.value = target; categorySelect.value = category;
+        document.querySelector('#link-sessions-now').checked = false;
+        sessionDate.value = '';
+        sessionOptions.querySelectorAll('input').forEach(input => { input.checked = false; });
+        updateAssignmentOptions();
+        showWorkoutEditor();
+    });
+    categoryTiles.append(tile);
+});
+// General entry links show the chooser without erasing an unfinished draft.
+document.querySelectorAll('#sidebar-navigation a[href="#create-workout"], #coach a[href="#create-workout"], .mobile-bottom-nav a[href="#create-workout"], #saved-workouts a[href="#create-workout"]').forEach(link => {
+    link.addEventListener('click', () => showCategoryChooser(false));
+});
+
 function updateAssignmentOptions() {
     document.querySelector('#workout-session-assignment').hidden = destination.value !== 'sessions';
-    document.querySelector('#workout-athlete-assignment').hidden = destination.value !== 'athlete';
+    document.querySelector('#workout-athlete-assignment').hidden = !isAthleteDestination();
+    athleteDate.required = isAthleteDestination() && !editingWorkoutId;
+    athleteDate.disabled = !isAthleteDestination() || Boolean(editingWorkoutId);
+    sessionDate.disabled = !linksSessions();
+    document.querySelector('#session-link-options').hidden = !linksSessions();
+    categoryLabel.hidden = isAthleteDestination();
+    categorySelect.required = destination.value === 'sessions';
+    if (isAthleteDestination()) categorySelect.value = destination.value === 'private' ? 'Private' : destination.value === 'openGym' ? 'Open gym' : 'Athlete';
+    for (const option of categorySelect.options) option.hidden = destination.value === 'sessions' && ['Private','Open gym','Athlete'].includes(option.value);
+    if (destination.value === 'sessions' && ['Private','Open gym','Athlete'].includes(categorySelect.value)) categorySelect.value = '';
+
     const selected = new Set(Array.from(sessionOptions.querySelectorAll('input:checked'), input => input.value));
     sessionOptions.replaceChildren();
-    const sessions = window.capClub.sessions();
+    const sessions = window.capClub.sessions().filter(session => (!categorySelect.value || session.category === categorySelect.value)
+        && (!sessionDate.value || session.date === sessionDate.value));
     sessions.forEach(session => {
         const label = document.createElement('label');
         const checkbox = document.createElement('input');
         checkbox.type = 'checkbox'; checkbox.name = 'sessions'; checkbox.value = session.id;
         checkbox.checked = selected.has(session.id);
         const text = document.createElement('span');
-        text.textContent = `${session.date} · ${session.start} · ${session.title} · ${session.coach}`;
+        text.textContent = `${session.date} · ${session.start} · ${session.category || session.title} · ${session.coach}`;
         label.append(checkbox, text); sessionOptions.append(label);
     });
     if (!sessions.length) {
@@ -64,23 +183,31 @@ function updateAssignmentOptions() {
     }
 }
 destination.addEventListener('change', updateAssignmentOptions);
+document.querySelector('#link-sessions-now').addEventListener('change', updateAssignmentOptions);
+categorySelect.addEventListener('change', updateAssignmentOptions);
+sessionDate.addEventListener('change', updateAssignmentOptions);
 document.addEventListener('cap:viewchange', () => {
     if (location.hash === '#create-workout') { updateAssignmentOptions(); refreshTemplates(); }
 });
 document.addEventListener('cap:workout-for-sessions', event => {
     setEditMode();
+    document.querySelector('#link-sessions-now').checked = true;
     destination.value = 'sessions';
+    categorySelect.value = '';
+    sessionDate.value = '';
     updateAssignmentOptions();
     sessionOptions.querySelectorAll('input').forEach(input => { input.checked = event.detail.includes(input.value); });
+    showWorkoutEditor();
 });
 document.querySelector('#athletes a[href="#create-workout"]').addEventListener('click', () => {
     setEditMode();
     destination.value = 'athlete'; updateAssignmentOptions();
+    showWorkoutEditor(false);
 });
 const groupWorkoutLink = document.createElement('a');
 groupWorkoutLink.href = '#create-workout'; groupWorkoutLink.className = 'secondary-button';
 groupWorkoutLink.textContent = 'Workout voor sessies maken';
-groupWorkoutLink.addEventListener('click', () => { setEditMode(); destination.value = 'sessions'; updateAssignmentOptions(); });
+groupWorkoutLink.addEventListener('click', () => showCategoryChooser(false));
 document.querySelector('#group-classes .coach-create-card').append(groupWorkoutLink);
 updateAssignmentOptions();
 
@@ -212,9 +339,26 @@ document.addEventListener('pointerdown', (event) => {
 });
 
 function numberExercises() {
-    const rows = exerciseFields.querySelectorAll('.exercise-row');
-    rows.forEach((row, index) => {
-        row.querySelector('legend').textContent = `Oefening ${index + 1}`;
+    const rows = Array.from(exerciseFields.querySelectorAll('.exercise-row'));
+    const groups = new Map();
+    const wrappers = [];
+    rows.forEach(row => {
+        const group = row.querySelector('[name="supersetGroup"]').value;
+        let wrapper = group ? groups.get(group) : null;
+        if (!wrapper) {
+            wrapper = document.createElement('div');
+            wrapper.className = group ? 'exercise-group superset-strip' : 'exercise-group';
+            if (group) { groups.set(group, wrapper); wrapper.setAttribute('role', 'group'); wrapper.setAttribute('aria-label', `Superset ${group}`); }
+            wrappers.push(wrapper);
+        }
+        wrapper.append(row);
+    });
+    exerciseFields.replaceChildren(...wrappers);
+    const ordered = Array.from(exerciseFields.querySelectorAll('.exercise-row'));
+    ordered.forEach((row, index) => {
+        const group = row.querySelector('[name="supersetGroup"]').value;
+        row.querySelector('legend').textContent = `Oefening ${index + 1}${group ? ` · Superset ${group}` : ''}`;
+        row.classList.toggle('superset-exercise', Boolean(group));
         const removeButton = row.querySelector('.remove-exercise');
         removeButton.disabled = rows.length === 1;
         removeButton.setAttribute('aria-label', `Oefening ${index + 1} verwijderen`);
@@ -225,6 +369,21 @@ function addExercise(moveFocus = true) {
     const fragment = exerciseTemplate.content.cloneNode(true);
     const row = fragment.querySelector('.exercise-row');
     setupExercisePicker(row);
+    row.querySelector('.add-superset').addEventListener('click', () => {
+        let group = row.querySelector('[name="supersetGroup"]').value;
+        if (!group) {
+            const used = new Set(Array.from(exerciseFields.querySelectorAll('[name="supersetGroup"]'), input => input.value));
+            group = ['A', 'B', 'C', 'D', 'E', 'F'].find(letter => !used.has(letter));
+            if (!group) { document.querySelector('#exercise-status').textContent = 'Je kunt maximaal zes supersets maken.'; return; }
+            row.querySelector('[name="supersetGroup"]').value = group;
+        }
+        const linked = addExercise(false);
+        linked.querySelector('[name="supersetGroup"]').value = group;
+        row.after(linked);
+        numberExercises();
+        linked.querySelector('[name="exercise"]').focus();
+        document.querySelector('#exercise-status').textContent = 'Superset-oefening toegevoegd. Wissel de gekoppelde oefeningen af.';
+    });
     const loadMode = row.querySelector('[name="loadMode"]');
     const loadValue = row.querySelector('[name="loadValue"]');
     function updateLoadInput() {
@@ -237,14 +396,20 @@ function addExercise(moveFocus = true) {
     loadMode.addEventListener('change', updateLoadInput);
     updateLoadInput();
     row.querySelector('.remove-exercise').addEventListener('click', () => {
+        const group = row.querySelector('[name="supersetGroup"]').value;
         row.remove();
+        if (group) {
+            const remaining = Array.from(exerciseFields.querySelectorAll('[name="supersetGroup"]')).filter(input => input.value === group);
+            if (remaining.length === 1) remaining[0].value = '';
+        }
         numberExercises();
         addExerciseButton.focus();
         document.querySelector('#exercise-status').textContent = 'Oefening verwijderd.';
     });
     exerciseFields.append(fragment);
     numberExercises();
-    if (moveFocus) row.querySelector('input').focus();
+    if (moveFocus) row.querySelector('[name="exercise"]').focus();
+    return row;
 }
 
 addExerciseButton.addEventListener('click', () => addExercise());
@@ -258,18 +423,23 @@ function populateWorkout(workout, edit = false) {
         updateAssignmentOptions();
     }
     workoutForm.elements.namedItem('title').value = workout.name;
+    categorySelect.value = workout.category || '';
+    typeSelect.value = workout.workoutType || 'other';
+    athleteDate.value = workout.assignedDate || clubToday();
     workoutForm.elements.namedItem('description').value = workout.description || '';
     exerciseFields.replaceChildren();
     workout.exercises.forEach(exercise => {
-        addExercise(false);
-        const row = exerciseFields.lastElementChild;
+        const row = addExercise(false);
         const values = { exercise: exercise.name, sets: exercise.sets, reps: exercise.reps,
             loadMode: exercise.loadMode || 'none', loadValue: exercise.loadValue,
-            restSeconds: exercise.restSeconds, tempo: exercise.tempo };
+            restSeconds: exercise.restSeconds, tempo: exercise.tempo, supersetGroup: exercise.supersetGroup };
         Object.entries(values).forEach(([name, value]) => { row.querySelector(`[name="${name}"]`).value = value ?? ''; });
         row.querySelector('[name="loadMode"]').dispatchEvent(new Event('change'));
     });
     workoutForm.querySelectorAll('input, textarea').forEach(input => input.setCustomValidity(''));
+    numberExercises();
+    updateAssignmentOptions();
+    showWorkoutEditor(false);
     document.querySelector('#workout-template-status').textContent = edit
         ? 'Je bewerkt de opgeslagen workout. De bestaande toewijzing blijft behouden. Afgeronde trainingen en gekopieerde sessieprogramma’s blijven ongewijzigd.'
         : 'Kopie geladen. Pas de workout aan en sla op. PR-percentages kun je voor een groepssessie vervangen door een vast gewicht of geen specifiek percentage.';
@@ -293,6 +463,7 @@ cancelEdit.addEventListener('click', () => {
     setEditMode(); workoutForm.reset(); exerciseFields.replaceChildren(); addExercise(false); updateAssignmentOptions();
     document.querySelector('#workout-template-status').textContent = '';
     document.querySelector('#exercise-status').textContent = '';
+    showCategoryChooser();
 });
 
 // Native required/min/max validation handles numbers; also reject whitespace-only names.
@@ -302,38 +473,56 @@ workoutForm.addEventListener('input', (event) => {
 workoutForm.addEventListener('submit', async (event) => {
     event.preventDefault();
     if (!window.capAccess.can('workouts') || previewRole !== 'coach') return;
+    if (!saveConfirmed) {
+        const invalid = Array.from(exerciseFields.querySelectorAll('input, select')).find(input => !input.checkValidity());
+        if (invalid) { invalid.reportValidity(); return; }
+        if (event.submitter === copySubmit && editingWorkoutId) {
+            setEditMode();
+            if (!athleteDate.value || athleteDate.value < clubToday()) athleteDate.value = clubToday();
+        }
+        pendingSubmitter = event.submitter || primarySubmit;
+        saveStatus.textContent = '';
+        updateAssignmentOptions();
+        saveDialog.showModal();
+        return;
+    }
+    saveConfirmed = false;
     if (!workoutForm.reportValidity()) return;
     const submit = workoutForm.querySelector('[type="submit"]');
     if (submit.disabled) return;
-    const status = document.querySelector('#exercise-status');
+    const status = saveStatus;
     const updating = Boolean(editingWorkoutId) && event.submitter !== copySubmit;
     if (updating && window.capTraining.isActive(editingWorkoutId)) {
         status.textContent = 'Rond de lopende training eerst af voordat je deze workout wijzigt.';
         return;
     }
     const sessionIds = Array.from(sessionOptions.querySelectorAll('input:checked'), input => input.value);
-    if (destination.value === 'sessions' && (!sessionIds.length || sessionIds.some(id => !window.capClub.sessions().some(session => session.id === id)))) {
+    if (linksSessions() && (!sessionIds.length || sessionIds.some(id => !window.capClub.sessions().some(session => session.id === id)))) {
         status.textContent = 'Kies minstens één beschikbare sessie. Controleer de planning.';
         return;
     }
-    if (destination.value !== 'athlete' && Array.from(exerciseFields.querySelectorAll('[name="loadMode"]')).some(input => input.value === 'percent')) {
+    if (!isAthleteDestination() && Array.from(exerciseFields.querySelectorAll('[name="loadMode"]')).some(input => input.value === 'percent')) {
         status.textContent = 'Een percentage van een PR vereist een persoonlijke toewijzing. Kies voor deze workout een vast gewicht of geen doelgewicht.';
         return;
     }
     submit.disabled = true;
     copySubmit.disabled = true;
-    cancelEdit.disabled = true;
+    cancelEdit.disabled = true; confirmSave.disabled = true; closeSave.disabled = true;
     status.textContent = 'Workout opslaan…';
     const payload = {
         name: workoutForm.elements.namedItem('title').value.trim(),
+        category: categorySelect.value,
+        workoutType: typeSelect.value,
+        assignedDate: isAthleteDestination() ? athleteDate.value || clubToday() : '',
         description: workoutForm.elements.namedItem('description').value.trim(),
-        athleteId: destination.value === 'athlete' ? workoutForm.elements.namedItem('athlete').value : '',
+        athleteId: isAthleteDestination() ? workoutForm.elements.namedItem('athlete').value : '',
         exercises: Array.from(exerciseFields.querySelectorAll('.exercise-row'), row => ({
             name: row.querySelector('[name="exercise"]').value.trim(),
             sets: Number(row.querySelector('[name="sets"]').value),
             reps: Number(row.querySelector('[name="reps"]').value),
             restSeconds: row.querySelector('[name="restSeconds"]').value === '' ? null : Number(row.querySelector('[name="restSeconds"]').value),
             tempo: row.querySelector('[name="tempo"]').value.trim(),
+            supersetGroup: row.querySelector('[name="supersetGroup"]').value,
             loadMode: row.querySelector('[name="loadMode"]').value,
             loadValue: row.querySelector('[name="loadValue"]').value === '' ? null : Number(row.querySelector('[name="loadValue"]').value)
         }))
@@ -349,7 +538,7 @@ workoutForm.addEventListener('submit', async (event) => {
         }
         const saved = await response.json();
         let message = updating ? 'Workout bijgewerkt. Geschiedenis en sessieprogramma’s blijven behouden.' : 'Workout opgeslagen in Java.';
-        if (destination.value === 'sessions') {
+        if (linksSessions()) {
             try {
                 window.capClub.assignWorkout(sessionIds, saved);
                 message = `Workout opgeslagen en gekoppeld aan ${sessionIds.length} sessie(s) in de lokale planning.`;
@@ -357,20 +546,23 @@ workoutForm.addEventListener('submit', async (event) => {
                 message = 'Workout opgeslagen in Java, maar de sessietoewijzing is mislukt. Het programma is niet bijgewerkt. Controleer browseropslag en de planning.';
             }
         }
+        saveDialog.close();
         workoutForm.reset();
         setEditMode();
+        athleteDate.value = clubToday();
         document.querySelector('#workout-template-status').textContent = '';
         sessionOptions.querySelectorAll('input').forEach(input => { input.checked = false; });
         updateAssignmentOptions();
         exerciseFields.replaceChildren();
         addExercise(false);
+        showCategoryChooser(false);
         status.textContent = '';
         document.querySelector('#coach-workout-status').textContent = message;
-        window.location.hash = 'dashboard';
+        window.location.hash = 'saved-workouts';
         document.dispatchEvent(new CustomEvent('cap:workouts-saved'));
     } catch (error) {
         status.textContent = `${error.message} Je invoer blijft behouden. Bij een verbindingsfout: controleer eerst de bibliotheek voordat je opnieuw opslaat.`;
-    } finally { submit.disabled = false; copySubmit.disabled = false; cancelEdit.disabled = false; }
+    } finally { submit.disabled = false; copySubmit.disabled = false; cancelEdit.disabled = false; confirmSave.disabled = false; closeSave.disabled = false; }
 });
 
 addExercise(false);

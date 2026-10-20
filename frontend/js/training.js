@@ -29,8 +29,6 @@
         <h3>Persoonlijke records per rep-aantal</h3><div id="training-records" class="club-grid"></div>
         <h3>Afgelopen trainingen</h3><div id="training-history"></div>`;
     document.querySelector('main').append(section);
-    const navLink = node('a', 'Trainingslog'); navLink.href = '#training'; navLink.dataset.viewLink = 'training';
-    document.querySelector('#sidebar-navigation [href="#shop"]').before(navLink);
     const coachLink = node('a', 'Bekijk resultaten en PRs van Guillaume', 'secondary-button'); coachLink.href = '#training';
     document.querySelector('#athlete-list-assignment').after(coachLink);
     function persist() {
@@ -46,7 +44,7 @@
     }
     setInterval(tick, 1000);
     function target(exercise) {
-        return `${exercise.sets} × ${exercise.reps}${exercise.targetKg != null ? ` · ${exercise.targetKg} kg` : ''}${exercise.restSeconds != null ? ` · Rust: ${exercise.restSeconds} s` : ''}${exercise.tempo ? ` · Tempo: ${exercise.tempo}` : ''}${exercise.loadMode === 'percent' ? ` (${exercise.loadValue}% van ${exercise.referenceKg} kg bij ${exercise.reps} reps)` : ''}`;
+        return `${exercise.sets} × ${exercise.reps}${exercise.targetKg != null ? ` · ${exercise.targetKg} kg` : ''}${exercise.restSeconds != null ? ` · Rust: ${exercise.restSeconds} s` : ''}${exercise.tempo ? ` · Tempo: ${exercise.tempo}` : ''}${exercise.supersetGroup ? ` · Superset ${exercise.supersetGroup}` : ''}${exercise.loadMode === 'percent' ? ` (${exercise.loadValue}% van ${exercise.referenceKg} kg bij ${exercise.reps} reps)` : ''}`;
     }
     function renderActive() {
         const container = $('active-training'); container.replaceChildren();
@@ -58,15 +56,30 @@
         const timer = node('p', '', 'training-timer'); timer.id = 'training-timer'; container.append(timer);
         container.append(node('p', 'De timer loopt ook als je deze pagina verlaat. Verwijder niet-uitgevoerde sets; laat geen geplande reps staan die je niet hebt gedaan.', 'sample-notice'));
         const form = document.createElement('form'); form.className = 'club-form training-form';
+        form.append(node('p', 'RIR (optioneel): hoeveel herhalingen kon je nog? 0 = geen meer.', 'sample-notice'));
+        const exerciseContainers = [];
+        window.capWorkoutView.blocks(active.planned.exercises).forEach(group => {
+            const section = node('section', null, 'training-workout-block');
+            section.append(node('h3', group.title));
+            const exercises = node('div', null, 'training-block-exercises');
+            section.append(exercises); form.append(section);
+            group.items.forEach(({ index }) => { exerciseContainers[index] = exercises; });
+        });
         active.planned.exercises.forEach((exercise, index) => {
             const block = node('fieldset', null, 'exercise-row'); block.append(node('legend', exercise.name), node('p', `Gepland: ${target(exercise)}`));
+            if (exercise.supersetGroup) block.classList.add('superset-exercise');
             const sets = active.exercises[index].sets;
             sets.forEach((set, setIndex) => {
                 const row = node('div', null, 'training-set'); row.append(node('span', `Set ${setIndex + 1}`));
-                [['reps', 'Uitgevoerde reps', '1', '1000', '1'], ['kg', 'Gewicht (kg)', '0', '2000', '0.01']].forEach(([field, labelText, min, max, step]) => {
+                [['reps', 'Reps', '1', '1000', '1'], ['kg', 'Kg', '0', '2000', '0.01'], ['rir', 'RIR', '0', '10', '1']].forEach(([field, labelText, min, max, step]) => {
                     const label = node('label', labelText); const input = document.createElement('input');
-                    input.type = 'number'; input.required = true; input.min = min; input.max = max; input.step = step;
-                    input.inputMode = field === 'kg' ? 'decimal' : 'numeric'; input.value = set[field];
+                    input.type = 'number'; input.required = field !== 'rir'; input.min = min; input.max = max; input.step = step;
+                    if (field === 'rir') {
+                        label.className = 'rir-field'; input.placeholder = '—';
+                        input.setAttribute('aria-label', `Resterende herhalingen, ${exercise.name}, set ${setIndex + 1} (optioneel)`);
+                        label.title = 'Reps in reserve: hoeveel herhalingen kon je nog? Optioneel, 0–10.';
+                    }
+                    input.inputMode = field === 'kg' ? 'decimal' : 'numeric'; input.value = set[field] ?? '';
                     input.disabled = Boolean(active.finishedAt);
                     input.addEventListener('input', () => { set[field] = input.value; persist(); });
                     label.append(input); row.append(label);
@@ -75,7 +88,7 @@
                 remove.disabled = Boolean(active.finishedAt); row.append(remove); block.append(row);
             });
             const add = button('+ Set toevoegen', () => { sets.push({ reps: '', kg: '' }); persist(); renderActive(); });
-            add.disabled = Boolean(active.finishedAt) || sets.length >= 100; block.append(add); form.append(block);
+            add.disabled = Boolean(active.finishedAt) || sets.length >= 100; block.append(add); exerciseContainers[index].append(block);
         });
         const finish = node('button', active.finishedAt ? 'Opslaan opnieuw proberen' : 'Training afronden', 'primary-button');
         finish.type = 'submit'; finish.disabled = saving; form.append(finish);
@@ -90,8 +103,8 @@
             try {
                 const response = await fetch('http://localhost:8080/api/training', {
                     method: 'POST', headers: { 'Content-Type': 'application/json' }, signal: timeoutController.signal,
-                    body: JSON.stringify({ id: active.id, workoutId: active.planned.id, startedAt: active.startedAt, finishedAt: active.finishedAt,
-                        exercises: active.exercises.map(e => ({ exerciseIndex: e.exerciseIndex, sets: e.sets.map(s => ({ reps: Number(s.reps), kg: Number(s.kg) })) })) })
+                    body: JSON.stringify({ id: active.id, workoutId: active.planned.id, assignmentId: active.planned.assignmentId || null, startedAt: active.startedAt, finishedAt: active.finishedAt,
+                        exercises: active.exercises.map(e => ({ exerciseIndex: e.exerciseIndex, sets: e.sets.map(s => ({ reps: Number(s.reps), kg: Number(s.kg), rir: s.rir == null || s.rir === '' ? null : Number(s.rir) })) })) })
                 });
                 const result = await response.json();
                 if (!response.ok) {
@@ -126,7 +139,7 @@
             const exercise = session.planned.exercises[result.exerciseIndex];
             content.append(node('h4', exercise.name), node('p', `Gepland: ${target(exercise)}`));
             const list = node('ul');
-            result.sets.forEach((set, i) => list.append(node('li', `Set ${i + 1}: ${set.reps} reps × ${set.kg} kg`)));
+            result.sets.forEach((set, i) => list.append(node('li', `Set ${i + 1}: ${set.reps} reps × ${set.kg} kg${set.rir != null ? ` · RIR ${set.rir}` : ''}`)));
             if (!result.sets.length) list.append(node('li', 'Overgeslagen'));
             content.append(list);
         });
@@ -170,7 +183,7 @@
                 active = { id: crypto.randomUUID(), planned: structuredClone(workout), startedAt: new Date().toISOString(), finishedAt: null,
                     exercises: workout.exercises.map((e, i) => ({ exerciseIndex: i, sets: Array.from({ length: e.sets }, () => ({ reps: '', kg: '' })) })) };
                 persist(); $('finished-overview').hidden = true;
-            } else if (active.planned.id !== workout.id) {
+            } else if (active.planned.id !== workout.id || active.planned.assignmentId !== workout.assignmentId) {
                 $('training-message').textContent = 'Er loopt al een training. Rond die eerst af voordat je een nieuwe start.';
             }
             location.hash = 'training'; renderActive();

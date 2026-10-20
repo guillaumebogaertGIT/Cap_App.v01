@@ -58,4 +58,18 @@ class TrainingStoreTests {
         assertThrows(ResponseStatusException.class, () -> store.finish(invalid, plan()));
         assertTrue(store.history().isEmpty()); assertTrue(store.records().isEmpty());
     }
+
+    @Test void optionalRirPersistsAndRejectsOutOfRangeValues() throws Exception {
+        String file = directory.resolve("rir.json").toString();
+        TrainingStore store = new TrainingStore(file);
+        for (int rir : new int[]{0, 2, 10, -1, 11}) {
+            var input = new TrainingStore.Completion(UUID.randomUUID().toString(), "workout-1",
+                Instant.now().minusSeconds(60).toString(), Instant.now().toString(),
+                List.of(new TrainingStore.ExerciseResult(0, List.of(new TrainingStore.SetResult(5, 60.0, rir)))));
+            if (rir < 0 || rir > 10) assertThrows(ResponseStatusException.class, () -> store.finish(input, plan()));
+            else store.finish(input, plan());
+        }
+        assertEquals(List.of(0, 2, 10), new TrainingStore(file).history().stream()
+            .map(session -> session.exercises().get(0).sets().get(0).rir()).toList());
+    }
 }

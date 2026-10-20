@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 @CrossOrigin(origins = "http://127.0.0.1:5500")
 @RestController
 public class WorkoutController {
+    public record Assignment(String athleteId, String date) {}
     private final WorkoutStore store;
     private final TrainingStore training;
 
@@ -26,6 +27,8 @@ public class WorkoutController {
     public List<Workout> getWorkouts() {
         return store.list();
     }
+    @GetMapping("/api/workout-assignments")
+    public List<WorkoutStore.DatedWorkout> getAssignments() { return store.assignments(); }
 
     @PostMapping("/api/workouts")
     @ResponseStatus(HttpStatus.CREATED)
@@ -43,7 +46,15 @@ public class WorkoutController {
     public Workout updateWorkout(@PathVariable("id") String id, @RequestBody Workout workout) throws IOException {
         Workout existing = store.list().stream().filter(w -> w.id().equals(id)).findFirst()
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Workout niet gevonden."));
-        Workout input = new Workout(id, workout.name(), workout.description(), workout.exercises(), existing.athleteId(), existing.assignedDate());
+        Workout input = new Workout(id, workout.name(), workout.description(), workout.exercises(), existing.athleteId(), existing.assignedDate(), workout.category(), workout.workoutType());
         return store.update(id, training.resolveTargets(input));
+    }
+
+    @PostMapping("/api/workouts/{id}/assignment")
+    public Workout assignWorkout(@PathVariable("id") String id, @RequestBody Assignment assignment) throws IOException {
+        Workout existing = store.list().stream().filter(w -> w.id().equals(id)).findFirst()
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Workout niet gevonden."));
+        Workout input = new Workout(id, existing.name(), existing.description(), existing.exercises(), assignment.athleteId(), assignment.date(), existing.category(), existing.workoutType());
+        return store.assign(id, training.resolveTargets(input));
     }
 }

@@ -10,6 +10,90 @@ import static org.junit.jupiter.api.Assertions.*;
 class WorkoutStoreTests {
     @TempDir Path directory;
 
+    @Test void workoutTypeAndAudiencePersistThroughCreateResolveAssignAndReload() throws Exception {
+        String file = directory.resolve("workout-types.json").toString();
+        WorkoutStore store = new WorkoutStore(file);
+        TrainingStore training = new TrainingStore(directory.resolve("types-training.json").toString());
+        for (String category : List.of("CAP HYROX", "Private", "Open gym", "Athlete")) {
+            Workout input = new Workout(null, "Upper session", "", List.of(new Workout.Exercise("Row", 3, 8)), "", "", category, "upper-body");
+            Workout saved = store.create(training.resolveTargets(input));
+            store.assign(saved.id(), training.resolveTargets(new Workout(saved.id(), saved.name(), "", saved.exercises(), "preview-guillaume", "", category, saved.workoutType())));
+        }
+        WorkoutStore reloaded = new WorkoutStore(file);
+        assertEquals(4, reloaded.list().size());
+        assertTrue(reloaded.list().stream().allMatch(w -> "upper-body".equals(w.workoutType())));
+        assertTrue(reloaded.assignments().stream().allMatch(a -> "upper-body".equals(a.planned().workoutType())));
+        assertEquals(List.of("CAP HYROX", "Private", "Open gym", "Athlete"), reloaded.list().stream().map(Workout::category).toList());
+        assertThrows(ResponseStatusException.class, () -> store.create(new Workout(null, "Invalid", "", List.of(new Workout.Exercise("Row", 3, 8)), "", "", "", "unknown")));
+    }
+
+    @Test void datedAssignmentsKeepSeparateSnapshotsAndCategoryAfterTemplateEdits() throws Exception {
+        String file = directory.resolve("dated.json").toString();
+        WorkoutStore store = new WorkoutStore(file);
+        Workout template = store.create(new Workout(null, "HYROX A", "", List.of(new Workout.Exercise("Squat", 3, 10)), "", "", "CAP HYROX"));
+        String tomorrow = java.time.LocalDate.now(java.time.ZoneId.of("Europe/Brussels")).plusDays(1).toString();
+        String nextDay = java.time.LocalDate.parse(tomorrow).plusDays(1).toString();
+        for (String date : List.of(tomorrow, nextDay)) {
+            store.assign(template.id(), new Workout(template.id(), template.name(), "", template.exercises(), "preview-guillaume", date, template.category()));
+        }
+        store.update(template.id(), new Workout(null, "Edited", "", List.of(new Workout.Exercise("Row", 4, 8)), "", "", "CAP HYROX"));
+        WorkoutStore reloaded = new WorkoutStore(file);
+        assertEquals(1, reloaded.list().size());
+        assertEquals(2, reloaded.assignments().size());
+        assertEquals("CAP HYROX", reloaded.list().get(0).category());
+        assertEquals(List.of(tomorrow, nextDay), reloaded.assignments().stream().map(a -> a.planned().assignedDate()).toList());
+        assertTrue(reloaded.assignments().stream().allMatch(a -> a.planned().name().equals("HYROX A") && a.planned().exercises().get(0).name().equals("Squat")));
+        assertNotEquals(reloaded.assignments().get(0).assignmentId(), reloaded.assignments().get(1).assignmentId());
+        assertThrows(ResponseStatusException.class, () -> reloaded.assign(template.id(), new Workout(template.id(), "Invalid", "", template.exercises(), "preview-guillaume", "invalid", "CAP HYROX")));
+    }
+
+    @Test void oldArrayStorageMigratesWithoutLosingWorkoutOrAssignment() throws Exception {
+        Path file = directory.resolve("legacy.json");
+        String today = java.time.LocalDate.now(java.time.ZoneId.of("Europe/Brussels")).toString();
+        String original = """
+            [{"id":"legacy","name":"Old","description":"","exercises":[{"name":"Squat","sets":3,"reps":5}],"athleteId":"preview-guillaume","assignedDate":"%s"}]
+            """.formatted(today);
+        java.nio.file.Files.writeString(file, original);
+        WorkoutStore store = new WorkoutStore(file.toString());
+        assertEquals(1, store.assignments().size());
+        store.create(workout("New", "", 3));
+        assertEquals(original, java.nio.file.Files.readString(file.resolveSibling("legacy.json.legacy-backup")));
+        WorkoutStore reloaded = new WorkoutStore(file.toString());
+        assertEquals(2, reloaded.list().size());
+        assertEquals(1, reloaded.assignments().size());
+    }
+
+    @Test void assignsSavedWorkoutWithoutCopyAndReplacesTodaysAssignment() throws Exception {
+        String file = directory.resolve("assignments.json").toString();
+        WorkoutStore store = new WorkoutStore(file);
+        Workout previous = store.create(workout("Previous", "preview-guillaume", 3));
+        Workout template = store.create(workout("Saved", "", 4));
+        Workout request = new Workout(template.id(), template.name(), template.description(), template.exercises(), "preview-guillaume", "");
+        Workout assigned = store.assign(template.id(), request);
+        assertEquals(template.id(), assigned.id());
+        assertEquals(previous.assignedDate(), assigned.assignedDate());
+        var saved = new WorkoutStore(file).list();
+        assertEquals(2, saved.size());
+        assertEquals("", saved.get(0).athleteId());
+        assertEquals("preview-guillaume", saved.get(1).athleteId());
+        store.assign(template.id(), request);
+        assertEquals(2, store.list().size());
+        assertThrows(ResponseStatusException.class, () -> store.assign("missing", request));
+        assertThrows(ResponseStatusException.class, () -> store.assign(template.id(), template));
+    }
+
+    @Test void supersetsSurviveResolutionAndReloadAndRequireTwoExercises() throws Exception {
+        String file = directory.resolve("supersets.json").toString();
+        WorkoutStore store = new WorkoutStore(file);
+        TrainingStore training = new TrainingStore(directory.resolve("training.json").toString());
+        var squat = new Workout.Exercise("Squat", 3, 8, "none", null, null, null, 60, "3-0-1-0", "A");
+        var row = new Workout.Exercise("Row", 3, 8, "fixed", 30.0, null, null, 60, "2-0-1-0", "A");
+        store.create(training.resolveTargets(new Workout(null, "Superset", "", List.of(squat, row), "", "")));
+        assertTrue(new WorkoutStore(file).list().get(0).exercises().stream().allMatch(e -> "A".equals(e.supersetGroup())));
+        assertThrows(ResponseStatusException.class, () -> store.create(new Workout(null, "Incomplete", "", List.of(squat), "", "")));
+        assertEquals(1, store.list().size());
+    }
+
     private Workout workout(String name, String athlete, int sets) {
         return new Workout(null, name, "Strength", List.of(new Workout.Exercise("Squat", sets, 10)), athlete, null);
     }

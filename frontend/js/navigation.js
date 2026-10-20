@@ -58,14 +58,15 @@ document.addEventListener('keydown', (event) => {
 // URL fragments let the browser's Back and Forward buttons switch screens too.
 function showCurrentView(moveFocus = true) {
     const requestedView = window.location.hash.slice(1);
-    const allowedViews = previewRole === 'coach' ? ['dashboard', 'settings', 'create-workout', 'athletes', 'group-classes', 'planning', 'bookings', 'shop', 'training'] : ['dashboard', 'workouts', 'health', 'settings', 'planning', 'bookings', 'shop', 'training'];
+    const allowedViews = previewRole === 'coach' ? ['dashboard', 'settings', 'create-workout', 'saved-workouts', 'athletes', 'coach-health', 'group-classes', 'planning', 'bookings', 'shop', 'training'] : ['dashboard', 'workouts', 'health', 'nutrition', 'settings', 'planning', 'bookings', 'shop', 'training'];
     const routeId = allowedViews.includes(requestedView)
         ? requestedView : 'dashboard';
     const viewId = previewRole === 'coach' && routeId === 'dashboard' ? 'coach' : routeId;
+    document.body.classList.toggle('is-workout-editor', viewId === 'create-workout');
 
     sidebarNavigation.querySelectorAll('a').forEach((link) => {
         link.hidden = previewRole === 'coach'
-            ? !['dashboard', 'settings', 'create-workout', 'athletes', 'group-classes', 'planning', 'bookings', 'shop', 'training'].includes(link.dataset.viewLink)
+            ? !['dashboard', 'settings', 'create-workout', 'saved-workouts', 'athletes', 'coach-health', 'group-classes', 'planning', 'bookings', 'shop', 'training'].includes(link.dataset.viewLink)
             : link.hasAttribute('data-coach-only');
     });
 
