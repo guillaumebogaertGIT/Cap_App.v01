@@ -22,3 +22,18 @@ Reviewed: September 29, 2026. This is not a new roadmap.
 Possible post-MVP integrations/wearables and other ideas are not commitments. `docs/TODO.md` is empty. History and PRs already exist, despite being described as future work in older master-plan sections.
 
 - Coach Gezondheid & Progress preview added October 20: visually review phone/tablet/desktop picker, measurement form and histories. Real roster/health persistence and per-athlete training/record API support remain absent; current backend training data is Guillaume-only.
+
+- October 22 exercise catalog: visually review phone/tablet/desktop search, collapsed filters, eight-result paging, long names, supersets and save/reopen. Browser inspection was blocked because computer-use could not confidently verify the browser URL. Difficulty/series/media fields in the supplied workbook remain unfilled.
+
+- Review new Oefeningen page: search, 24-row browsing, add multiple exercises and Workout bekijken. Check draft/superset preservation and phone button wrapping. Nested editor filters have been removed.
+
+- Review type-first creation and saved sections: Lower body -> CAP group -> save -> Lower body section; repeat Upper/Full, save/reopen, template copies, athlete/lesson/library shortcuts and phone layouts.
+
+- Review revised empty editor/search dialog on phone/tablet/desktop: Upper body hides lower-body catalog choices, Lower body hides upper-body choices, Full body includes both; +/last-row removal, quick search, long names, optional weight/rest/tempo, supersets and saved-workout reopening.
+
+- Review revised Planning at phone/tablet/desktop widths: readable first lesson rows, date controls, Dag/Week/Lijst, filters, expanded programme/actions and empty days. Actual browser layout verification remains outstanding.
+
+- Review Voeding coach calculator/athlete picker, manual targets, stale-input feedback and Guillaume athlete view on phone/tablet/desktop. Targets clear on refresh/signout. Next nutrition step is food/portion-based meal planning using Voedingsschema; multi-athlete server persistence remains absent. Food diary preview now supports workbook/custom foods, portions, dates and coach viewing; review on phone/tablet/desktop.
+
+
+- Review compact daily nutrition bars and saved meals on phone/tablet/desktop: log ingredients, name/save a meal, inspect ingredients, reuse on another date and delete template. Recipes and logs are still session-only; permanent athlete-owned storage remains pending.

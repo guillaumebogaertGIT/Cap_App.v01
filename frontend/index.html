@@ -14,13 +14,20 @@
     <script src="js/navigation.js" defer></script>
     <script src="js/workout-view.js" defer></script>
     <script src="js/club.js" defer></script>
+    <script src="js/exercise-data.js" defer></script>
+    <script src="js/exercise-picker.js" defer></script>
     <script src="js/coach-workouts.js" defer></script>
+    <script src="js/exercise-library.js" defer></script>
     <script src="js/account-menu.js" defer></script>
     <script src="js/backend-status.js" defer></script>
     <script src="js/workouts-api.js" defer></script>
     <script src="js/training.js" defer></script>
     <script src="js/health.js" defer></script>
     <script src="js/coach-health.js" defer></script>
+    <script src="js/nutrition-calculator.js" defer></script>
+    <script src="js/nutrition.js" defer></script>
+    <script src="js/food-data.js" defer></script>
+    <script src="js/food-diary.js" defer></script>
 </head>
 
 <body class="is-signed-out">
@@ -53,22 +60,23 @@
 
         <nav id="sidebar-navigation" aria-label="Hoofdnavigatie">
             <a class="active" href="#dashboard" data-view-link="dashboard" aria-current="page">Home</a>
-            <a href="#planning" data-view-link="planning">Planning</a>
-            <a href="#bookings" data-view-link="bookings">Boekingen</a>
             <a href="#workouts" data-view-link="workouts">Workouts</a>
+            <a href="#coach-nutrition" data-view-link="coach-nutrition" data-coach-only hidden>Voeding</a>
+            <a href="#coach-health" data-view-link="coach-health" data-coach-only hidden>Gezondheid &amp; Progress</a>
             <a href="#create-workout" data-view-link="create-workout" data-coach-only hidden>Workout maken</a>
+            <a href="#exercises" data-view-link="exercises" data-coach-only hidden>Oefeningen</a>
             <a href="#saved-workouts" data-view-link="saved-workouts" data-coach-only hidden>Opgeslagen workouts</a>
             <a href="#athletes" data-view-link="athletes" data-coach-only hidden>Sporters</a>
-            <a href="#coach-health" data-view-link="coach-health" data-coach-only hidden>Gezondheid &amp; Progress</a>
             <a href="#group-classes" data-view-link="group-classes" data-coach-only hidden>Groepslessen</a>
-            <a href="#" data-coach-only>Oefeningen</a>
+            <a href="#planning" data-view-link="planning">Planning</a>
+            <a href="#bookings" data-view-link="bookings">Boekingen</a>
             <a href="#" data-coach-only>Basketball</a>
-            <a href="#" data-coach-only>Voeding</a>
             <a href="#" data-coach-only>Recovery</a>
             <a href="#health" data-view-link="health" data-athlete-only>Gezondheid &amp; Progress</a>
+            <a href="#nutrition" data-view-link="nutrition" data-athlete-only>Voeding</a>
+            <a href="#shop" data-view-link="shop">Shop</a>
             <a href="#">Coaches</a>
             <a href="#">AI Coach</a>
-            <a href="#shop" data-view-link="shop">Shop</a>
             <a class="settings-link" href="#settings" data-view-link="settings" aria-label="Instellingen">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
                     <path d="M9.67 4.14a2 2 0 0 1 3.66 0 2 2 0 0 0 2.82 1.16 2 2 0 0 1 2.59 2.59 2 2 0 0 0 1.16 2.82 2 2 0 0 1 0 3.66 2 2 0 0 0-1.16 2.82 2 2 0 0 1-2.59 2.59 2 2 0 0 0-2.82 1.16 2 2 0 0 1-3.66 0 2 2 0 0 0-2.82-1.16 2 2 0 0 1-2.59-2.59 2 2 0 0 0-1.16-2.82 2 2 0 0 1 0-3.66 2 2 0 0 0 1.16-2.82A2 2 0 0 1 6.85 5.3a2 2 0 0 0 2.82-1.16" transform="translate(.5 -.5)" />
@@ -136,6 +144,10 @@
                 <img class="dashboard-wordmark" src="img/Stronger-Together.png" alt="Stronger Together">
             </header>
             <nav class="home-tiles" aria-label="Coachtaken">
+                <a class="home-tile" href="#coach-nutrition">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3v7m-3-7v4a3 3 0 0 0 6 0V3M8 10v11m10-18v18m0-18c-4 3-4 8 0 8"/></svg>
+                    <strong>Voeding</strong><span>Dagdoelen per sporter</span>
+                </a>
                 <a class="home-tile" href="#coach-health">
                     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12h4l3-7 4 14 3-7h4"/></svg>
                     <strong>Gezondheid &amp; Progress</strong>
@@ -228,6 +240,79 @@
                 </form>
             </dialog>
         </section>
+        <section id="coach-nutrition" data-view aria-labelledby="coach-nutrition-title" hidden>
+            <header class="dashboard-header"><div><h2 id="coach-nutrition-title" tabindex="-1">Voeding</h2><p class="dashboard-intro">Bereken en bewaar calorie- en macrodoelen per sporter.</p></div></header>
+            <p class="sample-notice">Lokale preview · gebruik fictieve gegevens. Invoer en dagdoelen verdwijnen bij vernieuwen of uitloggen.</p>
+            <div class="nutrition-athlete-bar club-toolbar">
+                <label>Zoek sporter<input id="nutrition-athlete-search" type="search" placeholder="Zoek op naam" autocomplete="off"></label>
+                <label>Sporter<select id="nutrition-athlete-select" aria-label="Kies een sporter voor voeding"></select></label>
+                <button type="button" class="secondary-button" id="nutrition-use-profile" hidden>Profielgegevens overnemen</button>
+            </div>
+            <h3 id="nutrition-athlete-name"></h3>
+            <p id="nutrition-saved-state" class="sample-notice" role="status"></p>
+            <div class="nutrition-layout">
+                <article class="club-card">
+                    <h3>1. Macro's berekenen</h3>
+                    <p class="sample-notice">Gebaseerd op Smart Macro Planning Tool. Dit zijn schattingen; controleer de uitkomst als coach.</p>
+                    <form id="nutrition-calculator-form" class="club-form">
+                        <div class="profile-fields">
+                            <label>Formule<select name="sex" required><option value="">Kies man/vrouw</option><option value="male">Man</option><option value="female">Vrouw</option></select></label>
+                            <label>Leeftijd<input name="age" type="number" min="1" max="120" step="1" required inputmode="numeric" placeholder="Jaar"></label>
+                            <label>Gewicht (kg)<input name="weightKg" type="number" min="20" max="500" step="0.1" required inputmode="decimal" placeholder="Bijv. 80"></label>
+                            <label>Lengte (cm)<input name="heightCm" type="number" min="50" max="250" step="0.1" required inputmode="decimal" placeholder="Bijv. 180"></label>
+                            <label>Activiteit<select name="activity" required></select></label>
+                            <label>Caloriedoel<select name="calorieGoal" required></select></label>
+                        </div>
+                        <details class="saved-workout" id="nutrition-advanced"><summary>Macroverdeling &amp; verfijning</summary>
+                            <div class="profile-fields">
+                                <label>Macrostrategie<select name="strategy"></select></label>
+                                <label>Streefgewicht (kg, optioneel)<input name="goalKg" type="number" min="20" max="500" step="0.1" inputmode="decimal" placeholder="Leeg = huidig gewicht"></label>
+                                <label>Gewichtscorrectie<select name="scaling"><option value="standard">Huidig gewicht gebruiken</option><option value="auto">Volgens vetpercentage</option><option value="forced">Maximale correctie uit coachtool</option></select></label>
+                                <label id="nutrition-body-fat-label" hidden>Geschat vetpercentage<select name="bodyFatBand"><option value="">Kies een categorie</option></select></label>
+                                <label>Spierbouw<select name="muscularity"></select></label>
+                            </div>
+                            <p class="sample-notice">De strategieën en factoren komen uit de coachtool. Bij correctie is een streefgewicht nodig. De standaard gebruikt het huidige gewicht.</p>
+                        </details>
+                        <button type="submit" class="primary-button">Bereken dagdoelen</button>
+                        <p id="nutrition-calculation-status" role="status"></p>
+                    </form>
+                </article>
+                <article class="club-card nutrition-target-card">
+                    <div class="health-overview-heading"><h3>2. Dagdoelen controleren</h3><button id="nutrition-manual" type="button" class="secondary-button">Handmatig</button></div>
+                    <p class="sample-notice">Pas de berekening aan of vul doelen handmatig in. Bewaar om ze aan deze sporter te koppelen.</p>
+                    <form id="nutrition-target-form" class="club-form">
+                        <div class="nutrition-target-grid">
+                            <label>Calorieën (kcal)<input name="calories" type="number" min="1" step="1" required inputmode="numeric"></label>
+                            <label>Eiwitten (g)<input name="proteinG" type="number" min="0" step="0.1" required inputmode="decimal"></label>
+                            <label>Koolhydraten (g)<input name="carbsG" type="number" min="0" step="0.1" required inputmode="decimal"></label>
+                            <label>Vetten (g)<input name="fatG" type="number" min="0" step="0.1" required inputmode="decimal"></label>
+                            <label>Water (ml)<input name="waterMl" type="number" min="0" step="1" required inputmode="numeric"></label>
+                        </div>
+                        <p id="nutrition-energy-note" class="sample-notice" role="status"></p>
+                        <button id="nutrition-save" type="submit" class="primary-button" disabled>Dagdoelen bewaren</button>
+                        <p id="nutrition-save-status" role="status"></p>
+                    </form>
+                    <details class="saved-workout"><summary>Berekening bekijken</summary><dl id="nutrition-calculation-details" class="body-metric-values"></dl></details>
+                </article>
+            </div>
+            <article class="club-card coach-food-diary">
+                <div class="health-overview-heading"><h3>Voedingsdagboek · <span id="coach-food-athlete"></span></h3><label>Datum<input type="date" id="coach-food-date" required></label></div>
+                <p id="coach-food-status" class="sample-notice" role="status"></p>
+                <dl id="coach-food-totals" class="nutrition-metrics"></dl>
+                <div id="coach-food-entries"></div>
+            </article>
+        </section>
+        <section id="exercises" data-view aria-labelledby="exercises-title" hidden>
+            <header class="dashboard-header"><div><h2 id="exercises-title" tabindex="-1">Oefeningen</h2><p class="dashboard-intro">De volledige coachbibliotheek. Zoek een oefening en voeg die toe aan je workout.</p></div></header>
+            <div class="exercise-library-toolbar">
+                <label class="library-search">Zoek een oefening<input id="exercise-library-search" type="search" placeholder="Bijv. squat, triceps of standing BB" autocomplete="off" spellcheck="false"></label>
+                <div><p id="exercise-library-draft" class="sample-notice"></p><a href="#create-workout" id="exercise-library-open" class="secondary-button">Workout bekijken</a></div>
+            </div>
+            <p id="exercise-library-feedback" role="status"></p>
+            <p id="exercise-library-count" class="sample-notice" role="status"></p>
+            <ul id="exercise-library-list" class="exercise-library-list" aria-label="Coachbibliotheek"></ul>
+            <button type="button" class="secondary-button" id="exercise-library-more" hidden>Meer oefeningen tonen</button>
+        </section>
         <section id="group-classes" data-view aria-labelledby="group-classes-title" hidden>
             <header class="dashboard-header">
                 <div>
@@ -303,6 +388,8 @@
                     <textarea name="description" rows="3" maxlength="1000" placeholder="Wat is het doel van deze training?"></textarea>
                 </label>
                 <h3>Oefeningen</h3>
+                <p class="sample-notice">Klik op + om een oefening toe te voegen. De zoeklijst past zich aan je workout type aan.</p>
+                <a class="secondary-button" href="#exercises">Oefeningenbibliotheek openen</a>
                 <div id="exercise-fields"></div>
                 <button id="add-exercise" class="secondary-button next-exercise" type="button" aria-label="Volgende oefening toevoegen" title="Volgende oefening toevoegen">+</button>
                 <p id="exercise-status" role="status"></p>
@@ -347,28 +434,26 @@
                     <legend>Oefening</legend>
                     <div class="exercise-inputs">
                         <div class="exercise-picker">
-                            <label class="exercise-input-label">Zoek een oefening</label>
-                            <div class="exercise-search-control">
-                                <input name="exercise" required maxlength="100" placeholder="Oefening: " autocomplete="off">
-                                <button class="exercise-dropdown-toggle" type="button" aria-expanded="false" aria-label="Oefeningen tonen">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
-                                </button>
-                                <div class="exercise-dropdown" hidden>
-                                    <p class="exercise-result-count" role="status"></p>
-                                    <ul class="exercise-results" aria-label="Beschikbare oefeningen"></ul>
-                                </div>
-                            </div>
+                            <input name="exercise" type="hidden">
+                            <button class="exercise-choice" type="button" aria-haspopup="dialog">
+                                <strong class="exercise-choice-name">Oefening kiezen</strong>
+                                <span class="exercise-choice-caption">Zoek in de coachbibliotheek</span>
+                            </button>
+                            <p class="exercise-scope-note sample-notice" hidden></p>
                         </div>
                         <label>Sets<input name="sets" type="number" min="1" max="100" step="1" value="3" required inputmode="numeric"></label>
                         <label>Herhalingen<input name="reps" type="number" min="1" max="1000" step="1" value="10" required inputmode="numeric"></label>
-                        <label>Gewicht voorschrijven<select name="loadMode"><option value="none">Geen specifiek percentage</option><option value="fixed">Vast gewicht (kg)</option><option value="percent">Percentage van rep-PR</option></select></label>
-                        <label>Kg of percentage<input name="loadValue" type="number" min="0" max="2000" step="0.01" inputmode="decimal" placeholder="Bijvoorbeeld: 60 of 90"></label>
-                        <label>Rust tussen sets (seconden, optioneel)<input name="restSeconds" type="number" min="0" max="3600" step="1" inputmode="numeric" placeholder="Bijvoorbeeld: 90"></label>
-                        <label>Tempo (optioneel)<input name="tempo" maxlength="40" placeholder="Bijvoorbeeld: 3-0-1-0"></label>
                         <input name="supersetGroup" type="hidden">
                     </div>
-                    <details class="exercise-help"><summary>Tempo &amp; gewicht</summary><p class="sample-notice">Tempo: omlaag – pauze – omhoog – pauze (seconden).</p>
-                    <p class="sample-notice">Percentage gebruikt het PR met hetzelfde aantal herhalingen van de toegewezen sporter. Geen PR? Kies een vast gewicht. Gebruik dezelfde oefeningnaam en gewichtsnotatie (totaal of per dumbbell).</p></details>
+                    <details class="exercise-options"><summary>Gewicht, rust &amp; tempo</summary>
+                        <div class="exercise-option-fields">
+                            <label>Gewicht<select name="loadMode"><option value="none">Geen doelgewicht</option><option value="fixed">Vast gewicht (kg)</option><option value="percent">Percentage van rep-PR</option></select></label>
+                            <label>Kg of percentage<input name="loadValue" type="number" min="0" max="2000" step="0.01" inputmode="decimal" placeholder="Bijvoorbeeld: 60"></label>
+                            <label>Rust (seconden)<input name="restSeconds" type="number" min="0" max="3600" step="1" inputmode="numeric" placeholder="Optioneel"></label>
+                            <label>Tempo<input name="tempo" maxlength="40" placeholder="Bijv. 3-0-1-0"></label>
+                        </div>
+                        <p class="sample-notice">Tempo: omlaag – pauze – omhoog – pauze. PR-percentages vereisen een persoonlijk record voor dezelfde oefening en herhalingen.</p>
+                    </details>
                     <div class="exercise-row-actions"><button class="secondary-button remove-exercise" type="button">Verwijderen</button><button class="secondary-button add-superset" type="button">+ Superset</button></div>
                 </fieldset>
             </template>
@@ -385,7 +470,7 @@
             <img class="dashboard-wordmark" src="img/Stronger-Together.png" alt="Stronger Together">
         </header>
 
-<nav class="home-tiles" aria-label="Ontdek CAP"><a class="home-tile" href="#workouts"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 5v14M3 8v8m15-11v14m3-11v8M6 12h12"/></svg><strong>Workouts</strong><span id="home-workout-meta">Jouw trainingen</span></a><a class="home-tile" href="#planning"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v16H4zM8 3v4m8-4v4M4 11h16"/></svg><strong>Planning</strong><span id="home-planning-meta">Bekijk het rooster</span></a><a class="home-tile" href="#bookings"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12v18l-6-3-6 3zM9 8h6m-6 4h6"/></svg><strong>Boekingen</strong><span>Jouw gereserveerde plekken</span></a><a class="home-tile" href="#health"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12h4l3-7 4 14 3-7h4"/></svg><strong>Gezondheid & Progress</strong><span>Metingen en records</span></a><a class="home-tile" href="#nutrition"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3v7m-3-7v4a3 3 0 0 0 6 0V3M8 10v11m10-18v18m0-18c-4 3-4 8 0 8"/></svg><strong>Nutrition</strong><span>Voeding · in ontwikkeling</span></a><a class="home-tile" href="#shop"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16l1 14H3zM8 7V6a4 4 0 0 1 8 0v1"/></svg><strong>Shop</strong><span>Abonnementen en aanbod</span></a></nav>
+<nav class="home-tiles" aria-label="Ontdek CAP"><a class="home-tile" href="#workouts"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 5v14M3 8v8m15-11v14m3-11v8M6 12h12"/></svg><strong>Workouts</strong><span id="home-workout-meta">Jouw trainingen</span></a><a class="home-tile" href="#planning"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v16H4zM8 3v4m8-4v4M4 11h16"/></svg><strong>Planning</strong><span id="home-planning-meta">Bekijk het rooster</span></a><a class="home-tile" href="#bookings"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12v18l-6-3-6 3zM9 8h6m-6 4h6"/></svg><strong>Boekingen</strong><span>Jouw gereserveerde plekken</span></a><a class="home-tile" href="#health"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12h4l3-7 4 14 3-7h4"/></svg><strong>Gezondheid & Progress</strong><span>Metingen en records</span></a><a class="home-tile" href="#nutrition"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3v7m-3-7v4a3 3 0 0 0 6 0V3M8 10v11m10-18v18m0-18c-4 3-4 8 0 8"/></svg><strong>Voeding</strong><span>Jouw dagdoelen</span></a><a class="home-tile" href="#shop"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16l1 14H3zM8 7V6a4 4 0 0 1 8 0v1"/></svg><strong>Shop</strong><span>Abonnementen en aanbod</span></a></nav>
         </section>
 
         <section id="workouts" data-view aria-labelledby="workouts-title" hidden>
@@ -425,7 +510,50 @@
 
             <details class="saved-workout"><summary>Gewichtslog</summary><ul id="weight-history" class="weight-history"></ul></details>
         </section>
-<section id="nutrition" data-view aria-labelledby="nutrition-title" hidden><header class="dashboard-header"><h2 id="nutrition-title" tabindex="-1">Nutrition</h2></header><article class="club-card"><h3>Voeding bij CAP</h3><p>Hier komen later voedingsplannen en voedingsregistratie. Deze functie is nog in ontwikkeling.</p><a class="secondary-button" href="#dashboard">Terug naar Home</a></article></section>
+        <section id="nutrition" data-view aria-labelledby="nutrition-title" hidden>
+            <header class="dashboard-header"><div><h2 id="nutrition-title" tabindex="-1">Voeding</h2><p class="dashboard-intro">Jouw dagdoelen van de coach.</p></div></header>
+            <article class="club-card"><h3>Mijn dagdoelen</h3><p id="athlete-nutrition-status" role="status"></p><dl id="athlete-nutrition-targets" class="nutrition-metrics"></dl><p id="athlete-nutrition-energy-note" class="sample-notice"></p><p class="sample-notice">Voorbeeldsporter: Guillaume. Maaltijdplanning volgt later.</p></article>
+            <article class="club-card">
+                <div class="health-overview-heading"><h3>Voedingsdagboek</h3><label>Datum<input id="athlete-food-date" type="date" required></label></div>
+                <p class="sample-notice">Log wat je hebt gegeten. Lokale preview: je log verdwijnt bij vernieuwen of uitloggen.</p>
+                <p id="athlete-food-status" class="sample-notice" role="status"></p>
+                <dl id="athlete-food-totals" class="nutrition-metrics"></dl>
+                <details class="food-add-panel"><summary>+ Voeding toevoegen</summary>
+                    <label class="club-form">Maaltijd<select id="food-meal"></select></label>
+                    <details class="saved-workout"><summary>+ Opgeslagen maaltijd toevoegen</summary>
+                        <p class="sample-notice">Log de ingrediënten één keer en kies daarna bij die maaltijd ‘Bewaren als vaste maaltijd’. Bewaard tijdens deze preview; verdwijnt bij vernieuwen of uitloggen.</p>
+                        <div id="food-saved-meals"></div>
+                        <p id="food-saved-feedback" role="status"></p>
+                    </details>
+                    <div class="food-portion-layout">
+                    <form id="food-entry-form" class="club-form">
+                        <label>Zoek een product<input id="food-search" type="search" placeholder="Bijv. yoghurt, brood of kip" autocomplete="off"></label>
+                        <label>Product<select id="food-product" required><option value="">Kies een product</option></select></label>
+                        <label id="food-amount-label">Hoeveelheid <span id="food-unit"></span><input id="food-amount" type="number" min="0.01" step="0.01" inputmode="decimal" required></label>
+                        <p id="food-portion-preview" class="sample-notice" role="status"></p>
+                        <button type="submit" class="primary-button">Toevoegen aan dagboek</button>
+                    </form>
+                    <div id="food-portion-chart" class="macro-chart" aria-live="polite"></div>
+                    </div>
+                    <details class="saved-workout"><summary>Product niet gevonden? Zelf invullen</summary>
+                        <form id="food-custom-form" class="club-form">
+                            <label>Wat heb je gegeten?<input name="name" maxlength="120" placeholder="Bijv. 2 volkoren boterhammen" required></label>
+                            <p class="sample-notice">Vul de voedingswaarden in voor de hele gegeten portie.</p>
+                            <div class="profile-fields">
+                                <label>Calorieën (kcal)<input name="calories" type="number" min="0" step="0.1" inputmode="decimal" required></label>
+                                <label>Eiwitten (g)<input name="proteinG" type="number" min="0" step="0.1" inputmode="decimal" required></label>
+                                <label>Koolhydraten (g)<input name="carbsG" type="number" min="0" step="0.1" inputmode="decimal" required></label>
+                                <label>Vetten (g)<input name="fatG" type="number" min="0" step="0.1" inputmode="decimal" required></label>
+                            </div>
+                            <button type="submit" class="primary-button">Eigen product toevoegen</button>
+                        </form>
+                    </details>
+                    <p id="food-entry-feedback" role="status"></p>
+                </details>
+                <div id="athlete-food-entries"></div>
+                <button id="food-undo" class="secondary-button" type="button" hidden>Verwijderen ongedaan maken</button>
+            </article>
+        </section>
         <section id="settings" data-view aria-labelledby="settings-title" hidden>
             <header class="dashboard-header">
                 <div>

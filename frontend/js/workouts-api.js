@@ -25,6 +25,25 @@
     searchLabel.append(coachSearch);
     libraryPanel.append(toolbar, searchLabel, library);
     const categoryCounts = new Map();
+    const bodyTypeCounts = new Map();
+    const bodyHeading = document.createElement('h3'); bodyHeading.textContent = 'Kies een workout type';
+    const bodyTiles = document.createElement('div'); bodyTiles.className = 'home-tiles';
+    chooserTitle.before(bodyHeading, bodyTiles);
+    chooserTitle.textContent = 'Of kies een groep';
+    [['lower-body', 'Lower body'], ['upper-body', 'Upper body'], ['full-body', 'Full body']].forEach(([type, label]) => {
+        const tile = document.createElement('button'); tile.type = 'button'; tile.className = 'home-tile'; tile.dataset.workoutType = type;
+        const icon = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); icon.setAttribute('viewBox', '0 0 24 24'); icon.setAttribute('aria-hidden', 'true');
+        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path'); path.setAttribute('d', 'M3 6h7l2 2h9v13H3zM3 6V3h7l2 3'); icon.append(path);
+        const title = document.createElement('strong'); title.textContent = label;
+        const count = document.createElement('span'); count.textContent = 'Nog niet geladen'; bodyTypeCounts.set(type, count);
+        tile.append(icon, title, count);
+        tile.addEventListener('click', () => {
+            coachCategory = 'all'; coachType = type; coachSearch.value = '';
+            categoryChooser.hidden = true; libraryPanel.hidden = false;
+            filterCoachTypes(); selectionTitle.focus();
+        });
+        bodyTiles.append(tile);
+    });
     function showLibraryCategories(moveFocus = true) {
         categoryChooser.hidden = false; libraryPanel.hidden = true;
         if (moveFocus) chooserTitle.focus();
@@ -51,12 +70,19 @@
     coachSearch.addEventListener('input', filterCoachTypes);
     document.querySelectorAll('a[href="#saved-workouts"]').forEach(link => link.addEventListener('click', () => showLibraryCategories(false)));
     function updateCategoryCounts(workouts) {
+        bodyTypeCounts.forEach((element, type) => {
+            const count = workouts.filter(workout => workout.workoutType === type).length;
+            element.textContent = `${count} ${count === 1 ? 'workout' : 'workouts'}`;
+        });
         libraryCategories.forEach(([value]) => {
             const count = value === 'all' ? workouts.length : workouts.filter(workout => (workout.category || '') === value).length;
             categoryCounts.get(value).textContent = `${count} ${count === 1 ? 'workout' : 'workouts'}`;
         });
     }
     function filterCoachTypes() {
+        const typeName = { 'lower-body': 'Lower body', 'upper-body': 'Upper body', 'full-body': 'Full body', conditioning: 'Conditioning', other: 'Overig' }[coachType];
+        const categoryName = libraryCategories.find(([value]) => value === coachCategory)?.[1] || 'Alle workouts';
+        selectionTitle.textContent = typeName ? `${typeName}${coachCategory === 'all' ? '' : ' · ' + categoryName}` : categoryName;
         const query = coachSearch.value.trim().toLocaleLowerCase('nl-BE');
         let total = 0;
         document.querySelectorAll('#coach-workout-library .workout-category').forEach(group => {

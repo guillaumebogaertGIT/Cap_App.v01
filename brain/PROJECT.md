@@ -1,4 +1,4 @@
-﻿# CAP App — Project Memory
+# CAP App — Project Memory
 
 Reviewed: September 29, 2026.
 
@@ -14,7 +14,7 @@ Basketball belongs to the separate RAW Hoops scope and is explicitly excluded fr
 - Java 25 / Spring Boot 4.1.1 API: workout creation, assignment to example athlete Guillaume, timed completion, saved history and exact-rep personal records. Prescriptions support no target, fixed kg or a percentage of a matching record.
 - Planning, bookings, attendance and shop use browser-local example data. Login, registration, roles and subscriptions are simulations; no real accounts or payments exist.
 - Backend storage is local JSON, not a database. The earlier Java console application remains separately in `src/`.
-- Nutrition, recovery, coaches and AI are not implemented feature areas. “Coach Glenn” is a provisional future AI name.
+- Nutrition has a coach macro-calculator/manual-target preview and athlete day-target view; athlete food logging and coach diary viewing are session-only; meal planning is not implemented. Recovery, coaches and AI remain unimplemented. “Coach Glenn” is a provisional future AI name.
 
 ## Working requirements
 

@@ -173,3 +173,37 @@
 ## October 20, 2026 — Coach health and progress
 - Added coach-only page/Home tile/sidebar entry with ten-name searchable roster, selected-athlete identity, six compact metrics with dates/neutral changes, full body/segmental measurements, manual entry and expandable histories. Training section shows actual Guillaume sessions/sets/PRs; other athletes use unconnected empty states. Session-only measurement isolation and shared Guillaume capProfile, cleared on signout.
 - Syntax/DOM references/whitespace and simulated ten-athlete roster/search, measurement isolation, invalid-input atomicity, stale-response protection, shared-profile writes, training/PR rendering, offline feedback and signout reset passed. Actual browser/device visual verification unavailable; user review remains next. No backend changes.
+
+## October 22, 2026 — Coach exercise workbook integration
+- Imported all 1,100 exercise rows and 14 source columns, unchanged names, overview cells and source provenance through a repeatable standard-library Python importer. Replaced starter catalog with 1,078 distinct picker choices while preserving every original row. Added token search, dependent collapsed region/category/subcategory filters, eight-at-a-time paging and collapsed source details. Kept custom entries, existing prescriptions, supersets and backend format; nutrition workbooks untouched.
+- Independent workbook comparison passed for every imported cell. All frontend syntax/load-order checks and simulated all-row reachability, multiword/symbol search, combined filters, paging, exact selection, metadata, custom names and keyboard checks passed. Phone/tablet CSS uses in-flow results with touch-sized controls; actual visual verification blocked by computer-use URL verification. No commit/push.
+
+### Exercise library and simpler workout picker
+- Added coach-only Oefeningen sidebar route, full alphabetical catalog with search/24-row disclosure and optional source details. Add buttons append exact catalog names to the current draft without navigating or saving; toolbar shows current title/edit mode/count and opens the editor. Added library shortcut inside Create Workout and removed the nested picker filters.
+- Frontend syntax/whitespace and simulated library browsing/search/paging/empty states, draft feedback, blank-row reuse, preservation of existing supersets/title/edit identity, invalid-ID/role/100-row guards and coach-route checks passed. Actual phone/tablet/desktop browser verification remains outstanding. No backend changes, commit or push.
+
+### Body-focus-first workout creation
+- Added Lower/Upper/Full body first-step tiles and change-type controls before category/editor flow. Existing workoutType is prefilled, required and saved without a second selection; copy loading preserves the chosen type, saved edits retain their stored type. Saved library exposes matching sections/counts across groups, with old types still accessible.
+- All frontend syntax/whitespace and simulated first-step/prefill/category retention/type changes/library guard/legacy edit, three saved-section counts/filtering/search/legacy access checks passed. All 10 WorkoutStoreTests passed, including workoutType persistence. Actual phone/tablet/desktop visual verification remains outstanding.
+
+### Empty editor, compact cards and body-scoped search
+- Replaced automatic first exercise row with a + tile; last row is removable. Cards expose selection/sets/reps, with weight/rest/tempo under details. Shared roomy dialog replaces per-card dropdowns; includes one search, body-specific query shortcuts, 12-result disclosure and custom names. Editor and library search/additions obey workbook region labels for upper/lower; Full body includes both. Changed-focus drafts retain rows and show mismatch notes.
+- All frontend syntax/whitespace and simulated body scoping/no cross-region results, dialog selection/custom-name/mismatch checks, empty/unnamed submit guards and original prescription payload checks passed. Actual browser/device layout review remains outstanding. No backend changes or push.
+
+### Planning readability and controls
+- Found older desktop agenda grid targeted article placement while current lesson rows are details; this squeezed alternating rows into an 11rem column. Scoped planning day sections now stack full-width rows. Week columns auto-fit readable widths; improved date/control layout, explicit Dag/Week/Lijst, day/total counts and capacity labels. Booking/storage rules unchanged.
+- JavaScript syntax/whitespace and simulated 18-slot day, seven-day week/list, cancelled/ended exclusions, trainer/activity filters, selected-view states, counts and date boundaries passed. Actual phone/tablet/desktop browser visual verification remains outstanding. No dependency added; optional CSS parser unavailable.
+
+### Nutrition calculator and per-athlete day targets
+- Added coach Voeding sidebar/Home page, searchable example-athlete selector, six main calculator fields and advanced strategy/scaling options; editable calorie/protein/carbohydrate/fat/water targets and calculation details. Pure calculation module follows the supplied Smart Macro Planning Tool. Defaults avoid copying its personal example inputs. Session-only drafts/targets are separate by athlete; stale calculations cannot be saved without recalculation or explicit manual mode. Athlete Voeding displays only Guillaume's saved targets. Meal planner/food diary and backend changes deferred.
+- Workbook cached-reference comparison, 60 sex/activity/strategy energy reconciliations, invalid/missing/negative cases and all frontend syntax passed. Repeatable tools/test_nutrition.mjs added. Simulated ten-athlete draft/save isolation, Guillaume-only athlete view, manual mode, stale-input protection, signout reset, DOM IDs/references and role routing passed. Actual browser/device visual verification remains outstanding. No commit/push.
+
+
+### Athlete food logging
+- Added workbook food importer/catalog, compact add-food/custom-portion forms, per-day meal entries and calorie/macro totals compared to current coach targets. Added removal/undo and coach selected-athlete read view. Incomplete source food values remain unselectable rather than assumed zero.
+- Repeatable test_food_diary.mjs passed portion/date validation, add/delete/undo, date and athlete isolation, role guard and signout reset; all frontend JavaScript syntax and git whitespace checks passed. Responsive CSS uses two/four metric columns, wrapping rows and 44px controls. Actual browser/device visual verification remains outstanding. Entries/targets remain session-only.
+
+
+### Compact intake bars and reusable meals
+- Reduced daily bar thickness, padding, font sizes and spacing. Added saved-meal panel and per-meal save form; recipe snapshots preserve amounts and nutrition for reuse on another date. Ingredient inspection and template deletion included.
+- Simulated save/reuse on another date, diary totals, delete/undo, athlete isolation, role guards and signout reset passed in tools/test_food_diary.mjs. Whitespace checks passed. Actual phone/tablet/desktop visual review remains outstanding.

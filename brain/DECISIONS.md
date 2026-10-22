@@ -36,3 +36,21 @@ Public athlete signup, administrator-granted staff roles and separate subscripti
 - October 20: User confirmed CAP Lift & HIT remains a single category. Coach creation starts with a Home-style category grid before the shared editor; category selection does not automatically assign sessions.
 
 - October 20: First coach Gezondheid & Progress page uses the existing example roster and a searchable athlete picker. Manual measurements are per-athlete, session-only; Guillaume shares the athlete preview. No invented health/training measurements or automatic health interpretations. Multi-athlete backend integration remains separate work.
+
+- October 22: Use coach-supplied KILO exercise names in workout creation. Preserve original rows/empty metadata; collapse exact duplicates only in picker display. Ship a static generated catalog with no new runtime dependencies or backend changes. Optional filters/source details keep rows compact; handwritten custom names remain allowed. Nutrition files are not part of this step.
+
+- October 22 refinement: user found the inline exercise filters excessive. Use a dedicated coach Oefeningen sidebar page with search and add-to-draft actions; simplify the Create Workout picker to search only. This supersedes the nested region/category/subcategory filter UI.
+
+- October 22: User requested body focus as the first creation choice. Lower/upper/full use the existing workoutType field, independent of CAP categories and recipients; new saved-workout sections filter by that stored value. No automatic guessing or relabelling of older workouts.
+
+- October 22 refinement: user requested no automatic first exercise card and body-focus-aware search. Start with +; use one wider search window instead of inline dropdowns; collapse optional prescription controls. Use source region labels for matching; preserve existing draft exercises and flag mismatches when the type changes.
+
+- October 22: Planning visual revision addresses stacked/squeezed letters by giving lesson rows their own full-width line; week columns adapt to available width. Direct Day/Week/List controls replace the cycling view toggle.
+
+- October 22 Nutrition first implementation: follow Smart Macro Planning Tool for calculations; keep Voedingsschema and food data for the meal-planning step. Expose basic inputs first with advanced strategy/scaling collapsed. Coach reviews/adjusts/saves targets; athlete preview reads Guillaume's targets. Session-only data, default current-weight scaling/maintenance, explicit missing-data handling; no automatic diet assignment or clinical interpretation.
+
+
+October 22: user requested food logging. Keep the first diary compact under athlete Voeding with searchable workbook products, amount/unit, meal and optional custom portion values. Coach has a read-only selected-athlete diary. Historical dates compare against explicitly labelled current targets. Retain session-only preview storage pending real athlete ownership/backend work.
+
+
+October 22: user requested smaller daily bars and repeatable meals. First implementation saves a logged meal group under an athlete-chosen name, then reuses its fixed portion with one Add button. Uses existing session-only preview storage; permanent recipe persistence remains future work.
