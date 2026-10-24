@@ -207,3 +207,40 @@
 ### Compact intake bars and reusable meals
 - Reduced daily bar thickness, padding, font sizes and spacing. Added saved-meal panel and per-meal save form; recipe snapshots preserve amounts and nutrition for reuse on another date. Ingredient inspection and template deletion included.
 - Simulated save/reuse on another date, diary totals, delete/undo, athlete isolation, role guards and signout reset passed in tools/test_food_diary.mjs. Whitespace checks passed. Actual phone/tablet/desktop visual review remains outstanding.
+# October 23 — Coach athlete actions
+
+Guillaume's Sporters card now offers Resultaten bekijken, Workouts bekijken (dated assignment previews in a dialog), and Workout toewijzen (opens the existing saved library and assignment flow). Actions wrap with phone-sized touch targets. Other roster entries remain examples; real multi-athlete assignment is still future work. Browser layout verification remains pending.
+
+
+October 23 refinement: Athlete Workout toewijzen opens all saved workouts in direct-selection mode. Clicking a workout name posts today's Brussels-date assignment to Guillaume and returns to Sporters with confirmation. Regular library browsing retains preview/edit/date assignment controls. Browser verification pending.
+
+## October 23, 2026 — Persistence and preview session
+
+Fixed reload resetting preview login/role; added browser-local profile, measurements, nutrition, food diary and meal persistence. Explicit logout retains records. Added visible storage-error reporting and Live Server backend/build ignores. Updated Dutch storage descriptions. Syntax and tools/test_preview_storage.mjs checks pass. Actual browser assignment/refresh verification pending; restart Live Server for ignore settings.
+
+## October 23 — Athlete workout management
+
+Added compact edit/delete/note controls in Guillaume workout review. Assignment-specific backend endpoints persist snapshot edits, deletion and notes; editor returns to athlete review. All 17 backend tests pass including store persistence/isolation and HTTP edit/note/delete/history preservation; frontend scripts parse. Browser layout/interaction verification pending.
+
+October 23 screenshot correction: workout review modal now has a separate whole-workout removal panel above exercises, with explicit scope. Each exercise has its own small removal action using the assignment PUT; lone remaining superset members become standalone. Last exercise cannot silently delete a workout; it directs to whole-workout removal. JavaScript syntax and index-preserving renderer check pass; visual review pending.
+
+## October 23 — Weekly and daily workout planning
+
+Replaced automatic-today athlete shortcut with shared agenda; coach can assign a flexible week or fixed day. Creation uses the same picker; group assignment filters actual sessions by day/week. Athlete Workouts browses weeks and supports choosing/changing/clearing a flexible workout day. Backend persists weekly metadata, stable assignment IDs and completion reference; completed assignments cannot be rescheduled. Existing daily assignments retained. All 18 backend tests, agenda unit checks and JavaScript syntax checks pass. Browser UI unavailable (no registered browsers; in-app browser unavailable), so visual verification remains pending. Restarted Spring Boot successfully.
+
+
+
+
+October 24: User requested undoing all three exercise UI steps. Restored the standalone Oefeningen sidebar page and original searchable catalog/add-to-draft flow; removed embedded panel, new filters and dropdown. JavaScript syntax checks passed; browser verification pending.
+
+October 24 final implementation: Replaced exercise sidebar entry with a Create Workout button linking to the separate exercise page. Added dependent Excel filters and matching dropdown while retaining searchable detail list and add-to-draft behavior. Node VM interaction checks passed for Lower Body/Squat (62 choices), selecting/adding and empty-result handling; JavaScript syntax and whitespace checks passed. Responsive controls stack below 650px. Actual phone/tablet/desktop browser review remains pending.
+
+October 24 autocomplete: Added filtered clickable suggestions below exercise search. Node VM checks passed for typing, suggestion selection and adding to draft; syntax and whitespace checks passed. Actual browser/mobile review pending.
+
+October 24 creation flow fix: Changed initial and default body-focus destination from category chooser to editor after user reported being unable to reach creation. Explicit category changes remain supported. JavaScript syntax and VM click checks pass for all three body types; actual browser verification pending.
+
+October 24 editor startup repair: Removed an obsolete event binding to the absent athlete Create Workout link (athlete assignment now uses Saved Workouts). The null dereference stopped initialization before +, save and draft API setup. Full-script Node VM DOM harness confirms initialization with the retired link absent, + creates a row/opens picker, and submit/draft handlers exist. Syntax and whitespace checks pass; actual browser verification pending.
+
+October 24 named workout flow: Moved title out of save dialog to above exercise-page button. Added shared nonblank-name guard for page links, +, submit and catalog additions. Exercise page Add controls explain missing names and retain the same named draft. Syntax/whitespace and VM name-validation checks passed; actual browser verification pending.
+
+October 24 per-set progression: Added backward-compatible setPlan model, exact-rep target resolution, persistence and optional coach set editor. Updated workout, training/history and group previews; athletes still enter actual kg/reps. All 19 backend tests pass, including new mixed per-set percentage/fixed/free targets, frozen references, persistence and independent actual weights. Node VM checks cover edit/load/serialization and set-count growth; modified scripts parse and whitespace checks pass. Browser layout review remains pending.

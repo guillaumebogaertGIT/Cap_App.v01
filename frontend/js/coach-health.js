@@ -1,4 +1,4 @@
-// Coach preview: roster from Sporters; measurements remain in memory per athlete.
+// Coach preview: roster from Sporters; measurements saved in this browser per athlete.
 document.addEventListener('DOMContentLoaded', () => {
     const $ = id => document.getElementById(id);
     const node = (tag, text, className) => {
@@ -21,7 +21,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
     roster.sort((a, b) => a.name.localeCompare(b.name, 'nl-BE'));
-    const measurementsByAthlete = new Map();
+    const measurementsByAthlete = window.capStorage.map('coach-measurements');
     let selectedId = roster.find(athlete => athlete.id === 'preview-guillaume')?.id || roster[0]?.id;
     let request = null;
     const selected = () => roster.find(athlete => athlete.id === selectedId);
@@ -188,7 +188,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.addEventListener('cap:viewchange', () => {
         if (!isOpen()) { request?.abort(); request = null; if (dialog.open) dialog.close(); }
         if (!window.capAccess.signedIn) {
-            measurementsByAthlete.clear(); selectedId = roster.find(athlete => athlete.id === 'preview-guillaume')?.id || roster[0]?.id;
+            selectedId = roster.find(athlete => athlete.id === 'preview-guillaume')?.id || roster[0]?.id;
             $('coach-health-search').value = ''; form.reset(); $('coach-measurement-status').textContent = '';
             renderPicker(); renderMeasurements(); clearTraining(); $('coach-health-training-status').textContent = '';
         }

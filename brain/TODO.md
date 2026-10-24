@@ -37,3 +37,7 @@ Possible post-MVP integrations/wearables and other ideas are not commitments. `d
 
 
 - Review compact daily nutrition bars and saved meals on phone/tablet/desktop: log ingredients, name/save a meal, inspect ingredients, reuse on another date and delete template. Recipes and logs are still session-only; permanent athlete-owned storage remains pending.
+
+- Review weekly workout agenda on phone/tablet/desktop: coach saved-library and creation paths, fixed day versus flexible week, group session selection, athlete week navigation/day choice/clear, refresh and completed state. Browser tool was unavailable during implementation. Personal backend still represents Guillaume only; no real open-gym membership enforcement added.
+
+- Visually review optional per-set workout targets on phone/tablet/desktop, including editor resizing, save/reopen, assignments and athlete actual-weight logging.

@@ -1,4 +1,4 @@
-// Session-only coach drafts/targets; athlete preview always represents Guillaume.
+// Browser-local coach drafts/targets; athlete preview always represents Guillaume.
 document.addEventListener('DOMContentLoaded', () => {
     const $ = id => document.getElementById(id);
     const calculator = window.capNutritionCalculator;
@@ -12,8 +12,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const node = (tag, text) => { const element = document.createElement(tag); if (text != null) element.textContent = text; return element; };
     const targetLabels = [['calories', 'Calorieën', 'kcal'], ['proteinG', 'Eiwitten', 'g'], ['carbsG', 'Koolhydraten', 'g'], ['fatG', 'Vetten', 'g'], ['waterMl', 'Water', 'ml']];
     const defaults = { sex: '', age: '', weightKg: '', heightCm: '', activity: '', calorieGoal: 'maintenance', strategy: 'standard', goalKg: '', scaling: 'standard', bodyFatBand: '', muscularity: 'average' };
-    const drafts = new Map();
-    const plans = new Map();
+    const drafts = window.capStorage.map('nutrition-drafts');
+    const plans = window.capStorage.map('nutrition-plans');
     const roster = [];
     document.querySelectorAll('#athletes .membership-group').forEach(group => {
         const membership = group.querySelector('summary').firstChild.textContent.trim();
@@ -185,7 +185,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.addEventListener('cap:profile-changed', refreshInputs);
     document.addEventListener('cap:viewchange', () => {
         if (!window.capAccess.signedIn) {
-            drafts.clear(); plans.clear(); result = null; calculatedInput = null; stale = false;
+            result = null; calculatedInput = null; stale = false;
             selectedId = roster.find(athlete => athlete.id === 'preview-guillaume')?.id || roster[0]?.id;
             $('nutrition-athlete-search').value = ''; renderPicker(); loadAthlete(); renderAthlete();
         } else if (location.hash === '#coach-nutrition' && canEdit()) { renderPicker(); refreshInputs(); refreshTargets(); }

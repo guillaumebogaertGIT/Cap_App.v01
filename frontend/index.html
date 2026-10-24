@@ -10,9 +10,11 @@
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/polish.css">
     <link rel="stylesheet" href="css/auth.css">
+    <script src="js/preview-storage.js" defer></script>
     <script src="js/auth-preview.js" defer></script>
     <script src="js/navigation.js" defer></script>
     <script src="js/workout-view.js" defer></script>
+    <script src="js/assignment-agenda.js" defer></script>
     <script src="js/club.js" defer></script>
     <script src="js/exercise-data.js" defer></script>
     <script src="js/exercise-picker.js" defer></script>
@@ -64,7 +66,6 @@
             <a href="#coach-nutrition" data-view-link="coach-nutrition" data-coach-only hidden>Voeding</a>
             <a href="#coach-health" data-view-link="coach-health" data-coach-only hidden>Gezondheid &amp; Progress</a>
             <a href="#create-workout" data-view-link="create-workout" data-coach-only hidden>Workout maken</a>
-            <a href="#exercises" data-view-link="exercises" data-coach-only hidden>Oefeningen</a>
             <a href="#saved-workouts" data-view-link="saved-workouts" data-coach-only hidden>Opgeslagen workouts</a>
             <a href="#athletes" data-view-link="athletes" data-coach-only hidden>Sporters</a>
             <a href="#group-classes" data-view-link="group-classes" data-coach-only hidden>Groepslessen</a>
@@ -203,7 +204,7 @@
                 </section></section>
         <section id="coach-health" data-view aria-labelledby="coach-health-title" hidden>
             <header class="dashboard-header"><div><h2 id="coach-health-title" tabindex="-1">Gezondheid &amp; Progress</h2><p class="dashboard-intro">Kies een sporter en volg metingen, trainingen en records.</p></div></header>
-            <p class="sample-notice">Voorbeeldsporters · gebruik fictieve metingen. Handmatige metingen blijven alleen in deze sessie en verdwijnen bij vernieuwen of uitloggen.</p>
+            <p class="sample-notice">Voorbeeldsporters · gebruik fictieve metingen. Handmatige metingen blijven in deze browser bewaard.</p>
             <div class="coach-health-layout">
                 <aside class="coach-athlete-picker" aria-labelledby="coach-picker-title">
                     <h3 id="coach-picker-title">Kies een sporter</h3>
@@ -242,7 +243,7 @@
         </section>
         <section id="coach-nutrition" data-view aria-labelledby="coach-nutrition-title" hidden>
             <header class="dashboard-header"><div><h2 id="coach-nutrition-title" tabindex="-1">Voeding</h2><p class="dashboard-intro">Bereken en bewaar calorie- en macrodoelen per sporter.</p></div></header>
-            <p class="sample-notice">Lokale preview · gebruik fictieve gegevens. Invoer en dagdoelen verdwijnen bij vernieuwen of uitloggen.</p>
+            <p class="sample-notice">Lokale preview · gebruik fictieve gegevens. Invoer en dagdoelen blijven in deze browser bewaard.</p>
             <div class="nutrition-athlete-bar club-toolbar">
                 <label>Zoek sporter<input id="nutrition-athlete-search" type="search" placeholder="Zoek op naam" autocomplete="off"></label>
                 <label>Sporter<select id="nutrition-athlete-select" aria-label="Kies een sporter voor voeding"></select></label>
@@ -302,17 +303,7 @@
                 <div id="coach-food-entries"></div>
             </article>
         </section>
-        <section id="exercises" data-view aria-labelledby="exercises-title" hidden>
-            <header class="dashboard-header"><div><h2 id="exercises-title" tabindex="-1">Oefeningen</h2><p class="dashboard-intro">De volledige coachbibliotheek. Zoek een oefening en voeg die toe aan je workout.</p></div></header>
-            <div class="exercise-library-toolbar">
-                <label class="library-search">Zoek een oefening<input id="exercise-library-search" type="search" placeholder="Bijv. squat, triceps of standing BB" autocomplete="off" spellcheck="false"></label>
-                <div><p id="exercise-library-draft" class="sample-notice"></p><a href="#create-workout" id="exercise-library-open" class="secondary-button">Workout bekijken</a></div>
-            </div>
-            <p id="exercise-library-feedback" role="status"></p>
-            <p id="exercise-library-count" class="sample-notice" role="status"></p>
-            <ul id="exercise-library-list" class="exercise-library-list" aria-label="Coachbibliotheek"></ul>
-            <button type="button" class="secondary-button" id="exercise-library-more" hidden>Meer oefeningen tonen</button>
-        </section>
+
         <section id="group-classes" data-view aria-labelledby="group-classes-title" hidden>
             <header class="dashboard-header">
                 <div>
@@ -348,6 +339,7 @@
                 </div>
             </header>
             <p class="sample-notice">Voorbeeldlijst. Echte sporters worden later via hun account gekoppeld.</p>
+            <p id="athlete-action-status" role="status"></p>
             <div class="membership-groups"><details class="membership-group" open><summary>Credit <span class="status-label">3</span></summary><p class="sample-notice">Sporters met een beurtenkaart.</p><ul class="membership-athletes" aria-label="Credit sporters"><li class="membership-athlete"><span class="membership-avatar" aria-hidden="true">A</span><span>Anna Peeters</span><small>Voorbeeld</small></li><li class="membership-athlete"><span class="membership-avatar" aria-hidden="true">J</span><span>Jules Maes</span><small>Voorbeeld</small></li><li class="membership-athlete"><span class="membership-avatar" aria-hidden="true">T</span><span>Tess De Smet</span><small>Voorbeeld</small></li></ul></details><details class="membership-group" open><summary>Groep <span class="status-label">3</span></summary><p class="sample-notice">Sporters met een groepsabonnement.</p><ul class="membership-athletes" aria-label="Groep sporters"><li class="membership-athlete"><span class="membership-avatar" aria-hidden="true">B</span><span>Bram Jacobs</span><small>Voorbeeld</small></li><li class="membership-athlete"><span class="membership-avatar" aria-hidden="true">E</span><span>Elias Willems</span><small>Voorbeeld</small></li><li class="membership-athlete"><span class="membership-avatar" aria-hidden="true">N</span><span>Noor Claes</span><small>Voorbeeld</small></li></ul></details><details class="membership-group" open><summary>All-in <span class="status-label">4</span></summary><p class="sample-notice">Credit + groep: toegang tot beide.</p><ul class="membership-athletes" aria-label="All-in sporters"><li class="athlete-card">
                     <div>
                         <span class="card-label">Voorbeeldsporter</span>
@@ -357,8 +349,37 @@
                         <h4>Training vandaag</h4>
                         <p id="athlete-list-assignment">Nog geen workout toegewezen.</p>
                     </div>
-                    <a class="secondary-button" href="#create-workout">Workout maken</a>
+                    <div class="athlete-actions">
+                        <a class="secondary-button" href="#training">Resultaten bekijken</a>
+                        <button class="secondary-button" type="button" id="review-athlete-workouts">Workouts bekijken</button>
+                        <a class="primary-button" href="#saved-workouts" id="assign-athlete-workout">Workout toewijzen</a>
+                    </div>
                 </li><li class="membership-athlete"><span class="membership-avatar" aria-hidden="true">L</span><span>Lena De Vos</span><small>Voorbeeld</small></li><li class="membership-athlete"><span class="membership-avatar" aria-hidden="true">M</span><span>Milan Vermeulen</span><small>Voorbeeld</small></li><li class="membership-athlete"><span class="membership-avatar" aria-hidden="true">S</span><span>Sofie Martens</span><small>Voorbeeld</small></li></ul></details></div>
+        </section>
+
+        <section id="exercises" data-view aria-labelledby="exercises-title" hidden>
+            <header class="dashboard-header"><div><h2 id="exercises-title" tabindex="-1">Oefeningen</h2><p class="dashboard-intro">De volledige coachbibliotheek. Zoek een oefening en voeg die toe aan je workout.</p></div></header>
+            <div class="exercise-library-filters">
+                <label>Lichaamsregio<select id="exercise-filter-region"><option value="">Full body / alle regio's</option></select></label>
+                <label>Categorie<select id="exercise-filter-category"><option value="">Alle categorieën</option></select></label>
+                <label>Beweging / subcategorie<select id="exercise-filter-subcategory"><option value="">Alle bewegingen</option></select></label>
+            </div>
+            <div class="exercise-library-toolbar">
+                <div class="library-search exercise-autocomplete">
+                    <label>Zoek een oefening<input id="exercise-library-search" type="search" placeholder="Bijv. squat, triceps of standing BB" autocomplete="off" spellcheck="false" aria-controls="exercise-library-suggestions" aria-expanded="false"></label>
+                    <ul id="exercise-library-suggestions" class="exercise-library-suggestions" aria-label="Oefeningsuggesties" hidden></ul>
+                </div>
+                <div><p id="exercise-library-draft" class="sample-notice"></p><a href="#create-workout" id="exercise-library-open" class="secondary-button">Workout bekijken</a></div>
+            </div>
+            <div class="exercise-library-toolbar exercise-library-selection">
+                <label class="library-search">Kies een oefening<select id="exercise-library-select" aria-describedby="exercise-selection-help"><option value="">Kies een oefening</option></select></label>
+                <button type="button" class="secondary-button" id="exercise-library-add-selected" disabled>+ Toevoegen aan workout</button>
+            </div>
+            <p id="exercise-selection-help" class="sample-notice">De keuzelijst volgt je filters en zoekterm. Full body toont alle regio's uit het Excelbestand.</p>
+            <p id="exercise-library-feedback" role="status"></p>
+            <p id="exercise-library-count" class="sample-notice" role="status"></p>
+            <ul id="exercise-library-list" class="exercise-library-list" aria-label="Coachbibliotheek"></ul>
+            <button type="button" class="secondary-button" id="exercise-library-more" hidden>Meer oefeningen tonen</button>
         </section>
 
         <section id="create-workout" data-view aria-labelledby="create-workout-title" hidden>
@@ -372,7 +393,17 @@
                     <span>Open jouw bibliotheek &rarr;</span>
                 </a>
             </header>
+            <a class="secondary-button workout-exercises-button" href="#exercises">Oefeningen kiezen</a>
+
+
             <form id="coach-workout-form" class="workout-editor">
+                <section id="whole-workout-actions" class="whole-workout-actions" aria-labelledby="whole-workout-title" hidden>
+                    <div>
+                        <h3 id="whole-workout-title">Volledige workout</h3>
+                        <p id="whole-workout-help">Verwijder deze volledige workout, inclusief alle oefeningen.</p>
+                    </div>
+                    <button class="secondary-button" type="button" id="delete-edited-workout" aria-describedby="whole-workout-help">Volledige workout verwijderen</button>
+                </section>
                 <details class="editor-template-tools"><summary>Opgeslagen workout gebruiken</summary><label>Begin met een opgeslagen workout (optioneel)
                     <select id="workout-template"><option value="">Nieuwe workout</option></select>
                 </label>
@@ -380,8 +411,8 @@
                 <p class="sample-notice">Een opgeslagen workout wordt als kopie geladen. Pas de oefeningen aan en sla op voor je gekozen sessie of sporter. Het origineel blijft bewaard.</p>
                 <p id="workout-template-status" role="status"></p></details>
                 <p class="sample-notice">Workouts worden opgeslagen via Java en blijven bewaard na vernieuwen. Gebruik alleen voorbeeldgegevens.</p>
-                <label>Naam training
-                    <input name="title" required maxlength="100" placeholder="Bijvoorbeeld: Full body">
+                <label class="workout-name-card"><span class="workout-name-label">Naam workout</span>
+                    <input name="title" required maxlength="100" placeholder="Bijvoorbeeld: Lower body — maandag">
                 </label>
                 <label>Bewaren in groep<select name="category" id="workout-category"><option value="">Algemeen / persoonlijk</option><option>CAP HYROX</option><option>CAP Hybrid</option><option>CAP Move</option><option>CAP Lift &amp; HIT</option><option>Private</option><option>Open gym</option><option>Athlete</option></select></label>
                 <label>Beschrijving (optioneel)
@@ -419,7 +450,7 @@
                     </select>
                 </label>
                 <label>Geplande datum<input name="assignedDate" id="workout-athlete-date" type="date"></label>
-                <p id="assignment-help" class="sample-notice">De workout wordt gepland voor deze datum. Andere datums blijven behouden.</p>
+                <p id="assignment-help" class="sample-notice">Kies een flexibele week of plan een vaste trainingsdag. Andere toewijzingen blijven behouden.</p>
                     </div>
                 </fieldset>
                 <div class="editor-actions">
@@ -477,12 +508,12 @@
             <header class="dashboard-header">
                 <div>
                     <h2 id="workouts-title" tabindex="-1">Workouts</h2>
-                    <p class="dashboard-intro">Kies een training voor vandaag.</p>
+                    <p class="dashboard-intro">Jouw workouts deze week. Kies zelf een dag voor flexibele trainingen.</p>
                 </div>
             </header>
             <details id="workout-library-panel" class="saved-workout workout-library-panel" open>
             <summary>Mijn toegewezen workouts</summary>
-            <label class="workout-search">Periode<select id="assigned-workout-period"><option value="upcoming">Vandaag en gepland</option><option value="past">Eerdere datums</option></select></label><label class="workout-search">Zoek een workout<input id="workout-search" type="search" placeholder="Naam of oefening" autocomplete="off"></label>
+            <label class="workout-search">Periode<select id="assigned-workout-period"><option value="upcoming">Deze week</option><option value="past">Vorige week</option></select></label><label class="workout-search">Zoek een workout<input id="workout-search" type="search" placeholder="Naam of oefening" autocomplete="off"></label>
             <p id="workouts-status" role="status">Workouts worden geladen zodra je dit overzicht opent.</p>
             <button id="reload-workouts" class="secondary-button" type="button">Opnieuw laden</button>
             <div class="workout-options" id="api-workouts" aria-busy="false"></div>
@@ -492,7 +523,7 @@
         </section>
         <section id="health" data-view aria-labelledby="health-title" hidden>
             <header class="dashboard-header"><div><h2 id="health-title" tabindex="-1">Gezondheid &amp; Progress</h2><p class="dashboard-intro">Jouw gegevens en je vooruitgang op één plek.</p></div></header>
-            <p class="sample-notice">Lokale preview: gebruik fictieve gegevens. Profiel en gewichtslog worden gewist bij vernieuwen of uitloggen.</p>
+            <p class="sample-notice">Lokale preview: gebruik fictieve gegevens. Profiel en gewichtslog blijven in deze browser bewaard.</p>
             <div class="club-grid">
                 <article class="club-card health-overview"><div class="health-overview-heading"><h3>Jouw metingen</h3><button type="button" class="secondary-button" id="health-edit-profile">Profiel aanpassen</button></div><div class="health-tile-grid"><dl class="health-metrics"><div data-metric="height"><dt>Lengte</dt><dd id="health-height">—</dd></div><div data-metric="weight"><dt>Gewicht</dt><dd id="health-weight">—</dd></div></dl><div id="health-composition-metrics"></div></div><details class="saved-workout"><summary>Alle metingen &amp; lichaamsdelen</summary><div id="health-extra-metrics"></div></details>                <details class="saved-workout"><summary>+ Lichaamsmeting toevoegen</summary>
                     <form id="body-measurement-form" class="club-form">
@@ -515,13 +546,13 @@
             <article class="club-card"><h3>Mijn dagdoelen</h3><p id="athlete-nutrition-status" role="status"></p><dl id="athlete-nutrition-targets" class="nutrition-metrics"></dl><p id="athlete-nutrition-energy-note" class="sample-notice"></p><p class="sample-notice">Voorbeeldsporter: Guillaume. Maaltijdplanning volgt later.</p></article>
             <article class="club-card">
                 <div class="health-overview-heading"><h3>Voedingsdagboek</h3><label>Datum<input id="athlete-food-date" type="date" required></label></div>
-                <p class="sample-notice">Log wat je hebt gegeten. Lokale preview: je log verdwijnt bij vernieuwen of uitloggen.</p>
+                <p class="sample-notice">Log wat je hebt gegeten. Je log blijft in deze browser bewaard.</p>
                 <p id="athlete-food-status" class="sample-notice" role="status"></p>
                 <dl id="athlete-food-totals" class="nutrition-metrics"></dl>
                 <details class="food-add-panel"><summary>+ Voeding toevoegen</summary>
                     <label class="club-form">Maaltijd<select id="food-meal"></select></label>
                     <details class="saved-workout"><summary>+ Opgeslagen maaltijd toevoegen</summary>
-                        <p class="sample-notice">Log de ingrediënten één keer en kies daarna bij die maaltijd ‘Bewaren als vaste maaltijd’. Bewaard tijdens deze preview; verdwijnt bij vernieuwen of uitloggen.</p>
+                        <p class="sample-notice">Log de ingrediënten één keer en kies daarna bij die maaltijd ‘Bewaren als vaste maaltijd’. Je vaste maaltijden blijven in deze browser bewaard.</p>
                         <div id="food-saved-meals"></div>
                         <p id="food-saved-feedback" role="status"></p>
                     </details>

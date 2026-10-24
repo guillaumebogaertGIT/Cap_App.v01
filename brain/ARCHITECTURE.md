@@ -101,3 +101,27 @@ October 22 food diary: import_foods.py preserves all 55 Calorietabel rows in foo
 
 
 October 22 nutrition refinement: daily intake uses compact stacked target bars; food-entry preview owns the portion-only macro ring. Saved meal templates snapshot ingredients/amounts/nutrients from a logged meal group, support names, ingredient inspection, adding one meal portion to the chosen date/meal and deletion. Session-only preview templates clear on signout. No backend/dependencies added.
+
+## October 23 persistence update (supersedes session-only descriptions above)
+
+preview-storage.js loads before auth: guarded JSON storage and write-through maps using cap-<name>-v1 keys. preview-session stores signedIn/role/plan only (no credentials); profile stores values/weight/body history. Other keys: coach-measurements, nutrition-drafts, nutrition-plans, food-entries, saved-meals. Auth restores at DOMContentLoaded and saves on role/plan/view changes. Logout retains records. Write failures show a global alert. Browser/device-local example data only; Java persistence unchanged. Live Server ignores backend/brain writes. tools/test_preview_storage.mjs covers reload restoration, logout state, retained records, malformed JSON and failed writes.
+
+October 23 assignment management: DatedWorkout adds optional note (old JSON loads without it). PUT/DELETE /api/workout-assignments/{id} edits/removes one snapshot; PUT .../{id}/note saves up to 2000 characters. Shared workout validation and atomic JSON storage retained. Coach athlete review exposes edit/delete/collapsed note form. Shared editor uses assignment ID for edits and returns to athlete review; template/other dates/completed history stay independent. Notes currently coach-only. Store and HTTP tests cover persistence, isolation, note/edit/delete and retained history.
+
+## October 23 — Flexible weekly workouts
+
+assignment-agenda.js supplies shared UTC date-only arithmetic and responsive week/day controls (four day columns on narrow phones, seven on larger screens). Used by saved-workout assignment, coach creation and group-session filtering. Athlete Workouts browses a Monday–Sunday week; weekly assignments can remain undated or be planned within that week by coach/athlete.
+
+DatedWorkout adds nullable weekStart; weekly assignments have stable IDs based on template/athlete/week and blank planned.assignedDate until scheduled. Repeating a weekly assignment preserves its chosen day, edits and notes. POST /api/workouts accepts optional weekStart query for atomic create+weekly assignment; POST /api/workouts/{id}/assignment accepts optional weekStart. PUT /api/workout-assignments/{id}/schedule sets/clears the day within its week. Existing daily records load unchanged. Training Session now stores nullable assignmentId to display completion and prevent rescheduling completed assignments. No account/entitlement changes.
+
+18 backend tests pass, including weekly creation/assignment, week validation, persistence, ID/note/edit preservation and HTTP schedule/completion. tools/test_assignment_agenda.mjs covers week/year/DST boundaries, day selection and bounded weekly planning. Browser tool unavailable; actual phone/tablet/desktop UI verification remains pending. Spring Boot restarted with updated endpoints.
+
+
+
+October 24 final exercise flow: Workout maken has an always-visible Oefeningen kiezen button opening the separate exercises route; no exercise sidebar entry. Region/category/subcategory filters derive dependent options from Excel data; search and filters populate a full matching exercise dropdown alongside the existing paginated detail list. Both Add actions share the existing draft API; incompatible workout-type additions are disabled with explanation.
+
+October 24: Exercise library search offers up to eight clickable suggestions using current Excel filters. Selection fills the search and exercise dropdown; shared Add action remains explicit. Suggestions stay in flow on phones, with arrow-key navigation, Escape and focus-leave dismissal.
+
+October 24 name-first: Workout title stays above Oefeningen kiezen on the creation page (explicit form ownership), rather than in the save dialog. Exercise page navigation, +, saving and catalog additions require a nonblank valid title. Exercise page displays the draft name/count; selected and list Add actions target that existing draft.
+
+October 24 per-set targets: Exercise has optional setPlan (reps, loadMode/loadValue, frozen targetKg/referenceKg per set). Existing exercise-wide fields/constructors and old JSON remain compatible. TrainingStore resolves each percentage against the exact-rep PR and validates set counts. WorkoutStore preserves plans; assignment/history snapshots carry them. Optional coach per-set controls retain the shared-target default. Workout/training/group previews show set targets; actual logged kg/reps remain independent editable inputs.

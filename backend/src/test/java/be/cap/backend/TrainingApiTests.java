@@ -97,6 +97,24 @@ class TrainingApiTests {
         assertEquals(400, post("/api/workouts/" + id + "/assignment", """
             {"athleteId":"unknown"}
             """).statusCode());
+        String assignmentPath = "http://127.0.0.1:" + port + "/api/workout-assignments/" + assignmentId;
+        var note = client.send(HttpRequest.newBuilder(URI.create(assignmentPath + "/note"))
+            .header("Content-Type", "application/json").header("Origin", "http://127.0.0.1:5500")
+            .PUT(HttpRequest.BodyPublishers.ofString("{\"note\":\"Coach note\"}")).build(), HttpResponse.BodyHandlers.ofString());
+        assertEquals(200, note.statusCode());
+        assertEquals("Coach note", mapper.readTree(note.body()).get("note").asText());
+        var assignmentEdited = client.send(HttpRequest.newBuilder(URI.create(assignmentPath))
+            .header("Content-Type", "application/json").PUT(HttpRequest.BodyPublishers.ofString("""
+                {"name":"Personal edit","exercises":[{"name":"Row","sets":2,"reps":8,"loadMode":"none"}]}
+                """)).build(), HttpResponse.BodyHandlers.ofString());
+        assertEquals(200, assignmentEdited.statusCode());
+        assertEquals("Personal edit", mapper.readTree(assignmentEdited.body()).get("planned").get("name").asText());
+        assertEquals("Coach note", mapper.readTree(assignmentEdited.body()).get("note").asText());
+        var unassigned = client.send(HttpRequest.newBuilder(URI.create(assignmentPath))
+            .header("Origin", "http://127.0.0.1:5500").DELETE().build(), HttpResponse.BodyHandlers.ofString());
+        assertEquals(204, unassigned.statusCode());
+        var templatesAfterUnassign = client.send(HttpRequest.newBuilder(URI.create("http://127.0.0.1:" + port + "/api/workouts")).GET().build(), HttpResponse.BodyHandlers.ofString());
+        assertTrue(mapper.readTree(templatesAfterUnassign.body()).valueStream().anyMatch(w -> id.equals(w.get("id").asText())));
         var deleted = client.send(HttpRequest.newBuilder(URI.create("http://127.0.0.1:" + port + "/api/workouts/" + id))
             .header("Origin", "http://127.0.0.1:5500").DELETE().build(), HttpResponse.BodyHandlers.ofString());
         assertEquals(204, deleted.statusCode());
@@ -108,5 +126,30 @@ class TrainingApiTests {
         assertEquals(finished.body(), post("/api/training", body).body());
         var records = client.send(HttpRequest.newBuilder(URI.create("http://127.0.0.1:" + port + "/api/records")).GET().build(), HttpResponse.BodyHandlers.ofString());
         assertEquals(60.0, mapper.readTree(records.body()).get(0).get("kg").asDouble());
+        String today = java.time.LocalDate.now(java.time.ZoneId.of("Europe/Brussels")).toString();
+        String week = java.time.LocalDate.parse(today).with(java.time.temporal.TemporalAdjusters.previousOrSame(java.time.DayOfWeek.MONDAY)).toString();
+        var weekly = post("/api/workouts?weekStart=" + week, """
+            {"name":"Flexible week","athleteId":"preview-guillaume","exercises":[{"name":"Row","sets":1,"reps":8,"loadMode":"none"}]}
+            """);
+        assertEquals(201, weekly.statusCode());
+        String weeklyId = mapper.readTree(weekly.body()).get("id").asText();
+        var allAssignments = client.send(HttpRequest.newBuilder(URI.create("http://127.0.0.1:" + port + "/api/workout-assignments")).GET().build(), HttpResponse.BodyHandlers.ofString());
+        var flexible = mapper.readTree(allAssignments.body()).valueStream().filter(a -> weeklyId.equals(a.get("planned").get("id").asText())).findFirst().orElseThrow();
+        assertEquals(week, flexible.get("weekStart").asText());
+        assertEquals("", flexible.get("planned").get("assignedDate").asText());
+        String weeklyAssignment = flexible.get("assignmentId").asText();
+        String schedulePath = "http://127.0.0.1:" + port + "/api/workout-assignments/" + weeklyAssignment + "/schedule";
+        var scheduled = client.send(HttpRequest.newBuilder(URI.create(schedulePath)).header("Content-Type", "application/json")
+            .PUT(HttpRequest.BodyPublishers.ofString("{\"date\":\"" + today + "\"}")).build(), HttpResponse.BodyHandlers.ofString());
+        assertEquals(200, scheduled.statusCode());
+        assertEquals(weeklyAssignment, mapper.readTree(scheduled.body()).get("assignmentId").asText());
+        var weeklyFinish = post("/api/training", """
+            {"id":"%s","workoutId":"%s","assignmentId":"%s","startedAt":"%s","finishedAt":"%s","exercises":[{"exerciseIndex":0,"sets":[{"reps":8,"kg":0}]}]}
+            """.formatted(UUID.randomUUID(), weeklyId, weeklyAssignment, Instant.now().minusSeconds(60), Instant.now()));
+        assertEquals(200, weeklyFinish.statusCode());
+        assertEquals(weeklyAssignment, mapper.readTree(weeklyFinish.body()).get("assignmentId").asText());
+        var rescheduleCompleted = client.send(HttpRequest.newBuilder(URI.create(schedulePath)).header("Content-Type", "application/json")
+            .PUT(HttpRequest.BodyPublishers.ofString("{\"date\":\"\"}")).build(), HttpResponse.BodyHandlers.ofString());
+        assertEquals(409, rescheduleCompleted.statusCode());
     }
 }

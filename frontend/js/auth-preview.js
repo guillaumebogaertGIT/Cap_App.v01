@@ -52,7 +52,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         <label>Trainingsdoel<select name="goal"><option value="">Kies je doel</option><option value="strength">Sterker worden</option><option value="fitness">Conditie verbeteren</option><option value="weight-loss">Afvallen</option><option value="health">Algemene gezondheid</option></select></label>
                         <label>Ervaring<select name="experience"><option value="">Kies je niveau</option><option value="beginner">Beginner</option><option value="intermediate">Gemiddeld</option><option value="advanced">Ervaren</option></select></label>
                     </div>
-                    <p class="sample-notice">Ontwerpvoorbeeld: gebruik fictieve gegevens. Je profiel blijft alleen tijdens deze preview beschikbaar via Profiel. Bij vernieuwen of uitloggen wordt het gewist; er wordt niets verzonden. Geslacht kan later helpen bij voedingsberekeningen.</p>
+                    <p class="sample-notice">Ontwerpvoorbeeld: gebruik fictieve gegevens. Je profiel blijft in deze browser bewaard en is beschikbaar via Profiel. Er wordt niets verzonden. Geslacht kan later helpen bij voedingsberekeningen.</p>
                     <button type="submit" class="primary-button">Verder naar CAP</button>
                     <button type="button" class="secondary-button" id="skip-profile">Later invullen</button>
                     <button type="button" class="auth-text-button" id="back-to-signup">Terug naar registratie</button>
@@ -63,10 +63,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const $ = (id) => document.getElementById(id);
     const form = $('auth-form');
     const profileForm = $('profile-form');
-    const profileValues = {};
-    const weightHistory = [];
-    const bodyMeasurements = [];
-    const profileChanged = () => document.dispatchEvent(new CustomEvent('cap:profile-changed'));
+    const storedProfile = window.capStorage.read('profile', {});
+    const profileValues = storedProfile.values && typeof storedProfile.values === 'object' ? storedProfile.values : {};
+    const weightHistory = Array.isArray(storedProfile.weights) ? storedProfile.weights : [];
+    const bodyMeasurements = Array.isArray(storedProfile.measurements) ? storedProfile.measurements : [];
+    const profileChanged = () => {
+        window.capStorage.write('profile', { values: profileValues, weights: weightHistory, measurements: bodyMeasurements });
+        document.dispatchEvent(new CustomEvent('cap:profile-changed'));
+    };
     window.capProfile = {
         get() { return { ...profileValues }; },
         weights() { return weightHistory.map(entry => ({ ...entry })); },
@@ -137,7 +141,7 @@ document.addEventListener('DOMContentLoaded', () => {
         event.preventDefault();
         if (!editProfileForm.reportValidity()) return;
         retainProfile(editProfileForm);
-        profileStatus.textContent = 'Profiel bijgewerkt voor deze preview. Bij vernieuwen of uitloggen worden deze gegevens gewist.';
+        profileStatus.textContent = 'Profiel bewaard in deze browser.';
     });
     profileDialog.addEventListener('close', () => {
         editProfileForm.reset();
@@ -183,6 +187,10 @@ document.addEventListener('DOMContentLoaded', () => {
         updateWorkoutLinkLabels();
         document.dispatchEvent(new CustomEvent('cap:viewchange'));
     }
+    const saveSession = () => window.capStorage.write('preview-session', {
+        signedIn: access.signedIn, plan: access.plan, role: previewRole
+    });
+    document.addEventListener('cap:viewchange', saveSession);
     function enter() {
         profileForm.reset();
         $('profile-card').hidden = true;
@@ -200,13 +208,10 @@ document.addEventListener('DOMContentLoaded', () => {
         updateAccess();
     }
     window.capSignOut = () => {
-        Object.keys(profileValues).forEach(key => delete profileValues[key]);
-        weightHistory.length = 0;
-        bodyMeasurements.length = 0;
-        profileChanged();
         document.querySelectorAll('dialog[open]').forEach((dialog) => dialog.close());
         access.signedIn = false;
         access.plan = 'none';
+        saveSession();
         document.body.classList.add('is-signed-out');
         $('auth-screen').hidden = false;
         form.reset(); mode(false);
@@ -259,5 +264,16 @@ document.addEventListener('DOMContentLoaded', () => {
         notice.hidden = access.can('workouts');
         notice.textContent = 'Voor workouts maken is een geschikt abonnement nodig. Test dit met het voorbeeldpakket Uitgebreid bovenaan.';
     });
+    const session = window.capStorage.read('preview-session', {});
+    if (session.signedIn === true) {
+        access.signedIn = true;
+        access.plan = Object.hasOwn(access.plans, session.plan) ? session.plan : 'none';
+        previewRole = session.role === 'coach' ? 'coach' : 'athlete';
+        $('preview-plan').value = access.plan;
+        document.querySelectorAll('[name="preview-role"]').forEach(input => { input.checked = input.value === previewRole; });
+        document.body.classList.remove('is-signed-out');
+        $('auth-screen').hidden = true;
+        showCurrentView(false);
+    }
     updateAccess();
 });

@@ -1,4 +1,4 @@
-// Health preview shares session-only profile data; no Apple Health connection yet.
+// Health preview shares browser-local profile data; no Apple Health connection yet.
 window.capBodyMetrics = [
     ['weightKg', 'Gewicht', 'kg', 500],
     ['bodyFatPercent', 'Vetpercentage', '%', 100],

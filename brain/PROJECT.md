@@ -29,3 +29,7 @@ Maintain one responsive codebase for phones (especially iPhones), tablets and de
 - `docs/SESSION-2026-09-27.md`: prior handoff; `docs/CAP-overview.html`: printable companion.
 - `docs/account-access-plan.md`: provisional access design and unresolved CAP decisions.
 - From `backend/`, with JDK 25: `.\mvnw.cmd spring-boot:run`. Windows VS Code terminals use the user `JAVA25_HOME` variable; see README for setup. Open `http://127.0.0.1:5500/frontend/index.html` through Live Server and enter the design preview. API port: 8080. Current access controls are not production security; use example data.
+
+October 23 persistence update: preview login/role/plan, profile/measurements, nutrition targets/drafts, food diary and saved meals now survive reloads in this browser. Logout ends the session without deleting records. Local preview only; no real accounts or cross-device sync. Live Server ignores backend writes. This supersedes session-only descriptions above.
+
+October 23 weekly planning: personal workouts support one flexible Monday–Sunday assignment or a fixed day. Coach library shortcuts/save dialog share a week/day agenda; group assignments still select actual dated sessions. Athletes browse workouts by week and can choose/change/clear a day for flexible assignments. Personal schedules persist in Java; group sessions remain browser-local.

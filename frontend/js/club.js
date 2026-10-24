@@ -489,7 +489,7 @@
                 throw new Error('Kies opnieuw een beschikbare sessie in de planning.');
             }
             const program = [workout.name, workout.description, ...workout.exercises.map(exercise =>
-                `${exercise.name} · ${exercise.sets} sets × ${exercise.reps} herhalingen${exercise.targetKg != null ? ` · ${exercise.targetKg} kg` : ''}${exercise.restSeconds != null ? ` · Rust: ${exercise.restSeconds} s` : ''}${exercise.tempo ? ` · Tempo: ${exercise.tempo}` : ''}${exercise.supersetGroup ? ` · Superset ${exercise.supersetGroup}` : ''}`)]
+                `${exercise.name}${exercise.setPlan?.length ? ' · ' + exercise.setPlan.map((set, i) => 'Set ' + (i + 1) + ': ' + window.capWorkoutView.targetText(set)).join(' / ') : ' · ' + exercise.sets + ' sets × ' + exercise.reps + ' herhalingen' + (exercise.targetKg != null ? ' · ' + exercise.targetKg + ' kg' : '')}${exercise.restSeconds != null ? ` · Rust: ${exercise.restSeconds} s` : ''}${exercise.tempo ? ` · Tempo: ${exercise.tempo}` : ''}${exercise.supersetGroup ? ` · Superset ${exercise.supersetGroup}` : ''}`)]
                 .filter(Boolean).join('\n');
             const updated = { ...data, sessions: data.sessions.map(session => ids.includes(session.id) ? { ...session, program, workoutSnapshot: structuredClone(workout) } : session) };
             // Persist before changing the screen so failed storage does not look like a saved assignment.

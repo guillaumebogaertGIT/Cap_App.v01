@@ -25,7 +25,7 @@ public class TrainingStore {
     }
     public record Record(String exercise, int reps, double kg) {}
     public record Session(String id, String athleteId, Workout planned, Instant startedAt, Instant finishedAt,
-                          long durationSeconds, List<ExerciseResult> exercises, List<Record> newRecords) {}
+                          long durationSeconds, List<ExerciseResult> exercises, List<Record> newRecords, String assignmentId) {}
     private final Path file;
     private final JsonMapper mapper = JsonMapper.builder().build();
     private List<Session> sessions;
@@ -52,6 +52,18 @@ public class TrainingStore {
     public synchronized Workout resolveTargets(Workout input) {
         if (input == null || input.exercises() == null || input.exercises().stream().anyMatch(Objects::isNull)) throw invalid("Oefeningen ontbreken.");
         List<Workout.Exercise> exercises = input.exercises().stream().map(e -> {
+            if (e.setPlan() != null) {
+                if (e.setPlan().isEmpty() || e.setPlan().size() > 100 || e.setPlan().size() != e.sets()) throw invalid("Controleer het aantal geplande sets.");
+                List<Workout.SetTarget> targets = e.setPlan().stream().map(set -> {
+                    if (set == null || set.reps() < 1 || set.reps() > 1000) throw invalid("Controleer de herhalingen per set.");
+                    Workout.Exercise single = new Workout.Exercise(e.name(), 1, set.reps(), set.loadMode(), set.loadValue(), null, null);
+                    Workout resolved = resolveTargets(new Workout(input.id(), input.name(), input.description(), List.of(single), input.athleteId(), input.assignedDate()));
+                    Workout.Exercise target = resolved.exercises().getFirst();
+                    return new Workout.SetTarget(target.reps(), target.loadMode(), target.loadValue(), target.targetKg(), target.referenceKg());
+                }).toList();
+                Workout.SetTarget first = targets.getFirst();
+                return new Workout.Exercise(e.name(), targets.size(), first.reps(), first.loadMode(), first.loadValue(), first.targetKg(), first.referenceKg(), e.restSeconds(), e.tempo(), e.supersetGroup(), targets);
+            }
             String mode = e.loadMode() == null ? "none" : e.loadMode();
             if (mode.equals("none")) return new Workout.Exercise(e.name(), e.sets(), e.reps(), mode, null, null, null, e.restSeconds(), e.tempo(), e.supersetGroup());
             Double value = e.loadValue();
@@ -99,7 +111,7 @@ public class TrainingStore {
         }
         if (totalSets == 0) throw invalid("Vul minstens één uitgevoerde set in.");
         List<ExerciseResult> results = input.exercises().stream().map(e -> new ExerciseResult(e.exerciseIndex(), List.copyOf(e.sets()))).toList();
-        Session session = new Session(input.id(), "preview-guillaume", planned, start, end, duration, results, List.copyOf(improvements.values()));
+        Session session = new Session(input.id(), "preview-guillaume", planned, start, end, duration, results, List.copyOf(improvements.values()), input.assignmentId());
         List<Session> updated = new ArrayList<>(sessions); updated.add(session);
         Files.createDirectories(file.getParent());
         Path temporary = Files.createTempFile(file.getParent(), "training-", ".tmp");

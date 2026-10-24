@@ -10,6 +10,70 @@ import static org.junit.jupiter.api.Assertions.*;
 class WorkoutStoreTests {
     @TempDir Path directory;
 
+    @Test void flexibleWeekCanBePlannedWithoutDuplicatingOrLosingEditsAndNotes() throws Exception {
+        String file = directory.resolve("weekly.json").toString();
+        WorkoutStore store = new WorkoutStore(file);
+        java.time.LocalDate today = java.time.LocalDate.now(java.time.ZoneId.of("Europe/Brussels"));
+        String monday = today.with(java.time.temporal.TemporalAdjusters.previousOrSame(java.time.DayOfWeek.MONDAY)).toString();
+        Workout template = store.create(workout("Library", "", 3));
+        Workout assigned = new Workout(template.id(), template.name(), "", template.exercises(), "preview-guillaume", "");
+        store.assignWeekly(template.id(), assigned, monday);
+        String id = store.assignments().get(0).assignmentId();
+        assertEquals("", store.assignment(id).planned().assignedDate());
+        store.updateNote(id, "Weekly note");
+        store.updateAssignment(id, workout("Personal", "", 4));
+        store.schedule(id, today.toString());
+        store.assignWeekly(template.id(), assigned, monday);
+        WorkoutStore reloaded = new WorkoutStore(file);
+        assertEquals(1, reloaded.assignments().size());
+        assertEquals(monday, reloaded.assignment(id).weekStart());
+        assertEquals(today.toString(), reloaded.assignment(id).planned().assignedDate());
+        assertEquals("Weekly note", reloaded.assignment(id).note());
+        assertEquals("Personal", reloaded.assignment(id).planned().name());
+        assertEquals("Library", reloaded.list().get(0).name());
+        assertThrows(ResponseStatusException.class, () -> reloaded.schedule(id, java.time.LocalDate.parse(monday).plusDays(7).toString()));
+        reloaded.schedule(id, "");
+        assertEquals("", new WorkoutStore(file).assignment(id).planned().assignedDate());
+        int before = reloaded.list().size();
+        assertThrows(ResponseStatusException.class, () -> reloaded.createWeekly(workout("Invalid week", "preview-guillaume", 3), java.time.LocalDate.parse(monday).plusDays(1).toString()));
+        assertEquals(before, new WorkoutStore(file).list().size());
+        reloaded.createWeekly(workout("New weekly", "preview-guillaume", 3), monday);
+        WorkoutStore created = new WorkoutStore(file);
+        assertEquals(2, created.assignments().size());
+        assertEquals(monday, created.assignments().get(1).weekStart());
+    }
+
+    @Test void assignmentEditsNotesAndDeletionPersistWithoutChangingTemplateOrOtherDates() throws Exception {
+        String file = directory.resolve("assignment-editing.json").toString();
+        WorkoutStore store = new WorkoutStore(file);
+        Workout template = store.create(workout("Template", "", 3));
+        String today = java.time.LocalDate.now(java.time.ZoneId.of("Europe/Brussels")).toString();
+        String tomorrow = java.time.LocalDate.parse(today).plusDays(1).toString();
+        for (String date : List.of(today, tomorrow)) {
+            store.assign(template.id(), new Workout(template.id(), template.name(), template.description(), template.exercises(), "preview-guillaume", date));
+        }
+        String id = store.assignments().get(0).assignmentId();
+        store.updateNote(id, "  Rustig opbouwen  ");
+        store.updateAssignment(id, workout("Personal version", "", 5));
+        WorkoutStore reloaded = new WorkoutStore(file);
+        assertEquals("Rustig opbouwen", reloaded.assignment(id).note());
+        assertEquals("Personal version", reloaded.assignment(id).planned().name());
+        assertEquals(5, reloaded.assignment(id).planned().exercises().get(0).sets());
+        assertEquals(today, reloaded.assignment(id).planned().assignedDate());
+        assertEquals("preview-guillaume", reloaded.assignment(id).planned().athleteId());
+        assertEquals("Template", reloaded.list().get(0).name());
+        assertEquals(3, reloaded.assignments().get(1).planned().exercises().get(0).sets());
+        assertThrows(ResponseStatusException.class, () -> reloaded.updateNote(id, "x".repeat(2001)));
+        assertThrows(ResponseStatusException.class, () -> reloaded.updateAssignment(id, workout("", "", 3)));
+        assertEquals("Rustig opbouwen", new WorkoutStore(file).assignment(id).note());
+        reloaded.deleteAssignment(id);
+        WorkoutStore deleted = new WorkoutStore(file);
+        assertEquals(1, deleted.list().size());
+        assertEquals(1, deleted.assignments().size());
+        assertEquals(tomorrow, deleted.assignments().get(0).planned().assignedDate());
+        assertThrows(ResponseStatusException.class, () -> deleted.assignment(id));
+    }
+
     @Test void workoutTypeAndAudiencePersistThroughCreateResolveAssignAndReload() throws Exception {
         String file = directory.resolve("workout-types.json").toString();
         WorkoutStore store = new WorkoutStore(file);

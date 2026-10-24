@@ -29,8 +29,6 @@
         <h3>Persoonlijke records per rep-aantal</h3><div id="training-records" class="club-grid"></div>
         <h3>Afgelopen trainingen</h3><div id="training-history"></div>`;
     document.querySelector('main').append(section);
-    const coachLink = node('a', 'Bekijk resultaten en PRs van Guillaume', 'secondary-button'); coachLink.href = '#training';
-    document.querySelector('#athlete-list-assignment').after(coachLink);
     function persist() {
         try { if (active) localStorage.setItem(key, JSON.stringify(active)); else localStorage.removeItem(key); }
         catch { $('training-message').textContent = 'Je browser kan de lopende training niet bewaren. Houd deze pagina open tot je klaar bent.'; }
@@ -44,6 +42,7 @@
     }
     setInterval(tick, 1000);
     function target(exercise) {
+        if (exercise.setPlan?.length) return exercise.setPlan.map((set, i) => 'Set ' + (i + 1) + ': ' + window.capWorkoutView.targetText(set)).join(' | ');
         return `${exercise.sets} × ${exercise.reps}${exercise.targetKg != null ? ` · ${exercise.targetKg} kg` : ''}${exercise.restSeconds != null ? ` · Rust: ${exercise.restSeconds} s` : ''}${exercise.tempo ? ` · Tempo: ${exercise.tempo}` : ''}${exercise.supersetGroup ? ` · Superset ${exercise.supersetGroup}` : ''}${exercise.loadMode === 'percent' ? ` (${exercise.loadValue}% van ${exercise.referenceKg} kg bij ${exercise.reps} reps)` : ''}`;
     }
     function renderActive() {
@@ -71,6 +70,8 @@
             const sets = active.exercises[index].sets;
             sets.forEach((set, setIndex) => {
                 const row = node('div', null, 'training-set'); row.append(node('span', `Set ${setIndex + 1}`));
+                const plannedSet = window.capWorkoutView.setTargets(exercise)[setIndex];
+                if (plannedSet && exercise.setPlan?.length) block.append(node('p', 'Doel set ' + (setIndex + 1) + ': ' + window.capWorkoutView.targetText(plannedSet), 'sample-notice'));
                 [['reps', 'Reps', '1', '1000', '1'], ['kg', 'Kg', '0', '2000', '0.01'], ['rir', 'RIR', '0', '10', '1']].forEach(([field, labelText, min, max, step]) => {
                     const label = node('label', labelText); const input = document.createElement('input');
                     input.type = 'number'; input.required = field !== 'rir'; input.min = min; input.max = max; input.step = step;

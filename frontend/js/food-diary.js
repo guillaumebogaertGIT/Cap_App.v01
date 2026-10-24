@@ -47,8 +47,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const athleteId = 'preview-guillaume';
     const meals = [['breakfast', 'Ontbijt'], ['snack', 'Tussendoor'], ['lunch', 'Middagmaal'], ['dinner', 'Avondmaal'], ['bedtime', 'Voor slapen'], ['pre', 'Pre-workout'], ['post', 'Post-workout']];
     const metrics = [['calories', 'Calorieën', 'kcal'], ['proteinG', 'Eiwitten', 'g'], ['carbsG', 'Koolhydraten', 'g'], ['fatG', 'Vetten', 'g']];
-    const entries = new Map();
-    const savedMeals = [];
+    const entries = window.capStorage.map('food-entries');
+    const storedMeals = window.capStorage.read('saved-meals', []);
+    const savedMeals = Array.isArray(storedMeals) ? storedMeals : [];
     let removed = null;
     const today = () => new Intl.DateTimeFormat('sv-SE', { timeZone: 'Europe/Brussels' }).format(new Date());
     const format = value => new Intl.NumberFormat('nl-BE', { maximumFractionDigits: 1 }).format(value);
@@ -179,6 +180,7 @@ document.addEventListener('DOMContentLoaded', () => {
         $('food-undo').hidden = !removed || removed.date !== $('athlete-food-date').value;
     }
     function renderSavedMeals() {
+        window.capStorage.write('saved-meals', savedMeals);
         const container = $('food-saved-meals'); container.replaceChildren();
         if (!savedMeals.length) container.append(node('p', 'Je hebt nog geen vaste maaltijden bewaard.', 'sample-notice'));
         savedMeals.forEach(recipe => {
@@ -239,8 +241,8 @@ document.addEventListener('DOMContentLoaded', () => {
     document.addEventListener('cap:viewchange', () => {
         ['athlete-food-date', 'coach-food-date'].forEach(id => { $(id).max = today(); });
         if (!window.capAccess.signedIn) {
-            savedMeals.length = 0; renderSavedMeals(); $('food-saved-feedback').textContent = '';
-            entries.clear(); removed = null; $('food-search').value = ''; $('food-product').value = ''; $('food-meal').value = meals[0][0]; $('food-amount').value = ''; $('food-custom-form').reset();
+            $('food-saved-feedback').textContent = '';
+            removed = null; $('food-search').value = ''; $('food-product').value = ''; $('food-meal').value = meals[0][0]; $('food-amount').value = ''; $('food-custom-form').reset();
             $('food-entry-feedback').textContent = ''; $('athlete-food-date').value = today(); $('coach-food-date').value = today(); renderProducts();
         }
         render();

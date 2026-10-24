@@ -54,3 +54,19 @@ October 22: user requested food logging. Keep the first diary compact under athl
 
 
 October 22: user requested smaller daily bars and repeatable meals. First implementation saves a logged meal group under an athlete-chosen name, then reuses its fixed portion with one Add button. Uses existing session-only preview storage; permanent recipe persistence remains future work.
+
+- October 23: User requested saved changes and no unexpected login resets. Persist preview session and formerly session-only profile/measurement/nutrition/food data in this browser; logout retains records. Exclude backend writes from Live Server. No credentials, real authentication or cross-device sync introduced.
+
+- October 23: Athlete review actions target one dated assignment, preserving the saved template, other dates and completed training history. Reuse the shared editor; keep coach notes per assignment in backend JSON.
+
+- October 23: User requested both flexible weekly training (especially open gym) and coach-selected training days. Use one flexible workout per Monday–Sunday week, with optional chosen day; do not create seven copies. Coach can instead assign a fixed day. Athletes can plan their flexible workout within its week. Group workouts remain attached to specific scheduled sessions; agenda filters a day/week and requires session selection. This supersedes automatic assignment for today from the athlete shortcut.
+
+
+
+- October 24 clarified by user: Exercises belongs under Create Workout as a button opening a separate selection page, with Excel category filters and a dropdown of matching exercises. Preserve current workout draft and return action.
+
+- October 24: Body-focus selection (lower/upper/full) opens the workout editor directly. Category/recipient choices remain accessible through the editor and save dialog.
+
+- October 24: User requested naming the workout before choosing/adding exercises. Keep name above the exercise-page button and add catalog selections to that named draft; saving remains explicit.
+
+- October 24: User approved different reps/weights/percentages per set, retaining percentages based on matching rep-count PRs. Coach targets and athlete actuals remain separate. Old shared-target workouts remain supported.

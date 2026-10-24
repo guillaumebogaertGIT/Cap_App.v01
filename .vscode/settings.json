@@ -9,5 +9,12 @@
         "lib/**/*.jar"
     ],
     "java.compile.nullAnalysis.mode": "automatic",
-    "java.configuration.updateBuildConfiguration": "interactive"
+    "java.configuration.updateBuildConfiguration": "interactive",
+    "liveServer.settings.ignoreFiles": [
+        "**/backend/**",
+        "**/brain/**",
+        "**/.git/**",
+        "**/.vscode/**",
+        "**/node_modules/**"
+    ]
 }
