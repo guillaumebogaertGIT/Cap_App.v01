@@ -28,11 +28,13 @@ let savedTemplates = [];
 let templatesLoading = false;
 let editingWorkoutId = null;
 let editingAssignmentId = null;
+const sessionHandoffIds = new Set();
 const primarySubmit = workoutForm.querySelector('[type="submit"]');
 const copySubmit = document.querySelector('#save-workout-copy');
 const cancelEdit = document.querySelector('#cancel-workout-edit');
 const deleteEditedWorkout = document.querySelector('#delete-edited-workout');
 function setEditMode(workout = null) {
+    sessionHandoffIds.clear();
     editingAssignmentId = null;
     athleteDate.min = clubToday();
     editingWorkoutId = workout?.id || null;
@@ -198,7 +200,7 @@ workoutChoices.forEach(([label, target, category, caption, path]) => {
         setEditMode();
         destination.value = target; categorySelect.value = category;
         document.querySelector('#link-sessions-now').checked = false;
-        sessionDate.value = '';
+        sessionAgenda.reset();
         sessionOptions.querySelectorAll('input').forEach(input => { input.checked = false; });
         updateAssignmentOptions();
         showWorkoutEditor();
@@ -226,10 +228,15 @@ function updateAssignmentOptions() {
     const selected = new Set(Array.from(sessionOptions.querySelectorAll('input:checked'), input => input.value));
     sessionOptions.replaceChildren();
     const sessionSelection = sessionAgenda.value();
-    const sessions = window.capClub.sessions().filter(session => (!categorySelect.value || session.category === categorySelect.value)
+    const sessions = window.capClub.sessions().filter(session => sessionHandoffIds.has(session.id) || (!categorySelect.value || session.category === categorySelect.value)
         && (sessionSelection.mode === 'week'
             ? session.date >= sessionSelection.weekStart && session.date <= window.capAgenda.add(sessionSelection.weekStart, 6)
             : session.date === sessionSelection.date));
+    if (sessionHandoffIds.size) {
+        const notice = document.createElement('p'); notice.className = 'sample-notice';
+        notice.textContent = 'De gekozen kalenderlessen blijven hieronder beschikbaar, ook buiten deze week. Vink uit wat je niet wilt koppelen.';
+        sessionOptions.append(notice);
+    }
     sessions.forEach(session => {
         const label = document.createElement('label');
         const checkbox = document.createElement('input');
@@ -254,21 +261,19 @@ document.addEventListener('cap:viewchange', () => {
 });
 document.addEventListener('cap:workout-for-sessions', event => {
     setEditMode();
+    event.detail.forEach(id => sessionHandoffIds.add(id));
     document.querySelector('#link-sessions-now').checked = true;
     destination.value = 'sessions';
-    categorySelect.value = '';
-    sessionDate.value = '';
+    const firstSession = window.capClub.sessions().find(session => sessionHandoffIds.has(session.id));
+    categorySelect.value = firstSession?.category || '';
+    sessionAgenda.reset(firstSession?.date || clubToday());
     updateAssignmentOptions();
     sessionOptions.querySelectorAll('input').forEach(input => { input.checked = event.detail.includes(input.value); });
     showTypeChooser(true, 'editor');
 });
 // Athlete assignment now opens Saved Workouts (handled by workouts-api.js).
 // Do not bind the retired Create Workout link: it no longer exists in the page.
-const groupWorkoutLink = document.createElement('a');
-groupWorkoutLink.href = '#create-workout'; groupWorkoutLink.className = 'secondary-button';
-groupWorkoutLink.textContent = 'Workout voor sessies maken';
-groupWorkoutLink.addEventListener('click', () => showTypeChooser(false));
-document.querySelector('#group-classes .coach-create-card').append(groupWorkoutLink);
+// Group sessions now enter through the calendar's session editor.
 updateAssignmentOptions();
 
 const setupExercisePicker = window.capExercisePicker.setup;

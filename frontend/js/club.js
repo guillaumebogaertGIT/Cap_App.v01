@@ -125,7 +125,7 @@
                 <label>Programma voor sporters<textarea name="program" rows="5" maxlength="3000" placeholder="Bijvoorbeeld: opwarming, oefeningen en cooling-down"></textarea></label>
                 <p class="sample-notice" id="session-program-help">Sporters kunnen dit programma bekijken voor ze boeken. Na inschrijving verschijnt de sessie ook bij hun workouts.</p>
                 <div class="club-form-grid"><label>Datum<input name="date" type="date" required></label><label>Type<select name="type"><option>Groep</option><option>Privé</option><option>Open gym</option></select></label><label id="session-category-label">CAP groep<select name="category"><option value="">Andere groepsles</option><option>CAP HYROX</option><option>CAP Hybrid</option><option>CAP Move</option><option>CAP Lift &amp; HIT</option></select></label><label>Start<input name="start" type="time" required></label><label>Einde<input name="end" type="time" required></label><label>Coach<input name="coach" required maxlength="80"></label><label>Locatie<input name="location" required maxlength="120"></label><label>Max. deelnemers<input name="capacity" type="number" min="1" max="200" required value="8"></label><label>Wekelijks herhalen<select name="repeat"><option value="1">Eenmalig</option><option value="4">4 weken</option><option value="8">8 weken</option></select></label></div>
-                <p class="sample-notice">Herhalingen worden losse lessen. Wijzigingen gelden alleen voor de gekozen les.</p><p id="session-error" role="alert"></p><div class="editor-actions"><button class="primary-button" type="submit">Les bewaren</button><button class="secondary-button" type="submit" id="session-add-workout">Workout toevoegen</button><button class="secondary-button" type="button" data-close="session-dialog">Sluiten</button></div>
+                <p class="sample-notice">Wekelijkse herhalingen vallen op dezelfde weekdag als de gekozen datum. Elke herhaling is een losse les; bewerken geldt alleen voor die les.</p><p id="session-error" role="alert"></p><div class="editor-actions"><button class="primary-button" type="submit">Les bewaren</button><button class="secondary-button" type="submit" id="session-add-workout">Workout toevoegen</button><button class="secondary-button" type="button" data-close="session-dialog">Sluiten</button></div>
                 <p class="sample-notice" id="session-workout-help">Workout toevoegen bewaart eerst de les. Daarna kun je een nieuwe workout maken of een opgeslagen workout aanpassen voor deze sessie.</p>
             </form>
         </dialog>
@@ -200,13 +200,13 @@
         if (session.type !== 'Open gym') card.append(programPreview(session));
         else card.append(element('p', 'Vrij trainen. Je reserveert een plek; je persoonlijke workout kies je zelf.', 'sample-notice'));
         if (coach()) {
-            actions.append(button('Bewerken', () => openSession(session)));
+            actions.append(button('Bewerken', () => openSession(session, undefined, location.hash === '#group-classes')));
             actions.append(button('Les verwijderen', () => {
                 if (!window.confirm(`Weet je zeker dat je de sessie "${session.title}" op ${dateLabel(session.date)} om ${session.start} wilt verwijderen? Bijbehorende boekingen worden ook verwijderd.`)) return;
                 data.sessions = data.sessions.filter(item => item.id !== session.id);
                 data.bookings = data.bookings.filter(booking => booking.sessionId !== session.id);
                 save('Les en bijbehorende boekingen verwijderd uit de planning.');
-                $('new-session').focus();
+                (location.hash === '#group-classes' ? $('new-group-session') : $('new-session')).focus();
             }));
         } else {
             const booked = active.some((booking) => booking.athlete === 'Guillaume');
@@ -354,7 +354,10 @@
         const reserved = upcoming.filter((session) => bookingsFor(session).some((booking) => booking.athlete === 'Guillaume'));
         $('home-planning-meta').textContent = reserved.length ? `${reserved.length} komende boeking(en)` : 'Bekijk het rooster';
     }
-    function render() { renderPlanning(); renderBookings(); renderShop(); renderDashboard(); renderSessionWorkouts(); }
+    function render() {
+        renderPlanning(); renderBookings(); renderShop(); renderDashboard(); renderSessionWorkouts();
+        document.dispatchEvent(new CustomEvent('cap:club-changed'));
+    }
     function updateSessionType() {
         const form = $('session-form');
         const openGym = form.elements.namedItem('type').value === 'Open gym';
@@ -380,16 +383,17 @@
         }
         updateSessionType();
     });
-    function openSession(session) {
+    function openSession(session, selectedDate, groupOnly = false) {
         if (!coach()) return;
         const form = $('session-form'); form.reset();
         form.elements.namedItem('date').min = today();
-        const values = session || { id: '', date: week, start: '18:00', end: '19:00', coach: 'Glenn', location: 'CAP Gistel', capacity: 8, type: 'Groep' };
+        const values = session || { id: '', date: selectedDate || week, start: '18:00', end: '19:00', coach: 'Glenn', location: 'CAP Gistel', capacity: 8, type: 'Groep' };
         Object.entries(values).forEach(([name, value]) => { if (form.elements.namedItem(name)) form.elements.namedItem(name).value = value; });
+        form.elements.namedItem('type').closest('label').hidden = groupOnly;
         form.elements.repeat.disabled = Boolean(session);
         updateSessionType();
         $('session-error').textContent = '';
-        $('session-dialog-title').textContent = session ? 'Les bewerken' : 'Les toevoegen';
+        $('session-dialog-title').textContent = groupOnly ? (session ? 'Groepsles bewerken' : 'Groepsles plannen') : session ? 'Les bewerken' : 'Les toevoegen';
         $('session-dialog').showModal();
     }
     function openProduct(product) {
@@ -432,6 +436,7 @@
                 $('session-filter').value = '';
                 $('coach-filter').value = '';
                 $('session-dialog').close(); save('Les bewaard. De planning is bijgewerkt voor beide rollen.');
+                document.dispatchEvent(new CustomEvent('cap:group-session-saved', { detail: { date: values.date, id: targetIds[0] } }));
                 if (event.submitter?.id === 'session-add-workout') {
                     location.hash = 'create-workout';
                     document.dispatchEvent(new CustomEvent('cap:workout-for-sessions', { detail: targetIds }));
@@ -469,16 +474,29 @@
     }));
     ['session-filter', 'coach-filter', 'booking-filter', 'product-filter'].forEach((id) => $(id).addEventListener('change', render));
     document.addEventListener('cap:viewchange', render);
-    // Link the existing group overview to the working schedule.
-    const groupCard = document.querySelector('#group-classes .coach-create-card');
-    if (groupCard) {
-        groupCard.querySelector('p').textContent = 'Plan groepslessen, kies een coach en stel het aantal plaatsen in. Dezelfde planning is zichtbaar voor jouw sporters.';
-        groupCard.querySelector('.status-label').textContent = 'Lokale preview';
-        const link = element('a', 'Groepslessen plannen', 'primary-button'); link.href = '#planning';
-        link.addEventListener('click', () => { $('session-filter').value = 'Groep'; });
-        groupCard.append(link);
-    }
     window.capClub = {
+        groupSessions() {
+            return data.sessions.filter(session => session.type === 'Groep' && !session.cancelled)
+                .map(({ id, title, date, start, end, coach, category }) => ({ id, title, date, start, end, coach, category }));
+        },
+        planGroupSession(date) {
+            if (coach() && date >= today()) openSession(undefined, date, true);
+        },
+        renderGroupDay(date, container, expandedId) {
+            container.replaceChildren();
+            const sessions = data.sessions.filter(session => session.type === 'Groep' && session.date === date && !session.cancelled)
+                .sort((a, b) => a.start.localeCompare(b.start));
+            sessions.forEach(session => {
+                const card = sessionCard(session);
+                card.open = session.id === expandedId;
+                if (past(session)) {
+                    card.querySelector('.club-actions')?.remove();
+                    card.append(element('p', 'Afgelopen / gestart · Historiek blijft behouden.', 'sample-notice'));
+                }
+                container.append(card);
+            });
+            if (!sessions.length) container.append(element('p', 'Geen groepslessen op deze dag.', 'club-empty'));
+        },
         sessions() {
             return data.sessions.filter(session => session.type !== 'Open gym' && !session.cancelled && !past(session))
                 .sort((a, b) => `${a.date}${a.start}`.localeCompare(`${b.date}${b.start}`))

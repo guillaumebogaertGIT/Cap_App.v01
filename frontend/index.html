@@ -16,6 +16,7 @@
     <script src="js/workout-view.js" defer></script>
     <script src="js/assignment-agenda.js" defer></script>
     <script src="js/club.js" defer></script>
+    <script src="js/group-calendar.js" defer></script>
     <script src="js/exercise-data.js" defer></script>
     <script src="js/exercise-catalog.js" defer></script>
     <script src="js/exercise-picker.js" defer></script>
@@ -315,27 +316,26 @@
             <header class="dashboard-header">
                 <div>
                     <h2 id="group-classes-title" tabindex="-1">Groepslessen</h2>
-                    <p class="dashboard-intro">Samen trainen. Samen sterker.</p>
+                    <p class="dashboard-intro">Kies een dag om een groepsles te plannen.</p>
                 </div>
+                <button type="button" class="primary-button" id="new-group-session">Groepsles plannen</button>
             </header>
-            <div class="dashboard-cards coach-cards">
-                <section class="coach-create-card">
-                    <span class="card-label">Training in groep</span>
-                    <h3>Een workout voor de hele groep</h3>
-                    <p>Circuittraining, veel herhalingen of samen werken aan conditie: hier beheer je straks jouw groepslessen.</p>
-                    <span class="status-label">Ontwerpvoorbeeld</span>
-                </section>
-                <section>
-                    <span class="card-label">Lesoverzicht</span>
-                    <h3>Jouw groepslessen</h3>
-                    <p>Er zijn nog geen groepslessen aangemaakt. Hier komen de trainingen die je voor jouw groepen samenstelt.</p>
-                </section>
-                <section>
-                    <span class="card-label">Samen aan de slag</span>
-                    <h3>Deelnemers</h3>
-                    <p>Hier zie je straks welke sporters aan een groepsles deelnemen.</p>
-                </section>
+            <div class="group-calendar-toolbar">
+                <h3 id="group-calendar-month" aria-live="polite"></h3>
+                <div class="group-calendar-controls">
+                    <button type="button" class="secondary-button" id="group-previous-month" aria-label="Vorige maand"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 6-6 6 6 6"/></svg></button>
+                    <button type="button" class="secondary-button" id="group-current-month">Deze maand</button>
+                    <button type="button" class="secondary-button" id="group-next-month" aria-label="Volgende maand"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg></button>
+                </div>
             </div>
+            <p id="group-calendar-summary" class="sample-notice" role="status"></p>
+            <div class="group-calendar-weekdays" aria-hidden="true"><span>Ma</span><span>Di</span><span>Wo</span><span>Do</span><span>Vr</span><span>Za</span><span>Zo</span></div>
+            <div id="group-calendar-grid" class="group-calendar-grid" role="group" aria-labelledby="group-calendar-month"></div>
+            <section class="group-calendar-selected" aria-labelledby="group-day-title">
+                <div class="group-calendar-toolbar"><h3 id="group-day-title" tabindex="-1"></h3><button type="button" class="secondary-button" id="group-day-add">Les plannen op deze dag</button></div>
+                <div id="group-day-sessions"></div>
+            </section>
+            <p class="sample-notice">Clubtijd (België) · Groepslessen en boekingen blijven voorlopig in deze browser bewaard.</p>
         </section>
 
         <section id="athletes" data-view aria-labelledby="athletes-title" hidden>
