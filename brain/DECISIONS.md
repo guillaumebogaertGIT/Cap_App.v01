@@ -72,3 +72,4 @@ October 22: user requested smaller daily bars and repeatable meals. First implem
 - October 24: User requested naming the workout before choosing/adding exercises. Keep name above the exercise-page button and add catalog selections to that named draft; saving remains explicit.
 
 - October 24: User approved different reps/weights/percentages per set, retaining percentages based on matching rep-count PRs. Coach targets and athlete actuals remain separate. Old shared-target workouts remain supported.
+- October 27: Coach sidebar order is Home, Planning, Groepslessen, Boekingen, Workout maken, Oefeningen, Opgeslagen workouts, Sporters, Voeding. Coach Home tiles follow the same task order (without a self-link); existing Gezondheid & Progress and Shop follow afterward. Athlete navigation retains its original order.

@@ -3,6 +3,8 @@ const sidebarNavigation = document.querySelector('#sidebar-navigation');
 const sidebar = document.querySelector('.sidebar');
 const sidebarToggle = document.querySelector('.sidebar-toggle');
 const mobileLayout = window.matchMedia('(max-width: 800px)');
+const originalSidebarLinks = Array.from(sidebarNavigation.children);
+const coachSidebarOrder = ['dashboard', 'planning', 'group-classes', 'bookings', 'create-workout', 'exercises', 'saved-workouts', 'athletes', 'coach-nutrition'];
 let previewRole = 'athlete';
 
 document.querySelectorAll('[name="preview-role"]').forEach((input) => {
@@ -57,6 +59,14 @@ document.addEventListener('keydown', (event) => {
 
 // URL fragments let the browser's Back and Forward buttons switch screens too.
 function showCurrentView(moveFocus = true) {
+    // Coach tasks follow the agreed order; sporters retain their original navigation.
+    const coachLinks = coachSidebarOrder.map(view => originalSidebarLinks.find(link => link.dataset.viewLink === view));
+    const orderedLinks = previewRole === 'coach'
+        ? [...coachLinks, ...originalSidebarLinks.filter(link => !coachLinks.includes(link))]
+        : originalSidebarLinks;
+    if (orderedLinks.some((link, index) => sidebarNavigation.children[index] !== link)) {
+        sidebarNavigation.append(...orderedLinks);
+    }
     const requestedView = window.location.hash.slice(1);
     const allowedViews = previewRole === 'coach' ? ['dashboard', 'settings', 'create-workout', 'saved-workouts', 'exercises', 'athletes', 'coach-health', 'coach-nutrition', 'group-classes', 'planning', 'bookings', 'shop', 'training'] : ['dashboard', 'workouts', 'health', 'nutrition', 'settings', 'planning', 'bookings', 'shop', 'training'];
     const routeId = allowedViews.includes(requestedView)
