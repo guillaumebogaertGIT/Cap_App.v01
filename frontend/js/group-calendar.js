@@ -7,7 +7,7 @@
     const iso = date => date.toISOString().slice(0, 10);
     const shift = (date, days) => { const result = asDate(date); result.setUTCDate(result.getUTCDate() + days); return iso(result); };
     const monthOf = date => date.slice(0, 7) + '-01';
-    const fullDate = date => new Intl.DateTimeFormat('nl-BE', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' }).format(asDate(date));
+    const fullDate = date => window.capDateTime.dayLabel(date);
     let month = monthOf(today());
     let selected = today();
     let expandedId = null;

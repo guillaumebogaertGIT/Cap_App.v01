@@ -23,6 +23,8 @@ Follow `AGENTS.md`: small teaching steps, explain changes and verification, allo
 
 Maintain one responsive codebase for phones (especially iPhones), tablets and desktops. Retain the desktop sidebar; broader mobile navigation remains a product decision.
 
+All displayed full dates and date fields use dd/mm/yyyy, times use 24-hour HH:mm, and timestamps/today use Europe/Brussels (including daylight saving). API/storage dates remain ISO and timestamps remain UTC instants. Shared helpers live in date-time.js/date-inputs.js.
+
 ## References and local run
 
 - `README.md`: run instructions/current overview.

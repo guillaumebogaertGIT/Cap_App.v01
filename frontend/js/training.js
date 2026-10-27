@@ -135,7 +135,7 @@
     }
     function sessionContent(session) {
         const content = node('div');
-        content.append(node('p', `${new Date(session.finishedAt).toLocaleString('nl-BE')} · Duur ${duration(session.durationSeconds)}`));
+        content.append(node('p', `${window.capDateTime.dateTime(session.finishedAt)} · Duur ${duration(session.durationSeconds)}`));
         session.exercises.forEach(result => {
             const exercise = session.planned.exercises[result.exerciseIndex];
             content.append(node('h4', exercise.name), node('p', `Gepland: ${target(exercise)}`));
@@ -165,7 +165,7 @@
             $('training-history').replaceChildren(); $('training-records').replaceChildren();
             history.slice().reverse().forEach(session => {
                 const entry = node('details', null, 'saved-workout');
-                entry.append(node('summary', `${session.planned.name} · ${new Date(session.finishedAt).toLocaleDateString('nl-BE')} · ${duration(session.durationSeconds)}`), sessionContent(session));
+                entry.append(node('summary', `${session.planned.name} · ${window.capDateTime.date(session.finishedAt)} · ${duration(session.durationSeconds)}`), sessionContent(session));
                 $('training-history').append(entry);
             });
             if (!history.length) $('training-history').append(node('p', 'Nog geen afgeronde trainingen.', 'club-empty'));

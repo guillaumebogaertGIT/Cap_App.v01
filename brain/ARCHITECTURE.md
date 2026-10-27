@@ -24,6 +24,8 @@ Health also supports optional manual body-composition snapshots: Onyx Pro total 
 
 Scripts communicate through globals (`previewRole`, `capAccess`, `capTraining`), DOM and custom events (`cap:viewchange`, `cap:workouts-saved`). HTML script order matters.
 
+October 27 regional formatting: `date-time.js` loads before the app scripts and exposes cached Belgian dd/mm/yyyy and 24-hour timestamp formatters (Europe/Brussels), plus strict date/time parsers. Planning/assignment labels, history, health and nutrition use these helpers. `date-inputs.js` loads last and enhances native date/time inputs with visible local-format text controls. Native ISO-valued inputs retain names, validation and FormData; per-input value hooks/events/attribute observers keep display, required/disabled states and form resets synchronized. Added inputs are enhanced through a MutationObserver. Dates keep a native calendar button; times use HH:mm text to avoid device-specific AM/PM widgets. No date storage/API migration or runtime dependency added.
+
 `capClub.sessions()` supplies upcoming session choices; `capClub.assignWorkout()` copies a saved workout into session programme text and persists local planning before updating the UI. Session programmes are independent snapshots, without backend session assignment or set tracking.
 
 Planning defaults to one day of expandable slot rows, with day-aware previous/next arrows and optional week/list modes. Open gym is a separate local session type, excluded from workout assignment choices and booked workout previews; capacity bookings/attendance remain in Planning/Boekingen. Coach/program inputs are hidden for this type.

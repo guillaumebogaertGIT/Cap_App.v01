@@ -241,7 +241,7 @@ function updateAssignmentOptions() {
         checkbox.type = 'checkbox'; checkbox.name = 'sessions'; checkbox.value = session.id;
         checkbox.checked = selected.has(session.id);
         const text = document.createElement('span');
-        text.textContent = `${session.date} · ${session.start} · ${session.category || session.title} · ${session.coach}`;
+        text.textContent = `${window.capDateTime.date(session.date)} · ${session.start} · ${session.category || session.title} · ${session.coach}`;
         label.append(checkbox, text); sessionOptions.append(label);
     });
     if (!sessions.length) {

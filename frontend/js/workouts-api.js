@@ -137,7 +137,7 @@
     previousWeek.addEventListener('click', () => browseWeek(-7)); nextWeek.addEventListener('click', () => browseWeek(7));
     const scheduleLabel = workout => workout.weekStart
         ? `Week ${window.capAgenda.range(workout.weekStart)}${workout.assignedDate ? ` · Gepland: ${window.capAgenda.label(workout.assignedDate)}` : ' · Zelf een dag kiezen'}`
-        : workout.assignedDate;
+        : window.capDateTime.date(workout.assignedDate);
     function planDay(workout) {
         if (!window.capAccess.signedIn || window.capTraining.isActive(workout.id)) return;
         const dialog = document.createElement('dialog'); dialog.className = 'club-dialog'; dialog.setAttribute('aria-label', 'Workout op een dag plannen');
@@ -234,7 +234,7 @@
         matches.forEach(session => {
             const label = node('label', ''); const input = document.createElement('input');
             input.type = 'checkbox'; input.name = 'sessionIds'; input.value = session.id;
-            label.append(input, node('span', `${session.date} · ${session.start} · ${session.category || session.title}`)); list.append(label);
+            label.append(input, node('span', `${window.capDateTime.date(session.date)} · ${session.start} · ${session.category || session.title}`)); list.append(label);
         });
         if (!matches.length) list.append(node('p', 'Geen passende sessies op deze datum. Kies een andere datum of voeg eerst een sessie toe in Planning.'));
     }
@@ -272,7 +272,7 @@
             assignmentDialog.close();
             const confirmation = assignmentAgenda.value().mode === 'week'
                 ? `Workout “${assigningWorkout.name}” toegewezen voor de week ${window.capAgenda.range(assignmentAgenda.value().date)}.`
-                : `Workout “${assigningWorkout.name}” ingepland op ${assignmentAgenda.value().date}.`;
+                : `Workout “${assigningWorkout.name}” ingepland op ${window.capDateTime.date(assignmentAgenda.value().date)}.`;
             $('#coach-workout-status').textContent = confirmation;
             if (returnToAthlete) { quickAssign = false; $('#athlete-action-status').textContent = confirmation; location.hash = 'athletes'; }
             await loadWorkouts();
@@ -391,7 +391,7 @@
                     event.preventDefault();
                     assignToAthlete(workout);
                 });
-                if (workout.athleteId && workout.assignedDate) entry.append(node('p', `Toegewezen aan Guillaume · ${workout.assignedDate}`));
+                if (workout.athleteId && workout.assignedDate) entry.append(node('p', `Toegewezen aan Guillaume · ${window.capDateTime.date(workout.assignedDate)}`));
                 const remove = node('button', 'Workout verwijderen');
                 remove.type = 'button'; remove.className = 'secondary-button delete-workout';
                 remove.setAttribute('aria-label', `Workout ${workout.name} verwijderen`);

@@ -7,7 +7,7 @@
         value.setUTCDate(value.getUTCDate() + amount);
         return value.toISOString().slice(0, 10);
     };
-    const dateLabel = (date) => new Intl.DateTimeFormat('nl-BE', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' }).format(new Date(`${date}T12:00:00Z`));
+    const dateLabel = date => window.capDateTime.dayLabel(date);
     const money = (value) => new Intl.NumberFormat('nl-BE', { style: 'currency', currency: 'EUR' }).format(value);
     const uid = () => crypto.randomUUID();
     const seed = {

@@ -8,7 +8,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return item;
     };
     const format = value => new Intl.NumberFormat('nl-BE', { maximumFractionDigits: 1 }).format(value);
-    const dateLabel = value => new Intl.DateTimeFormat('nl-BE', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Europe/Brussels' }).format(new Date(value));
+    const dateLabel = value => window.capDateTime.dateTime(value);
     const isOpen = () => window.capAccess.signedIn && previewRole === 'coach' && location.hash === '#coach-health';
     const metrics = window.capBodyMetrics;
     const primaryKeys = ['weightKg', 'bodyFatPercent', 'muscleKg', 'waterPercent', 'boneKg', 'fatFreeKg'];

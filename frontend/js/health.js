@@ -50,7 +50,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const weights = window.capProfile.weights();
         weights.forEach(entry => {
             const item = document.createElement('li');
-            const date = new Intl.DateTimeFormat('nl-BE', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Europe/Brussels' }).format(new Date(entry.recordedAt));
+            const date = window.capDateTime.dateTime(entry.recordedAt);
             item.textContent = `${format(entry.kg)} kg · ${date}`;
             history.append(item);
         });
@@ -69,7 +69,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 group.dataset.metric = metric.key;
                 const title = document.createElement('dt'); title.textContent = metric.label;
                 const value = document.createElement('dd'); value.textContent = latest ? `${format(latest[metric.key])} ${metric.unit}` : '—';
-                if (latest) value.title = new Date(latest.recordedAt).toLocaleString('nl-BE');
+                if (latest) value.title = window.capDateTime.dateTime(latest.recordedAt);
                 group.append(title, value); values.append(group);
             });
             container.append(values);
@@ -77,7 +77,7 @@ document.addEventListener('DOMContentLoaded', () => {
         $('body-latest').replaceChildren(); $('body-history').replaceChildren();
         if (!measurements.length) $('body-latest').textContent = 'Nog geen lichaamsmeting toegevoegd.';
         measurements.forEach((entry, index) => {
-            const date = new Intl.DateTimeFormat('nl-BE', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Europe/Brussels' }).format(new Date(entry.recordedAt));
+            const date = window.capDateTime.dateTime(entry.recordedAt);
             if (index === 0) {
                 const stamp = document.createElement('p'); stamp.textContent = date; $('body-latest').append(stamp);
                 displayMeasurement(entry, $('body-latest'));

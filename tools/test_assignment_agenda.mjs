@@ -17,6 +17,7 @@ const context = {
     window: {}, document: { createElement: element },
     Option: class { constructor(text, value) { this.textContent = text; this.value = value; } }
 };
+vm.runInNewContext(readFileSync(new URL('../frontend/js/date-time.js', import.meta.url), 'utf8'), context);
 vm.runInNewContext(readFileSync(new URL('../frontend/js/assignment-agenda.js', import.meta.url), 'utf8'), context);
 const agenda = context.window.capAgenda;
 assert.equal(agenda.monday('2026-10-25'), '2026-10-19');

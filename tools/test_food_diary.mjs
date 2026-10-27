@@ -2,7 +2,7 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import vm from 'node:vm';
-const elements = new Map(), listeners = new Map();
+const elements = new Map(), listeners = new Map(), storage = new Map();
 class Element {
     constructor() { this.value = ''; this.children = []; this.events = {}; }
     append(...items) { this.children.push(...items); }
@@ -14,11 +14,12 @@ class Element {
 const get = id => { if (!elements.has(id)) elements.set(id, new Element()); return elements.get(id); };
 let selected = { id: 'preview-guillaume', name: 'Guillaume' };
 const context = { window: { capAccess: { signedIn: true }, capNutritionTargets: { get: () => null, selectedAthlete: () => selected } },
+    localStorage: { getItem: key => storage.get(key) ?? null, setItem: (key, value) => storage.set(key, value) },
     previewRole: 'athlete', Intl, Date, crypto: { randomUUID: () => String(Math.random()) },
     Option: class extends Element { constructor(text, value) { super(); this.textContent = text; this.value = value; } },
     document: { getElementById: get, createElement: () => new Element(), addEventListener: (event, fn) => listeners.set(event, fn) } };
 vm.createContext(context);
-for (const file of ['food-data.js', 'food-diary.js']) vm.runInContext(await fs.readFile(new URL('../frontend/js/' + file, import.meta.url), 'utf8'), context);
+for (const file of ['preview-storage.js', 'food-data.js', 'food-diary.js']) vm.runInContext(await fs.readFile(new URL('../frontend/js/' + file, import.meta.url), 'utf8'), context);
 const math = context.window.capFoodMath, foods = context.window.capFoodDatabase.foods;
 assert.equal(JSON.stringify(math.macroShares({ proteinG: 25, carbsG: 25, fatG: 100 / 9 })), '[34,33,33]');
 assert.equal(JSON.stringify(math.macroShares({ proteinG: 0, carbsG: 0, fatG: 10 })), '[0,0,100]');
@@ -67,6 +68,6 @@ assert.match(get('coach-food-status').textContent, /^0 producten /);
 context.previewRole = 'coach'; get('food-amount').value = '100'; fire('food-entry-form', 'submit');
 assert.match(get('athlete-food-status').textContent, /^1 product /);
 context.window.capAccess.signedIn = false; listeners.get('cap:viewchange')();
-assert.match(get('athlete-food-status').textContent, /^0 producten /);
-assert.equal(get('food-saved-meals').children[0].textContent, 'Je hebt nog geen vaste maaltijden bewaard.');
-console.log('Food diary: portion/date validation, add/delete/undo, date and athlete isolation, role guard and signout passed.');
+assert.match(get('athlete-food-status').textContent, /^1 product /);
+assert.equal(get('food-saved-meals').children[0].children[0].children[0].textContent, 'Overnight oats');
+console.log('Food diary: portion/date validation, add/delete/undo, date and athlete isolation, role guard and retained records on signout passed.');

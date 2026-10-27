@@ -7,7 +7,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const field = name => form.elements.namedItem(name);
     const raw = form => Object.fromEntries(new FormData(form));
     const format = value => new Intl.NumberFormat('nl-BE', { maximumFractionDigits: 1 }).format(value);
-    const stamp = value => new Intl.DateTimeFormat('nl-BE', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Europe/Brussels' }).format(new Date(value));
+    const stamp = value => window.capDateTime.dateTime(value);
     const canEdit = () => window.capAccess.signedIn && previewRole === 'coach';
     const node = (tag, text) => { const element = document.createElement(tag); if (text != null) element.textContent = text; return element; };
     const targetLabels = [['calories', 'Calorieën', 'kcal'], ['proteinG', 'Eiwitten', 'g'], ['carbsG', 'Koolhydraten', 'g'], ['fatG', 'Vetten', 'g'], ['waterMl', 'Water', 'ml']];

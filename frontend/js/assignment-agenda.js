@@ -10,7 +10,7 @@ window.capAgenda = {
         const day = new Date(`${date}T12:00:00Z`).getUTCDay();
         return this.add(date, -((day + 6) % 7));
     },
-    label(date) { return new Intl.DateTimeFormat('nl-BE', { day: 'numeric', month: 'short', timeZone: 'UTC' }).format(new Date(`${date}T12:00:00Z`)); },
+    label(date) { return window.capDateTime.date(date); },
     range(date) { const first = this.monday(date); return `${this.label(first)} – ${this.label(this.add(first, 6))}`; },
     mount(input, { mode = 'week', onChange = () => {}, fixedWeek = null, dayOnly = false, sessions = false } = {}) {
         const api = this;
