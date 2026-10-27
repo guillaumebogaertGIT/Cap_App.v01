@@ -81,6 +81,12 @@
                         label.title = 'Reps in reserve: hoeveel herhalingen kon je nog? Optioneel, 0–10.';
                     }
                     input.inputMode = field === 'kg' ? 'decimal' : 'numeric'; input.value = set[field] ?? '';
+                    if (field === 'kg') {
+                        // Leave scrolling to the page instead of the number input's stepper.
+                        input.addEventListener('wheel', () => {
+                            if (document.activeElement === input) input.blur();
+                        }, { passive: true });
+                    }
                     input.disabled = Boolean(active.finishedAt);
                     input.addEventListener('input', () => { set[field] = input.value; persist(); });
                     label.append(input); row.append(label);
