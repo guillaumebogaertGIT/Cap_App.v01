@@ -17,7 +17,7 @@
     <script src="js/workout-view.js" defer></script>
     <script src="js/assignment-agenda.js" defer></script>
     <script src="js/club.js" defer></script>
-    <script src="js/group-calendar.js" defer></script>
+    <script src="js/planning-calendar.js" defer></script>
     <script src="js/exercise-data.js" defer></script>
     <script src="js/exercise-catalog.js" defer></script>
     <script src="js/exercise-picker.js" defer></script>
@@ -73,7 +73,6 @@
             <a href="#saved-workouts" data-view-link="saved-workouts" data-coach-only hidden>Opgeslagen workouts</a>
             <a href="#exercises" data-view-link="exercises" data-coach-only hidden>Oefeningen</a>
             <a href="#athletes" data-view-link="athletes" data-coach-only hidden>Sporters</a>
-            <a href="#group-classes" data-view-link="group-classes" data-coach-only hidden>Groepslessen</a>
             <a href="#planning" data-view-link="planning">Planning</a>
             <a href="#bookings" data-view-link="bookings">Boekingen</a>
             <a href="#" data-coach-only>Basketball</a>
@@ -154,11 +153,6 @@
                     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v16H4zM8 3v4m8-4v4M4 11h16"/></svg>
                     <strong>Planning</strong>
                     <span>Beheer lessen en tijdstippen</span>
-                </a>
-                <a class="home-tile" href="#group-classes">
-                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 5h18v14H3zM7 9h10m-10 4h4m4 0h2"/></svg>
-                    <strong>Groepslessen</strong>
-                    <span>Trainingen voor jouw groepen</span>
                 </a>
                 <a class="home-tile" href="#bookings">
                     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12v18l-6-3-6 3zM9 8h6m-6 4h6"/></svg>
@@ -314,31 +308,32 @@
             </article>
         </section>
 
-        <section id="group-classes" data-view aria-labelledby="group-classes-title" hidden>
+        <dialog id="session-calendar-dialog" class="club-dialog planning-calendar-dialog" aria-labelledby="session-calendar-title">
             <header class="dashboard-header">
                 <div>
-                    <h2 id="group-classes-title" tabindex="-1">Groepslessen</h2>
-                    <p class="dashboard-intro">Kies een dag om een groepsles te plannen.</p>
+                    <h2 id="session-calendar-title" tabindex="-1">Les plannen</h2>
+                    <p class="dashboard-intro">Kies een dag voor een groepsles, priv&eacute;sessie of open gym.</p>
                 </div>
-                <button type="button" class="primary-button" id="new-group-session">Groepsles plannen</button>
+                <button type="button" class="primary-button" id="calendar-new-session">Les plannen</button>
+                <button type="button" class="secondary-button session-dialog-close" id="calendar-close" aria-label="Sluiten" title="Sluiten" autofocus><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button>
             </header>
-            <div class="group-calendar-toolbar">
-                <h3 id="group-calendar-month" aria-live="polite"></h3>
-                <div class="group-calendar-controls">
-                    <button type="button" class="secondary-button" id="group-previous-month" aria-label="Vorige maand"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 6-6 6 6 6"/></svg></button>
-                    <button type="button" class="secondary-button" id="group-current-month">Deze maand</button>
-                    <button type="button" class="secondary-button" id="group-next-month" aria-label="Volgende maand"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg></button>
+            <div class="planning-calendar-toolbar">
+                <h3 id="planning-calendar-month" aria-live="polite"></h3>
+                <div class="planning-calendar-controls">
+                    <button type="button" class="secondary-button" id="calendar-previous-month" aria-label="Vorige maand"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 6-6 6 6 6"/></svg></button>
+                    <button type="button" class="secondary-button" id="calendar-current-month">Deze maand</button>
+                    <button type="button" class="secondary-button" id="calendar-next-month" aria-label="Volgende maand"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg></button>
                 </div>
             </div>
-            <p id="group-calendar-summary" class="sample-notice" role="status"></p>
-            <div class="group-calendar-weekdays" aria-hidden="true"><span>Ma</span><span>Di</span><span>Wo</span><span>Do</span><span>Vr</span><span>Za</span><span>Zo</span></div>
-            <div id="group-calendar-grid" class="group-calendar-grid" role="group" aria-labelledby="group-calendar-month"></div>
-            <section class="group-calendar-selected" aria-labelledby="group-day-title">
-                <div class="group-calendar-toolbar"><h3 id="group-day-title" tabindex="-1"></h3><button type="button" class="secondary-button" id="group-day-add">Les plannen op deze dag</button></div>
-                <div id="group-day-sessions"></div>
+            <p id="planning-calendar-summary" class="sample-notice" role="status"></p>
+            <div class="planning-calendar-weekdays" aria-hidden="true"><span>Ma</span><span>Di</span><span>Wo</span><span>Do</span><span>Vr</span><span>Za</span><span>Zo</span></div>
+            <div id="planning-calendar-grid" class="planning-calendar-grid" role="group" aria-labelledby="planning-calendar-month"></div>
+            <section class="planning-calendar-selected" aria-labelledby="calendar-day-title">
+                <div class="planning-calendar-toolbar"><h3 id="calendar-day-title" tabindex="-1"></h3><button type="button" class="secondary-button" id="calendar-day-add">Les plannen op deze dag</button></div>
+                <div id="calendar-day-sessions"></div>
             </section>
-            <p class="sample-notice">Clubtijd (België) · Groepslessen en boekingen blijven voorlopig in deze browser bewaard.</p>
-        </section>
+            <p class="sample-notice">Clubtijd (België) · Sessies en boekingen blijven voorlopig in deze browser bewaard.</p>
+        </dialog>
 
         <section id="athletes" data-view aria-labelledby="athletes-title" hidden>
             <header class="dashboard-header">

@@ -4,7 +4,7 @@ const sidebar = document.querySelector('.sidebar');
 const sidebarToggle = document.querySelector('.sidebar-toggle');
 const mobileLayout = window.matchMedia('(max-width: 800px)');
 const originalSidebarLinks = Array.from(sidebarNavigation.children);
-const coachSidebarOrder = ['dashboard', 'planning', 'group-classes', 'bookings', 'create-workout', 'exercises', 'saved-workouts', 'athletes', 'coach-nutrition'];
+const coachSidebarOrder = ['dashboard', 'planning', 'bookings', 'create-workout', 'exercises', 'saved-workouts', 'athletes', 'coach-nutrition'];
 let previewRole = 'athlete';
 
 document.querySelectorAll('[name="preview-role"]').forEach((input) => {
@@ -68,7 +68,7 @@ function showCurrentView(moveFocus = true) {
         sidebarNavigation.append(...orderedLinks);
     }
     const requestedView = window.location.hash.slice(1);
-    const allowedViews = previewRole === 'coach' ? ['dashboard', 'settings', 'create-workout', 'saved-workouts', 'exercises', 'athletes', 'coach-health', 'coach-nutrition', 'group-classes', 'planning', 'bookings', 'shop', 'training'] : ['dashboard', 'workouts', 'health', 'nutrition', 'settings', 'planning', 'bookings', 'shop', 'training'];
+    const allowedViews = previewRole === 'coach' ? ['dashboard', 'settings', 'create-workout', 'saved-workouts', 'exercises', 'athletes', 'coach-health', 'coach-nutrition', 'planning', 'bookings', 'shop', 'training'] : ['dashboard', 'workouts', 'health', 'nutrition', 'settings', 'planning', 'bookings', 'shop', 'training'];
     const routeId = allowedViews.includes(requestedView)
         ? requestedView : 'dashboard';
     const viewId = previewRole === 'coach' && routeId === 'dashboard' ? 'coach' : routeId;
@@ -76,7 +76,7 @@ function showCurrentView(moveFocus = true) {
 
     sidebarNavigation.querySelectorAll('a').forEach((link) => {
         link.hidden = previewRole === 'coach'
-            ? !['dashboard', 'settings', 'create-workout', 'saved-workouts', 'exercises', 'athletes', 'coach-health', 'coach-nutrition', 'group-classes', 'planning', 'bookings', 'shop', 'training'].includes(link.dataset.viewLink)
+            ? !['dashboard', 'settings', 'create-workout', 'saved-workouts', 'exercises', 'athletes', 'coach-health', 'coach-nutrition', 'planning', 'bookings', 'shop', 'training'].includes(link.dataset.viewLink)
             : link.hasAttribute('data-coach-only');
     });
 
