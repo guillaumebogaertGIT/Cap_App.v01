@@ -60,9 +60,7 @@
         try { localStorage.setItem(storageKey, JSON.stringify(data)); }
         catch { storageMessage = 'Drukke voorbeeldplanning is alleen tijdens deze pagina beschikbaar; browseropslag is niet beschikbaar.'; }
     }
-    const previewDate = data.sessions.filter(session => session.preview && session.date > today())
-        .map(session => session.date).sort()[0];
-    let week = previewDate || today();
+    let week = today();
     let bookingWeek = today();
     // Supply example content for older preview data without replacing saved sessions.
     data.sessions.forEach(session => {
@@ -75,7 +73,6 @@
             ? 'Opwarming · 10 minuten mobiliteit en rustig bewegen\nCircuit · 3 rondes: 12 air squats, 10 push-ups en 250 m roeien\nCooling-down · 5 minuten rustig bewegen en stretchen'
             : '';
     });
-    let layout = 'day';
     const coach = () => previewRole === 'coach';
     const visibleSession = session => window.capSessionAccess.canView(session, previewRole, 'preview-guillaume');
     const ownBooking = booking => booking.athleteId ? booking.athleteId === 'preview-guillaume' : booking.athlete === 'Guillaume';
@@ -100,22 +97,8 @@
         <p class="club-preview-note" id="club-storage-note"></p>
         <p class="club-feedback" id="club-feedback" role="status"></p>
         <section id="planning" data-view hidden aria-labelledby="planning-title">
-            <header class="dashboard-header"><div><span class="card-label">Jouw club, jouw ritme</span><h2 id="planning-title" tabindex="-1">Planning</h2><p class="dashboard-intro">Groepslessen en persoonlijke begeleiding op één plek.</p></div><button type="button" class="primary-button" id="new-session">+ Les toevoegen</button></header>
-            <div class="club-toolbar planning-toolbar">
-                <div class="planning-date-controls"><button type="button" class="secondary-button" id="previous-week" aria-label="Vorige week">←</button><label>Kies een datum<input id="week-date" type="date" required aria-label="Kies de begindatum van je planning"></label><button type="button" class="secondary-button" id="next-week" aria-label="Volgende week">→</button></div>
-                <div class="planning-view-controls"><button type="button" class="secondary-button" id="current-week">Vandaag</button>
-                <div class="planning-view-switch" role="group" aria-label="Weergave planning">
-                    <button type="button" data-planning-view="day" aria-pressed="true">Dag</button>
-                    <button type="button" data-planning-view="calendar" aria-pressed="false">Week</button>
-                    <button type="button" data-planning-view="list" aria-pressed="false">Lijst</button>
-                </div>
-                <details class="planning-filters"><summary>Filters</summary><div class="planning-filter-fields"><label>Activiteit<select id="session-filter"><option value="">Alle activiteiten</option><option>Groep</option><option>Privé</option><option>Open gym</option></select></label>
-                <label>Trainer<select id="coach-filter"><option value="">Alle trainers</option></select></label></div></details>
-                </div>
-            </div>
-            <p class="sample-notice" id="planning-summary" role="status"></p>
-            <p class="sample-notice">Clubtijd (België) · Voorbeeldgegevens. Open een les voor details en acties.</p>
-            <div id="session-list"></div>
+            <header class="dashboard-header"><div><h2 id="planning-title" tabindex="-1">Planning</h2><p class="dashboard-intro">Groepslessen en persoonlijke begeleiding op één plek.</p></div><button type="button" class="primary-button" id="new-session">+ Les toevoegen</button></header>
+            <p class="sample-notice">Clubtijd (Belgi&euml;) &middot; Kies een dag om de lessen te bekijken.</p>
         </section>
         <section id="bookings" data-view hidden aria-labelledby="bookings-title">
             <header class="dashboard-header"><div><span class="card-label">Samen aan de slag</span><h2 id="bookings-title" tabindex="-1">Boekingen</h2><p class="dashboard-intro" id="bookings-intro"></p></div></header>
@@ -142,6 +125,7 @@
             <form id="product-form" class="club-form"><h2 id="product-dialog-title">Product toevoegen</h2><input name="id" type="hidden"><label>Naam<input name="title" required maxlength="100"></label><label>Beschrijving<textarea name="description" rows="3" required maxlength="1000"></textarea></label><div class="club-form-grid"><label>Categorie<select name="category"><option>Abonnement</option><option>Beurtenkaart</option><option>Personal training</option><option>Artikel</option></select></label><label>Prijs (€)<input name="price" type="number" required min="0" max="100000" step="0.01"></label><label>Zichtbaarheid<select name="available"><option value="true">Beschikbaar</option><option value="false">Verborgen voor sporters</option></select></label></div><div class="editor-actions"><button class="primary-button" type="submit">Product bewaren</button><button class="secondary-button" type="button" data-close="product-dialog">Sluiten</button></div></form>
         </dialog>`);
     const $ = (id) => document.getElementById(id);
+    $('planning').append($('planning-calendar'));
     const sessionWorkouts = element('section');
     sessionWorkouts.id = 'booked-session-workouts';
     sessionWorkouts.setAttribute('aria-labelledby', 'booked-session-workouts-title');
@@ -215,7 +199,7 @@
                 data.sessions = data.sessions.filter(item => item.id !== session.id);
                 data.bookings = data.bookings.filter(booking => booking.sessionId !== session.id);
                 save('Les en bijbehorende boekingen verwijderd uit de planning.');
-                ($('session-calendar-dialog').open ? $('calendar-new-session') : $('new-session')).focus();
+                $('calendar-day-title').focus();
             }));
         } else {
             const booked = active.some(ownBooking);
@@ -239,35 +223,7 @@
         return card;
     }
     function renderPlanning() {
-        const earliest = today();
-        if (week < earliest) week = earliest;
-        $('week-date').min = earliest;
-        $('week-date').value = week;
-        $('previous-week').disabled = week <= earliest;
-        $('previous-week').setAttribute('aria-label', layout === 'day' ? 'Vorige dag' : 'Vorige week');
-        $('next-week').setAttribute('aria-label', layout === 'day' ? 'Volgende dag' : 'Volgende week');
         $('new-session').hidden = !coach();
-        document.querySelectorAll('[data-planning-view]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.planningView === layout)));
-        const selectedCoach = $('coach-filter').value;
-        $('coach-filter').replaceChildren(new Option('Alle trainers', ''));
-        [...new Set(data.sessions.filter(visibleSession).map((session) => session.coach))].sort().forEach((name) => $('coach-filter').add(new Option(name, name)));
-        $('coach-filter').value = [...$('coach-filter').options].some((option) => option.value === selectedCoach) ? selectedCoach : '';
-        const container = $('session-list');
-        container.className = layout === 'calendar' ? 'club-calendar' : 'club-agenda';
-        container.replaceChildren();
-        let total = 0;
-        for (let day = 0; day < (layout === 'day' ? 1 : 7); day++) {
-            const date = shiftDate(week, day);
-            const column = element('section', undefined, 'club-day');
-            column.append(element('h3', dateLabel(date), date === today() ? 'club-today' : ''));
-            const sessions = data.sessions.filter((session) => visibleSession(session) && session.date === date && !session.cancelled && !past({ ...session, start: session.end }) && (!$('session-filter').value || session.type === $('session-filter').value) && (!$('coach-filter').value || session.coach === $('coach-filter').value)).sort((a, b) => a.start.localeCompare(b.start));
-            total += sessions.length;
-            column.firstElementChild.append(element('span', `${sessions.length} ${sessions.length === 1 ? 'les' : 'lessen'}`, 'planning-day-count'));
-            if (!sessions.length) column.append(element('p', 'Geen lessen', 'sample-notice'));
-            sessions.forEach((session) => column.append(sessionCard(session)));
-            container.append(column);
-        }
-        $('planning-summary').textContent = `${total} ${total === 1 ? 'les' : 'lessen'} ${layout === 'day' ? 'op deze dag' : 'in deze periode'}${$('session-filter').value || $('coach-filter').value ? ' · gefilterd' : ''}`;
     }
     function renderCoachBookings(list, openRows, focusKey) {
         list.className = 'coach-booking-days';
@@ -425,7 +381,6 @@
         updateSessionType();
         $('session-error').textContent = '';
         $('session-dialog-title').textContent = session ? 'Les bewerken' : 'Les toevoegen';
-        document.dispatchEvent(new CustomEvent('cap:session-editor-opening'));
         $('session-dialog').showModal();
     }
     function openProduct(product) {
@@ -476,8 +431,6 @@
                     });
                 });
                 week = values.date;
-                $('session-filter').value = '';
-                $('coach-filter').value = '';
                 $('session-dialog').close(); save(values.type === 'Privé' ? 'Privésessie bewaard voor de geselecteerde sporters.' : 'Les bewaard. De planning is bijgewerkt.');
                 document.dispatchEvent(new CustomEvent('cap:session-saved', { detail: { date: values.date, id: targetIds[0] } }));
                 if (event.submitter?.id === 'session-add-workout') {
@@ -493,29 +446,13 @@
         });
     });
     document.querySelectorAll('[data-close]').forEach((control) => control.addEventListener('click', () => $(control.dataset.close).close()));
-    $('new-session').addEventListener('click', () => document.dispatchEvent(new CustomEvent('cap:session-calendar-open', { detail: { date: week } })));
     $('coach-booking-week').addEventListener('change', event => {
         if (event.target.value && event.target.validity.valid) bookingWeek = event.target.value;
         renderBookings();
     });
     $('booking-filter').addEventListener('change', () => { bookingWeek = $('booking-filter').value === 'history' ? shiftDate(today(), -6) : today(); });
     $('new-product').addEventListener('click', () => openProduct());
-    $('previous-week').addEventListener('click', () => { week = shiftDate(week, layout === 'day' ? -1 : -7); renderPlanning(); });
-    $('next-week').addEventListener('click', () => { week = shiftDate(week, layout === 'day' ? 1 : 7); renderPlanning(); });
-    $('current-week').addEventListener('click', () => { week = today(); renderPlanning(); });
-    $('week-date').addEventListener('change', (event) => {
-        if (event.target.value && event.target.validity.valid) week = event.target.value;
-        renderPlanning();
-    });
-    $('week-date').addEventListener('click', () => {
-        if (typeof $('week-date').showPicker === 'function') {
-            try { $('week-date').showPicker(); } catch { /* Native date input remains usable. */ }
-        }
-    });
-    document.querySelectorAll('[data-planning-view]').forEach(button => button.addEventListener('click', () => {
-        layout = button.dataset.planningView; renderPlanning();
-    }));
-    ['session-filter', 'coach-filter', 'booking-filter', 'product-filter'].forEach((id) => $(id).addEventListener('change', render));
+    ['booking-filter', 'product-filter'].forEach((id) => $(id).addEventListener('change', render));
     document.addEventListener('cap:viewchange', render);
     window.capClub = {
         calendarSessions() {

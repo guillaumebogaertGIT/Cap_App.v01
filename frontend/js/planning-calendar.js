@@ -1,8 +1,7 @@
-// Date selection for all session types, opened from Planning's Les toevoegen.
+// Shared monthly Planning view; club.js owns session visibility and booking actions.
 (() => {
     const $ = id => document.getElementById(id);
     const club = window.capClub;
-    const dialog = $('session-calendar-dialog');
     const today = () => new Intl.DateTimeFormat('sv-SE', { timeZone: 'Europe/Brussels' }).format(new Date());
     const asDate = date => new Date(`${date}T12:00:00Z`);
     const iso = date => date.toISOString().slice(0, 10);
@@ -12,20 +11,19 @@
     let month = monthOf(today());
     let selected = today();
     let expandedId = null;
-    let returnToCalendar = false;
-    const permitted = () => location.hash === '#planning' && previewRole === 'coach' && window.capAccess.signedIn;
-    const visible = () => dialog.open && permitted();
+    const permitted = () => location.hash === '#planning' && window.capAccess.signedIn;
+    const visible = () => permitted();
     const node = (tag, text, className) => {
         const result = document.createElement(tag);
         if (text != null) result.textContent = text;
         if (className) result.className = className;
         return result;
     };
-    function selectDay(date, plan = false) {
+    function selectDay(date, focusLessons = true) {
         selected = date; month = monthOf(date); expandedId = null;
         render();
         $('planning-calendar-grid').querySelector(`[data-calendar-date="${date}"]`)?.focus();
-        if (plan && date >= today()) club.planSession(date);
+        if (focusLessons) $('calendar-day-title').focus();
     }
     function render() {
         if (!visible()) return;
@@ -38,7 +36,7 @@
             byDate.get(session.date).push(session);
         });
         const count = sessions.filter(session => monthOf(session.date) === month).length;
-        $('planning-calendar-summary').textContent = `${count} ${count === 1 ? 'sessie' : 'sessies'} deze maand · Klik op een datum om te plannen.`;
+        $('planning-calendar-summary').textContent = `${count} ${count === 1 ? 'sessie' : 'sessies'} deze maand · Kies een dag om de lessen te bekijken.`;
         const grid = $('planning-calendar-grid'); grid.replaceChildren();
         const offset = (asDate(month).getUTCDay() + 6) % 7;
         const first = shift(month, -offset);
@@ -52,37 +50,22 @@
             const choose = node('button', null, 'calendar-day-select'); choose.type = 'button';
             choose.dataset.calendarDate = date;
             choose.setAttribute('aria-pressed', String(date === selected));
-            choose.setAttribute('aria-label', `${fullDate(date)} · ${entries.length} sessies${date >= current ? ' · Les plannen' : ''}`);
+            choose.setAttribute('aria-label', `${fullDate(date)}: ${entries.length} sessies bekijken`);
             if (date === current) choose.setAttribute('aria-current', 'date');
             choose.append(node('span', String(asDate(date).getUTCDate()), 'calendar-day-number'));
             if (entries.length) choose.append(node('span', `${entries.length} ${entries.length === 1 ? 'sessie' : 'sessies'}`, 'calendar-day-count'));
-            choose.addEventListener('click', () => selectDay(date, true));
+            choose.addEventListener('click', () => selectDay(date));
             choose.addEventListener('keydown', event => {
                 const amount = { ArrowLeft: -1, ArrowRight: 1, ArrowUp: -7, ArrowDown: 7 }[event.key];
                 if (amount == null) return;
-                event.preventDefault(); selectDay(shift(date, amount));
+                event.preventDefault(); selectDay(shift(date, amount), false);
             });
             cell.append(choose);
-            entries.slice(0, 2).forEach(session => {
-                const event = node('button', `${session.start} ${session.category || session.title}`, 'planning-calendar-event'); event.type = 'button';
-                event.setAttribute('aria-label', `${session.title}, ${fullDate(date)}, ${session.start}. Details bekijken`);
-                event.addEventListener('click', () => {
-                    selected = date; month = monthOf(date); expandedId = session.id; render();
-                    $('calendar-day-title').focus();
-                });
-                cell.append(event);
-            });
-            if (entries.length > 2) {
-                const more = node('button', `+${entries.length - 2} meer`, 'planning-calendar-more'); more.type = 'button';
-                more.setAttribute('aria-label', `Alle ${entries.length} sessies op ${fullDate(date)} bekijken`);
-                more.addEventListener('click', () => { selectDay(date); $('calendar-day-title').focus(); });
-                cell.append(more);
-            }
             grid.append(cell);
         }
         $('calendar-day-title').textContent = fullDate(selected);
-        $('calendar-day-add').hidden = selected < current;
-        $('calendar-new-session').disabled = selected < current;
+        $('calendar-day-add').hidden = previewRole !== 'coach' || selected < current;
+        $('new-session').disabled = selected < current;
         club.renderCalendarDay(selected, $('calendar-day-sessions'), expandedId);
     }
     function changeMonth(amount) {
@@ -93,29 +76,14 @@
     $('calendar-previous-month').addEventListener('click', () => changeMonth(-1));
     $('calendar-next-month').addEventListener('click', () => changeMonth(1));
     $('calendar-current-month').addEventListener('click', () => { month = monthOf(today()); selected = today(); expandedId = null; render(); });
-    [$('calendar-new-session'), $('calendar-day-add')].forEach(button => button.addEventListener('click', () => club.planSession(selected)));
-    $('calendar-close').addEventListener('click', () => dialog.close());
-    document.addEventListener('cap:session-calendar-open', event => {
-        if (!permitted()) return;
-        selected = event.detail.date >= today() ? event.detail.date : today(); month = monthOf(selected); expandedId = null;
-        if (!dialog.open) dialog.showModal();
-        render();
-    });
-    document.addEventListener('cap:session-editor-opening', () => {
-        returnToCalendar = dialog.open;
-        if (dialog.open) dialog.close();
-    });
+    [$('new-session'), $('calendar-day-add')].forEach(button => button.addEventListener('click', () => club.planSession(selected)));
     $('session-dialog').addEventListener('close', () => {
-        if (returnToCalendar && permitted()) {
-            returnToCalendar = false; dialog.showModal(); render();
-        }
+        if (permitted()) { render(); $('calendar-day-title').focus(); }
     });
-    dialog.addEventListener('close', () => { if (!returnToCalendar) $('new-session').focus(); });
     document.addEventListener('cap:session-saved', event => {
-        returnToCalendar = false;
         selected = event.detail.date; month = monthOf(selected); expandedId = event.detail.id;
-        if (dialog.open) dialog.close();
-        $('new-session').focus();
+        render();
+        if (permitted()) $('calendar-day-title').focus();
     });
     document.addEventListener('cap:club-changed', () => {
         // Follow a saved session when its date is changed in the editor.
@@ -127,11 +95,9 @@
         render();
     });
     document.addEventListener('cap:viewchange', () => {
-        if (!permitted()) {
-            returnToCalendar = false;
-            if (dialog.open) dialog.close();
-            if ($('session-dialog').open) $('session-dialog').close();
-        } else render();
+        if ((!permitted() || previewRole !== 'coach') && $('session-dialog').open) $('session-dialog').close();
+        expandedId = null;
+        render();
     });
     render();
 })();

@@ -837,11 +837,8 @@ main { padding: 1rem; }
 .exercise-library-state { display: grid; gap: 0.35rem; max-width: 22rem; margin-block: 1rem; }
 .exercise-library-state select { min-height: 2.75rem; }
 .planning-calendar-toolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.75rem; margin-block: 1rem; }
-.planning-calendar-dialog { width: min(76rem, calc(100% - 1rem)); max-width: calc(100% - 1rem); padding: 0.75rem; }
-.planning-calendar-dialog > .dashboard-header { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: start; }
-.planning-calendar-dialog > .dashboard-header > div { flex: 1; min-width: 0; }
-#calendar-close { grid-column: 2; grid-row: 1; }
-#calendar-new-session { grid-column: 1; grid-row: 2; justify-self: start; }
+.planning-calendar-layout { display: grid; gap: 1.5rem; }
+.planning-calendar-month-panel, .planning-calendar-selected { min-width: 0; }
 .calendar-day-count { max-width: 100%; text-align: center; }
 .planning-calendar-toolbar h3 { margin: 0; font-size: 1.2rem; }
 .planning-calendar-controls { display: flex; gap: 0.4rem; align-items: center; }
@@ -851,35 +848,28 @@ main { padding: 1rem; }
 .planning-calendar-weekdays { text-align: center; font-size: 0.8rem; color: var(--muted); margin-bottom: 0.5rem; }
 .planning-calendar-day { position: relative; min-width: 0; min-height: 4.5rem; background: var(--surface); border: 1px solid var(--border); border-radius: 0.4rem; }
 .calendar-day-select { display: flex; flex-direction: column; align-items: center; justify-content: start; gap: 0.25rem; width: 100%; min-height: 4.5rem; padding: 0.45rem 0.1rem; color: var(--text); background: transparent; border: 0; font: inherit; cursor: pointer; }
-/* Stretch the date button over the cell; lesson buttons remain above it. */
+/* Make the whole date cell a touch target. */
 .calendar-day-select::after { content: ''; position: absolute; inset: 0; border-radius: inherit; }
-.planning-calendar-event, .planning-calendar-more { position: relative; z-index: 1; }
 .planning-calendar-day:has(.calendar-day-select:hover) { background: var(--highlight); }
 .planning-calendar-day:has(.calendar-day-select:focus-visible) { outline: 2px solid var(--accent-text); outline-offset: 2px; }
-#session-calendar-dialog .calendar-day-select:focus-visible { outline: none; }
+#planning-calendar .calendar-day-select:focus-visible { outline: none; }
 .calendar-day-number { font-size: 0.95rem; line-height: 1.5; }
 .calendar-day-count { font-size: 0.75rem; line-height: 1.4; color: var(--muted); }
 .planning-calendar-day.is-other-month { background: var(--background); }
 .planning-calendar-day.is-other-month .calendar-day-number { color: var(--muted); }
 .planning-calendar-day.is-selected { background: var(--highlight); border-color: var(--accent-text); }
 .calendar-day-select[aria-current="date"] .calendar-day-number { color: var(--accent-text); font-weight: 750; text-decoration: underline; text-underline-offset: 0.25rem; }
-.planning-calendar-event, .planning-calendar-more { display: none; }
 .planning-calendar-selected { margin-top: 1.5rem; padding-top: 0.5rem; border-top: 1px solid var(--border); }
 #calendar-day-sessions { display: grid; gap: 0.75rem; }
 #calendar-day-sessions .planning-slot { margin: 0; }
-#session-calendar-dialog button:focus-visible { outline: 2px solid var(--accent-text); outline-offset: 2px; }
+#planning-calendar button:focus-visible { outline: 2px solid var(--accent-text); outline-offset: 2px; }
 @media (min-width: 650px) {
-    .planning-calendar-dialog { padding: 1.25rem; width: min(76rem, calc(100% - 2rem)); }
-    .planning-calendar-dialog > .dashboard-header { grid-template-columns: minmax(0, 1fr) auto auto; }
-    #calendar-close { grid-column: 3; }
-    #calendar-new-session { grid-column: 2; grid-row: 1; }
     .planning-calendar-weekdays, .planning-calendar-grid { gap: 0.4rem; }
-    .planning-calendar-day { min-height: 8.5rem; padding-bottom: 0.25rem; }
-    .calendar-day-select { flex-direction: row; align-items: center; justify-content: space-between; min-height: 2.75rem; padding: 0.4rem 0.5rem; }
-    .calendar-day-count { font-size: 0.75rem; }
-    .planning-calendar-event, .planning-calendar-more { display: block; width: 100%; min-height: 2.75rem; padding: 0.3rem 0.45rem; border: 0; background: transparent; color: var(--text); font: inherit; font-size: 0.75rem; text-align: left; overflow-wrap: anywhere; cursor: pointer; }
-    .planning-calendar-event:hover, .planning-calendar-more:hover, .calendar-day-select:hover { background: var(--highlight); }
-    .planning-calendar-more { color: var(--accent-text); }
+    .planning-calendar-day, .calendar-day-select { min-height: 5rem; }
+}
+@media (min-width: 1200px) {
+    .planning-calendar-layout { grid-template-columns: minmax(0, 1.6fr) minmax(18rem, 1fr); align-items: start; }
+    .planning-calendar-selected { margin-top: 0; padding-top: 0; border-top: 0; }
 }
 @media (min-width: 650px) {
     .exercise-definition-fields { grid-template-columns: repeat(2, minmax(0, 1fr)); }

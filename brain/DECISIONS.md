@@ -78,3 +78,5 @@ October 22: user requested smaller daily bars and repeatable meals. First implem
 - October 27 refinement: user removed the redundant Groepslessen entry. Planning → Les toevoegen now opens the monthly calendar as a dialog for all session types, including Open gym and Privé. Remove the old Home tile/route too; retain one scheduling entry. Calendar cancellation returns to Planning; session-form cancellation returns to the calendar, while saving returns to Planning. This supersedes the separate group-calendar page above.
 
 October 27: User requested direct CAP lesson choices and private appointments for one or more athletes. Use one activity dropdown and searchable checkbox roster. Private assignment creates bookings automatically; only coach and selected athletes see the appointment in the preview. Real authenticated athlete ownership remains future backend work.
+
+October 27: User approved month-calendar-first Planning for athletes and coaches. Clicking a date lists lessons instead of opening the editor. Reuse selected-day bookings/edit actions and open the coach form only through Les toevoegen. Remove the extra calendar popup and old day/week/list controls.

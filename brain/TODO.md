@@ -44,3 +44,5 @@ Possible post-MVP integrations/wearables and other ideas are not commitments. `d
 - October 27: User review next for Planning → Les toevoegen → month calendar → dated form for Groep/Privé/Open gym. Groepslessen navigation/page removed. Browser checks cover all types, Open gym repeats/hidden workout fields, cancel/back/save focus and four-session workout handoff; phone/tablet/desktop layouts verified. Future steps: custom recurrence/end date, direct saved-workout choice in session form, and single/future-series editing. Session persistence remains browser-local.
 
 Review Planning activity dropdown and private athlete selection: create/repeat/edit recipients, switch to Guillaume preview, verify unassigned private sessions are hidden. Implement server authentication and session ownership before real private appointments.
+
+Review calendar-first Planning: month arrows/Today, date selection, athlete booking/cancellation, private-session counts, coach add/edit and workout handoff. Phone/tablet list below calendar; desktop list beside it. Local preview storage and real authorization limitations remain.
