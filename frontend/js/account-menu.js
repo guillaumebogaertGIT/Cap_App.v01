@@ -12,6 +12,7 @@
         payment: ['Betalingen', 'Hier komen je betalingen en facturen. Er worden in deze preview geen betalingen verwerkt.'],
         logout: ['Uitloggen', 'Je gebruikt een voorbeeldaccount. Er is nog geen echte inlogsessie om af te sluiten.']
     };
+    if (window.capReal) previews.password[1] = 'Wachtwoord wijzigen is nog niet beschikbaar.';
     function closeMenu(returnFocus = false) {
         links.hidden = true;
         toggle.setAttribute('aria-expanded', 'false');

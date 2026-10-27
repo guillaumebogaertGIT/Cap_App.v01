@@ -21,10 +21,11 @@
             { id: 'demo-member', title: 'CAP maandabonnement', category: 'Abonnement', price: 75, description: 'Voorbeeldabonnement. De coach kan de inhoud en prijs aanpassen.', available: true }
         ]
     };
-    let data = seed;
+    const real = window.capReal;
+    let data = real ? { sessions: real.sessions.map(s => ({ ...s, start: s.start.slice(0,5), end: s.end.slice(0,5) })), bookings: real.bookings.map(b => ({ ...b, id: b.sessionId + ':' + b.athleteId })), products: [], busyPlanningPreviewAdded: true } : seed;
     let storageMessage = 'Lokale preview: voorbeeldgegevens, geen echte boekingen of betalingen. Opgeslagen in deze browser.';
     try {
-        const saved = JSON.parse(localStorage.getItem(storageKey));
+        const saved = real ? null : JSON.parse(localStorage.getItem(storageKey));
         if (saved && Array.isArray(saved.sessions) && Array.isArray(saved.bookings) && Array.isArray(saved.products)) data = saved;
     } catch {
         storageMessage = 'Browseropslag niet beschikbaar of onleesbaar. Wijzigingen blijven alleen tijdens deze pagina beschikbaar.';
@@ -74,9 +75,9 @@
             : '';
     });
     const coach = () => previewRole === 'coach';
-    const visibleSession = session => window.capSessionAccess.canView(session, previewRole, 'preview-guillaume');
-    const ownBooking = booking => booking.athleteId ? booking.athleteId === 'preview-guillaume' : booking.athlete === 'Guillaume';
-    const athletes = Array.from(document.querySelectorAll('#athletes .membership-athlete, #athletes .athlete-card'), item => {
+    const visibleSession = session => real ? true : window.capSessionAccess.canView(session, previewRole, 'preview-guillaume');
+    const ownBooking = booking => booking.athleteId ? booking.athleteId === (real?.account.id || 'preview-guillaume') : booking.athlete === 'Guillaume';
+    const athletes = real ? real.athletes : Array.from(document.querySelectorAll('#athletes .membership-athlete, #athletes .athlete-card'), item => {
         const name = (item.classList.contains('athlete-card') ? item.querySelector('h3') : item.querySelectorAll('span')[1]).textContent.trim();
         return { name, id: name === 'Guillaume' ? 'preview-guillaume' : 'example-' + name.toLocaleLowerCase('nl-BE').replaceAll(' ', '-') };
     }).sort((a,b) => a.name.localeCompare(b.name, 'nl-BE'));
@@ -132,9 +133,28 @@
     $('workout-library-panel').before(sessionWorkouts);
     let visibleSessionLimit = 6;
     document.querySelector('.welcome-bar').after($('club-storage-note'), $('club-feedback'));
-    $('club-storage-note').textContent = storageMessage;
+    $('club-storage-note').textContent = real ? 'Planning, boekingen en workouts worden gedeeld via de CAP-server.' : storageMessage;
     const announce = (message) => { $('club-feedback').textContent = message; };
+    let refreshVersion = 0;
+    async function refreshReal(message) {
+        const version = ++refreshVersion;
+        const [sessions, bookings] = await Promise.all([real.request('/api/club/sessions'), real.request('/api/club/bookings')]);
+        if (version !== refreshVersion) return;
+        data.sessions = sessions.map(s => ({ ...s, start: s.start.slice(0,5), end: s.end.slice(0,5) }));
+        data.bookings = bookings.map(b => ({ ...b, id: b.sessionId + ':' + b.athleteId }));
+        render(); if (message) announce(message);
+    }
+    let realBusy = false;
+    async function mutateReal(path, method, body, message) {
+        if (realBusy) return; realBusy = true;
+        try { await real.request(path, method, body); await refreshReal(message); }
+        catch (error) { announce(error.message); } finally { realBusy = false; }
+    }
+    function cancelReal(booking) {
+        return mutateReal('/api/club/sessions/' + booking.sessionId + (coach() ? '/bookings/' + booking.athleteId : '/booking'), 'DELETE', undefined, 'Boeking geannuleerd.');
+    }
     function save(message) {
+        if (real) { announce('Deze functie is nog niet aangesloten op gedeelde opslag.'); return; }
         try { localStorage.setItem(storageKey, JSON.stringify(data)); }
         catch { $('club-storage-note').textContent = 'Opslaan in deze browser is mislukt. Wijzigingen verdwijnen bij vernieuwen.'; }
         render();
@@ -169,7 +189,9 @@
             card.append(element('span', `${dateLabel(session.date)} · ${session.start} – ${session.end}`, 'card-label'),
                 element('h3', session.title), element('p', `${session.coach} · ${session.location}`), programPreview(session));
             const link = element('a', 'Bekijk boekingen', 'secondary-button');
-            link.href = '#bookings'; card.append(link); list.append(card);
+            link.href = '#bookings'; card.append(link);
+            if (real && session.workoutSnapshot) card.append(button('Training starten', () => window.capTraining.start({ ...session.workoutSnapshot, assignmentId: 'session:' + session.id })));
+            list.append(card);
         });
         if (!sessions.length) list.append(element('p', 'Nog geen komende sessies geboekt. Bekijk eerst het programma in Planning en schrijf je in.', 'club-empty'));
         sessionWorkouts.append(list);
@@ -180,13 +202,14 @@
     function sessionCard(session) {
         const card = element('details', undefined, 'club-card planning-slot');
         const active = bookingsFor(session);
+        const count = real ? session.bookedCount : active.length;
         const summary = element('summary');
         const title = element('span', undefined, 'slot-title');
         title.append(element('strong', session.title), element('small', session.category || session.type));
         if (session.preview) title.lastChild.textContent += ' · Voorbeeld';
         const booked = active.some(ownBooking);
-        const capacity = element('span', `${booked && !coach() ? '✓ ' : ''}${active.length}/${session.capacity}`, 'slot-capacity');
-        capacity.setAttribute('aria-label', `${active.length} van ${session.capacity} plaatsen geboekt`);
+        const capacity = element('span', `${booked && !coach() ? '✓ ' : ''}${count}/${session.capacity}`, 'slot-capacity');
+        capacity.setAttribute('aria-label', `${count} van ${session.capacity} plaatsen geboekt`);
         summary.append(element('span', session.start, 'slot-time'), title, capacity);
         card.append(summary, element('p', `${session.start} – ${session.end} · ${[session.coach, session.location].filter(Boolean).join(' · ')}`));
         const actions = element('div', undefined, 'club-actions');
@@ -196,6 +219,7 @@
             actions.append(button('Bewerken', () => openSession(session)));
             actions.append(button('Les verwijderen', () => {
                 if (!window.confirm(`Weet je zeker dat je de sessie "${session.title}" op ${dateLabel(session.date)} om ${session.start} wilt verwijderen? Bijbehorende boekingen worden ook verwijderd.`)) return;
+                if (real) { mutateReal('/api/club/sessions/' + session.id, 'DELETE', undefined, 'Les verwijderd.'); return; }
                 data.sessions = data.sessions.filter(item => item.id !== session.id);
                 data.bookings = data.bookings.filter(booking => booking.sessionId !== session.id);
                 save('Les en bijbehorende boekingen verwijderd uit de planning.');
@@ -204,13 +228,14 @@
         } else {
             const booked = active.some(ownBooking);
             const permitted = window.capAccess.can(bookingFeature(session));
-            const unavailable = session.cancelled || past(session) || (!booked && active.length >= session.capacity);
+            const unavailable = session.cancelled || past(session) || (!booked && count >= session.capacity);
             const control = button(booked ? 'Boeking annuleren' : session.cancelled ? 'Geannuleerd' : past(session) ? 'Afgelopen / gestart' : unavailable ? 'Volzet' : 'Boeken', () => {
                 if (!visibleSession(session)) return;
                 if (!window.capAccess.signedIn || (!booked && !window.capAccess.can(bookingFeature(session)))) {
                     announce('Voor deze sessie is een geschikt abonnement nodig. Bekijk de voorbeeldrechten bovenaan.');
                     return;
                 }
+                if (real) { mutateReal('/api/club/sessions/' + session.id + '/booking', booked ? 'DELETE' : 'POST', undefined, booked ? 'Boeking geannuleerd.' : 'Je bent ingeschreven.'); return; }
                 if (booked) active.filter(ownBooking).forEach((booking) => { booking.cancelled = true; });
                 else if (!session.cancelled && !past(session) && bookingsFor(session).length < session.capacity) data.bookings.push({ id: uid(), sessionId: session.id, athleteId: 'preview-guillaume', athlete: 'Guillaume', cancelled: false, attendance: 'Onbekend' });
                 save(booked ? 'Boeking geannuleerd.' : session.type === 'Open gym' ? 'Open gym geboekt. Bekijk Boekingen voor je gereserveerde plek.' : 'Geboekt voor Guillaume in de preview. De sessie staat nu ook bij Workouts.');
@@ -255,9 +280,9 @@
                         attendance.setAttribute('aria-label', `Aanwezigheid ${booking.athlete}`);
                         ['Onbekend', 'Aanwezig', 'Afwezig'].forEach(status => attendance.add(new Option(status, status)));
                         attendance.value = booking.attendance;
-                        attendance.addEventListener('change', () => { booking.attendance = attendance.value; save('Aanwezigheid bijgewerkt.'); });
+                        attendance.addEventListener('change', () => { if (real) { mutateReal('/api/club/sessions/' + booking.sessionId + '/bookings/' + booking.athleteId + '/attendance', 'PUT', { status: attendance.value }, 'Aanwezigheid bijgewerkt.'); return; } booking.attendance = attendance.value; save('Aanwezigheid bijgewerkt.'); });
                         row.append(attendance);
-                        if (!past(session)) row.append(button('Annuleren', () => { booking.cancelled = true; save('Boeking geannuleerd.'); }));
+                        if (!past(session)) row.append(button('Annuleren', () => { if (real) { cancelReal(booking); return; } booking.cancelled = true; save('Boeking geannuleerd.'); }));
                     }
                     item.append(row);
                 });
@@ -294,7 +319,7 @@
                 select.addEventListener('change', () => { booking.attendance = select.value; save('Aanwezigheid bijgewerkt.'); });
                 label.append(select); card.append(label);
             }
-            if (!history) card.append(button('Boeking annuleren', () => { booking.cancelled = true; save('Boeking geannuleerd.'); }));
+            if (!history) card.append(button('Boeking annuleren', () => { if (real) { cancelReal(booking); return; } booking.cancelled = true; save('Boeking geannuleerd.'); }));
             list.append(card);
         });
         if (!list.children.length) list.append(element('p', 'Nog geen boekingen in dit overzicht. Reserveer een les via Planning.', 'club-empty'));
@@ -368,8 +393,9 @@
         if (!coach()) return;
         const form = $('session-form'); form.reset();
         form.elements.namedItem('date').min = today();
-        const values = session || { id: '', date: selectedDate || week, start: '18:00', end: '19:00', coach: 'Glenn', location: 'CAP Gistel', capacity: 8, type: 'Groep' };
+        const values = session || { id: '', date: selectedDate || week, start: '18:00', end: '19:00', coach: real?.account.name || 'Glenn', location: 'CAP Gistel', capacity: 8, type: 'Groep' };
         Object.entries(values).forEach(([name, value]) => { if (form.elements.namedItem(name)) form.elements.namedItem(name).value = value; });
+        if (real) form.elements.namedItem('coach').value = session?.coachId || real.account.id;
         $('session-kind').value = values.type === 'Groep' ? values.category || '' : values.type;
         $('session-athlete-search').value = '';
         Array.from($('session-athlete-options').children).forEach(label => {
@@ -394,7 +420,7 @@
     // Trim text inputs as well as using native required/date/number validation.
     document.querySelectorAll('.club-form').forEach((form) => {
         form.addEventListener('input', (event) => event.target.setCustomValidity(''));
-        form.addEventListener('submit', (event) => {
+        form.addEventListener('submit', async (event) => {
             event.preventDefault();
             if (!coach()) return;
             form.querySelectorAll('input:not([type])[required], textarea[required]').forEach((input) => input.setCustomValidity(input.value.trim() ? '' : 'Vul dit veld in.'));
@@ -410,6 +436,21 @@
                 if (values.type === 'Privé' && !athleteIds.length) { $('session-error').textContent = 'Selecteer minstens een sporter voor deze privésessie.'; $('session-athlete-search').focus(); return; }
                 if (Number(values.capacity) < athleteIds.length) { $('session-error').textContent = 'Voorzie een plaats voor elke geselecteerde sporter.'; return; }
                 if (existing && values.type !== 'Privé' && Number(values.capacity) < bookingsFor(existing).length) { $('session-error').textContent = 'De capaciteit kan niet lager zijn dan het aantal boekingen.'; return; }
+                if (real) {
+                    if (realBusy) return;
+                    realBusy = true;
+                    try {
+                        const coachId = values.coach || existing?.coachId || real.account.id;
+                        const created = await real.request('/api/club/sessions' + (existing ? '/' + existing.id : ''), existing ? 'PUT' : 'POST', { ...values, coachId, athleteIds, capacity: Number(values.capacity), repeat: existing ? 1 : Number(values.repeat), program: values.program || '' });
+                        await refreshReal('Les bewaard.'); $('session-dialog').close();
+                        document.dispatchEvent(new CustomEvent('cap:session-saved', { detail: { date: values.date, id: created[0].id } }));
+                        if (event.submitter?.id === 'session-add-workout') {
+                            location.hash = 'create-workout'; document.dispatchEvent(new CustomEvent('cap:workout-for-sessions', { detail: created.map(s => s.id) }));
+                        }
+                    } catch (error) { $('session-error').textContent = error.message; }
+                    finally { realBusy = false; }
+                    return;
+                }
                 const session = { ...values, athleteIds, capacity: Number(values.capacity), cancelled: existing?.cancelled || false };
                 session.workoutSnapshot = existing?.program === values.program ? existing?.workoutSnapshot || null : null;
                 if (values.type !== 'Groep') session.category = '';
@@ -482,7 +523,8 @@
                 .sort((a, b) => `${a.date}${a.start}`.localeCompare(`${b.date}${b.start}`))
                 .map(session => ({ id: session.id, title: session.title, date: session.date, start: session.start, coach: session.coach, category: session.category || '' }));
         },
-        assignWorkout(ids, workout) {
+        async assignWorkout(ids, workout) {
+            if (real) { for (const id of ids) await real.request(`/api/club/sessions/${id}/workout`, "PUT", { workoutId: workout.id }); await refreshReal(); return; }
             if (!coach() || !ids.length || ids.some(id => !this.sessions().some(session => session.id === id))) {
                 throw new Error('Kies opnieuw een beschikbare sessie in de planning.');
             }
@@ -496,5 +538,11 @@
             render();
         }
     };
+    if (real) {
+        const coachField = $('session-form').elements.namedItem('coach');
+        const select = document.createElement('select'); select.name = 'coach';
+        real.coaches.forEach(person => select.add(new Option(person.name, person.id))); coachField.replaceWith(select);
+        document.addEventListener('cap:viewchange', () => { if (['#planning', '#bookings', '#workouts', '#dashboard'].includes(location.hash)) refreshReal().catch(error => announce(error.message)); });
+    }
     showCurrentView(false);
 })();

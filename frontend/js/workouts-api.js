@@ -1,6 +1,7 @@
 (() => {
     const $ = (selector) => document.querySelector(selector);
     let loading = false;
+    const athleteId = () => window.capReal ? (previewRole === 'coach' ? window.capReal.selectedAthleteId : window.capReal.account.id) : 'preview-guillaume';
     let pending = false;
     let visibleLimit = 6;
     let coachType = 'all';
@@ -193,7 +194,7 @@
     document.body.append(athleteWorkoutsDialog);
     athleteWorkoutsDialog.querySelector('button').addEventListener('click', () => athleteWorkoutsDialog.close());
     $('#review-athlete-workouts').addEventListener('click', () => {
-        if (previewRole === 'coach') athleteWorkoutsDialog.showModal();
+        if (previewRole === 'coach') { loadWorkouts(); athleteWorkoutsDialog.querySelector('h2').textContent = 'Toegewezen workouts'; athleteWorkoutsDialog.showModal(); }
     });
     let assigningWorkout = null;
     const assignmentDialog = document.createElement('dialog'); assignmentDialog.className = 'club-dialog';
@@ -209,10 +210,12 @@
     </form>`;
     document.body.append(assignmentDialog);
     const assignmentForm = $('#assign-saved-workout-form');
+    if (window.capReal) assignmentForm.elements.athleteId.replaceChildren(...window.capReal.athletes.map(p => new Option(p.name, p.id)));
     let returnToAthlete = false;
     const assignmentAgenda = window.capAgenda.mount($('#assignment-date'), { onChange: () => updateAssignmentTargets() });
     function openAssignment(workout, fromAthlete = false) {
         assigningWorkout = workout; returnToAthlete = fromAthlete;
+        if (window.capReal && fromAthlete) assignmentForm.elements.athleteId.value = athleteId();
         assignmentAgenda.reset();
         $('#assignment-target').value = 'athlete'; updateAssignmentTargets();
         $('#assign-workout-name').textContent = workout.name;
@@ -254,7 +257,7 @@
             if ($('#assignment-target').value === 'sessions') {
                 const ids = Array.from(document.querySelectorAll('#assignment-session-options input:checked'), input => input.value);
                 if (!ids.length) throw new Error('Selecteer minstens één specifieke sessie.');
-                window.capClub.assignWorkout(ids, assigningWorkout);
+                await window.capClub.assignWorkout(ids, assigningWorkout);
                 assignmentDialog.close();
                 $('#coach-workout-status').textContent = `Workout gekoppeld aan ${ids.length} gekozen sessie(s). Andere sessies blijven ongewijzigd.`;
                 return;
@@ -327,14 +330,14 @@
         const controller = new AbortController();
         const timeout = setTimeout(() => controller.abort(), 5000);
         try {
-            const responses = await Promise.all(['/api/workouts', '/api/workout-assignments', '/api/training'].map(path => fetch(`http://localhost:8080${path}`, { signal: controller.signal, cache: 'no-store' })));
+            const responses = await Promise.all(['/api/workouts', '/api/workout-assignments', '/api/training'].map(path => fetch(`http://localhost:8080${path}${window.capReal && previewRole === "coach" && path === "/api/training" && athleteId() ? "?athleteId=" + encodeURIComponent(athleteId()) : ""}`, { signal: controller.signal, cache: 'no-store' })));
             if (responses.some(response => !response.ok)) throw new Error('Load failed');
             const [workouts, assignments, history] = await Promise.all(responses.map(response => response.json()));
             const completed = new Set(history.map(session => session.assignmentId).filter(Boolean));
             if (!Array.isArray(assignments)) throw new Error('Invalid assignments');
             if (!Array.isArray(workouts) || !workouts.every(w => typeof w.name === 'string' && Array.isArray(w.exercises))) throw new Error('Invalid data');
             const today = new Intl.DateTimeFormat('sv-SE', { timeZone: 'Europe/Brussels' }).format(new Date());
-            const allPersonal = assignments.map(a => ({ ...a.planned, assignmentId: a.assignmentId, note: a.note || '', weekStart: a.weekStart || '' })).filter(w => w.athleteId === 'preview-guillaume');
+            const allPersonal = assignments.map(a => ({ ...a.planned, assignmentId: a.assignmentId, note: a.note || '', weekStart: a.weekStart || '' })).filter(w => w.athleteId === athleteId());
             const personalWorkouts = allPersonal.filter(w => w.weekStart ? w.weekStart === viewedWeek : w.assignedDate >= viewedWeek && w.assignedDate <= window.capAgenda.add(viewedWeek, 6))
                 .sort((a, b) => (a.assignedDate || a.weekStart).localeCompare(b.assignedDate || b.weekStart));
             weekTitle.textContent = `Workouts deze week · ${window.capAgenda.range(viewedWeek)}`;
@@ -391,7 +394,7 @@
                     event.preventDefault();
                     assignToAthlete(workout);
                 });
-                if (workout.athleteId && workout.assignedDate) entry.append(node('p', `Toegewezen aan Guillaume · ${window.capDateTime.date(workout.assignedDate)}`));
+                if (workout.athleteId && workout.assignedDate) entry.append(node('p', `Toegewezen aan sporter · ${window.capDateTime.date(workout.assignedDate)}`));
                 const remove = node('button', 'Workout verwijderen');
                 remove.type = 'button'; remove.className = 'secondary-button delete-workout';
                 remove.setAttribute('aria-label', `Workout ${workout.name} verwijderen`);
@@ -408,7 +411,7 @@
                 entry.append(assign);
                 if (quickAssign) {
                     edit.hidden = true; remove.hidden = true; assign.hidden = true;
-                    entry.querySelector('summary').setAttribute('aria-label', `${workout.name} vandaag toewijzen aan Guillaume`);
+                    entry.querySelector('summary').setAttribute('aria-label', `${workout.name} vandaag toewijzen aan sporter`);
                 }
                 const category = categoryLists.get(workout.category || '') || categoryLists.get('');
                 category.list.prepend(entry); category.count++;
@@ -461,7 +464,7 @@
                 remove.addEventListener('click', async () => {
                     if (previewRole !== 'coach' || assignmentSaving) return;
                     if (window.capTraining.isActive(workout.id)) { feedback.textContent = 'Rond de lopende training eerst af.'; return; }
-                    if (!window.confirm(`Workout “${workout.name}” · ${scheduleLabel(workout)} verwijderen bij Guillaume? Het opgeslagen voorbeeld blijft behouden.`)) return;
+                    if (!window.confirm(`Workout “${workout.name}” · ${scheduleLabel(workout)} verwijderen bij deze sporter? Het opgeslagen voorbeeld blijft behouden.`)) return;
                     assignmentSaving = true; remove.disabled = true; edit.disabled = true;
                     try {
                         await changeAssignment(workout.assignmentId, 'DELETE');

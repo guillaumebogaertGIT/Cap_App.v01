@@ -5,17 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="referrer" content="no-referrer">
     <title>CAP account</title>
+    <link rel="icon" href="shared/Cap-logo.png">
     <script src="shared/theme.js"></script>
     <link rel="stylesheet" href="shared/style.css">
     <link rel="stylesheet" href="shared/polish.css">
     <link rel="stylesheet" href="accounts.css">
     <script src="accounts.js" defer></script>
-    <script src="shared/date-time.js" defer></script>
-    <script src="shared/workout-view.js" defer></script>
-    <script src="planning.js" defer></script>
-    <script src="workouts.js" defer></script>
-    <script src="exercises.js" defer></script>
-    <script src="shared/date-inputs.js" defer></script>
 </head>
 <body>
 <svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" aria-hidden="true" style="position:absolute"><defs><filter id="logo-white" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values="0 0 0 0 1 -1 1 0 0 1 -1 0 1 0 1 0 0 0 1 0"/></filter></defs></svg>
@@ -47,25 +42,7 @@
     <section id="member-panel" hidden aria-labelledby="member-title">
         <div class="account-heading"><h1 id="member-title" tabindex="-1">Mijn account</h1><button id="real-logout" type="button" class="secondary-button">Uitloggen</button></div>
         <p id="member-identity"></p>
-        <nav class="real-tabs" aria-label="CAP navigatie"><a class="secondary-button" href="#planning">Planning &amp; boekingen</a><a class="secondary-button" href="#workouts">Workouts &amp; training</a><a id="real-exercises-link" class="secondary-button" href="#exercises" hidden>Oefeningen</a><a id="real-invitations-link" class="secondary-button" href="#invitations" hidden>Sporters uitnodigen</a></nav>
-        <div id="real-planning"></div>
-        <div id="real-workouts" hidden></div>
-        <div id="real-exercises" hidden></div>
-        <section id="coach-invitations" hidden aria-labelledby="invitation-title">
-            <h2 id="invitation-title">Sporter uitnodigen</h2>
-            <p>Maak een persoonlijke uitnodigingslink. De sporter kiest zelf een wachtwoord. De link is 7 dagen geldig en werkt één keer.</p>
-            <form id="create-invitation" class="club-form">
-                <label>E-mailadres sporter<input name="email" type="email" required maxlength="254" autocomplete="off"></label>
-                <button class="primary-button" type="submit">Uitnodigingslink maken</button>
-            </form>
-            <div id="invitation-result" hidden>
-                <p id="invitation-recipient"></p>
-                <label for="invitation-link">Persoonlijke uitnodigingslink</label>
-                <input id="invitation-link" type="text" readonly autocomplete="off">
-                <button id="copy-invitation" class="secondary-button" type="button">Link kopiëren</button>
-                <p class="sample-notice">Er wordt nog geen e-mail verstuurd. Deel de link alleen met deze sporter. Een nieuwe uitnodiging maakt de vorige link ongeldig. Op dit moment werkt de link alleen op deze computer.</p>
-            </div>
-        </section>
+        <p>Log eerst uit voordat je een uitnodiging voor een ander account accepteert. Open daarna de uitnodigingslink opnieuw.</p>
     </section>
     <noscript>Schakel JavaScript in om in te loggen of je uitnodiging te accepteren.</noscript>
 </main>

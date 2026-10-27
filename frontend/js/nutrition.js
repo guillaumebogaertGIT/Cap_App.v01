@@ -19,7 +19,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const membership = group.querySelector('summary').firstChild.textContent.trim();
         group.querySelectorAll('.membership-athlete, .athlete-card').forEach(item => {
             const name = item.classList.contains('athlete-card') ? item.querySelector('h3').textContent.trim() : item.querySelectorAll('span')[1].textContent.trim();
-            roster.push({ id: name === 'Guillaume' ? 'preview-guillaume' : `example-${name.toLocaleLowerCase('nl-BE').replaceAll(' ', '-')}`, name, membership });
+            roster.push({ id: item.dataset.athleteId || (name === 'Guillaume' ? 'preview-guillaume' : `example-${name.toLocaleLowerCase('nl-BE').replaceAll(' ', '-')}`), name, membership });
         });
     });
     roster.sort((a, b) => a.name.localeCompare(b.name, 'nl-BE'));

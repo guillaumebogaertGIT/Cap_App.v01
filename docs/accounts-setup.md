@@ -4,7 +4,8 @@ The `accounts` Spring profile uses PostgreSQL for accounts, lessons, private
 recipients, bookings, workouts, exercise-library changes and athlete training.
 The existing design preview still runs separately on port 8080 with its old data.
 
-The real-account page is served at `http://127.0.0.1:8081/accounts/index.html`.
+The original app is served at `http://127.0.0.1:8081/app/index.html`.
+Guests go to `/accounts/index.html` to log in, then return to the original app.
 It supports real login/logout, coach invitations, Planning, bookings, workouts,
 exercise management, training entry, history and PRs. Existing browser/JSON
 preview data is not imported automatically or assigned to real people.
@@ -23,30 +24,30 @@ and coach password, not the database password. The preview entry screen also has
 an **Inloggen met je echte CAP-account** link. Use the backend-served page, not
 Live Server, for real account operations.
 
-As coach, enter an athlete email and choose **Uitnodigingslink maken**. Copy the
+As coach, open **Sporters**, enter an athlete email and choose **Uitnodigingslink maken**. Copy the
 link and open it in a private browser window to test accepting it as that athlete.
 The athlete chooses their own password, then logs in. Coaches cannot choose an
 athlete's password or grant coach rights through this form.
 
-The account page now has task navigation:
+Real login now opens the original sidebar and screens; there is no separate task workspace:
 
-- **Planning & boekingen:** month calendar, CAP group/private/open-gym lessons,
+- **Planning / Boekingen:** month calendar, CAP group/private/open-gym lessons,
   one/4/8-week creation, per-lesson editing/removal, booking/cancellation and
   attendance. Private recipients come from real accepted athlete accounts.
-- **Workouts & training:** coach workout library/editor, sets with individual
+- **Workout maken / Opgeslagen workouts / Workouts:** coach workout library/editor, sets with individual
   reps/weights/percentages, rest/tempo/supersets, assignments to a real athlete
   on a fixed day or flexible week, and snapshots attached to booked sessions.
   Athletes start their own assigned or booked workout, log results and view
   their own history/rep-specific records. Coaches select an athlete to review.
 - **Oefeningen:** coaches add/edit/archive/restore shared definitions. Existing
   workout names and completed history remain snapshots when definitions change.
-- **Sporters uitnodigen:** coaches create athlete accounts through invitations.
+- **Sporters:** coaches create athlete accounts through invitations.
 
 To review the complete flow, create an athlete invitation and accept it in a
 private browser window. In the coach window, create a future group lesson, save
 a workout and choose **Toewijzen → Geplande les**. In the athlete window, refresh
 Planning, book the lesson and open Workouts. Start, enter results, wait for the
-saved-progress message (or press **Voortgang bewaren**), refresh, then complete.
+short typing pause (about one second), refresh, then complete.
 Verify history/PRs and that another athlete cannot see a private appointment.
 
 Training starts with a server-frozen workout snapshot. Progress is saved after a
@@ -60,7 +61,8 @@ and athlete ownership are enforced on the server, not by the browser selector.
 Membership billing/paid-package entitlement rules are not implemented; invited
 athletes can book public lessons and their explicitly assigned private lessons.
 Nutrition, health/profile tracking, shop/payments and messaging remain outside
-this connected core and available only in the earlier preview where applicable.
+this connected core. Their original screens remain visible; browser-only tools
+do not become shared storage. Only the core features listed above use PostgreSQL.
 
 For now these localhost links work only on this PC, not on an athlete's phone or
 another computer. Email delivery and public hosting are separate later steps.

@@ -13,7 +13,7 @@
     let saving = false;
     let historyLoading = false;
     try {
-        const draft = JSON.parse(localStorage.getItem(key));
+        const draft = window.capReal ? window.capReal.draft : JSON.parse(localStorage.getItem(key));
         if (draft && draft.id && draft.planned?.exercises?.length && Array.isArray(draft.exercises)
             && Number.isFinite(Date.parse(draft.startedAt))) active = draft;
     } catch { /* An unreadable draft should not prevent the app from loading. */ }
@@ -21,7 +21,7 @@
     section.setAttribute('aria-labelledby', 'training-title');
     section.innerHTML = `
         <header class="dashboard-header"><div><span class="card-label">Elke set telt</span><h2 id="training-title" tabindex="-1">Trainingslog</h2><p class="dashboard-intro">Uitgevoerde trainingen en records per aantal herhalingen.</p></div></header>
-        <p class="sample-notice">Voorbeeldsporter: Guillaume. Alleen afgeronde trainingen tellen mee voor PRs. Gebruik steeds dezelfde gewichtsnotatie per oefening; 0 kg betekent geen toegevoegd gewicht.</p>
+        <p class="sample-notice">${window.capReal ? 'Jouw trainingslog.' : 'Voorbeeldsporter: Guillaume.'} Alleen afgeronde trainingen tellen mee voor PRs. Gebruik steeds dezelfde gewichtsnotatie per oefening; 0 kg betekent geen toegevoegd gewicht.</p>
         <p id="training-message" role="status"></p>
         <div id="active-training"></div>
         <section id="finished-overview" class="settings-card" hidden aria-labelledby="finished-title"><h3 id="finished-title" tabindex="-1">Training afgerond</h3><div id="finished-content"></div></section>
@@ -29,7 +29,27 @@
         <h3>Persoonlijke records per rep-aantal</h3><div id="training-records" class="club-grid"></div>
         <h3>Afgelopen trainingen</h3><div id="training-history"></div>`;
     document.querySelector('main').append(section);
+    let progressTimer;
+    let progressQueue = Promise.resolve();
+    function progressPayload(draft) {
+        return draft.exercises.map(e => ({ exerciseIndex: e.exerciseIndex, sets: e.sets.map(s => ({ reps: s.reps === '' ? 0 : Number(s.reps), kg: s.kg === '' || s.kg == null ? null : Number(s.kg), rir: s.rir === '' || s.rir == null ? null : Number(s.rir) })) }));
+    }
+    async function flushProgress() {
+        clearTimeout(progressTimer);
+        if (!active || !window.capReal) return;
+        const draft = active; const exercises = progressPayload(draft);
+        progressQueue = progressQueue.catch(() => {}).then(async () => {
+            const saved = await window.capReal.request('/api/training/active', 'PUT', { id: draft.id, version: draft.version, exercises });
+            draft.version = saved.version;
+        });
+        return progressQueue;
+    }
     function persist() {
+        if (window.capReal) {
+            clearTimeout(progressTimer);
+            if (active && !active.finishedAt) progressTimer = setTimeout(() => flushProgress().catch(error => { $('training-message').textContent = error.message + ' Je invoer staat nog op dit scherm.'; }), 600);
+            return;
+        }
         try { if (active) localStorage.setItem(key, JSON.stringify(active)); else localStorage.removeItem(key); }
         catch { $('training-message').textContent = 'Je browser kan de lopende training niet bewaren. Houd deze pagina open tot je klaar bent.'; }
     }
@@ -108,9 +128,10 @@
             $('training-message').textContent = 'Training opslaan…';
             const timeoutController = new AbortController(); const timeout = setTimeout(() => timeoutController.abort(), 15000);
             try {
+                if (window.capReal) await flushProgress();
                 const response = await fetch('http://localhost:8080/api/training', {
                     method: 'POST', headers: { 'Content-Type': 'application/json' }, signal: timeoutController.signal,
-                    body: JSON.stringify({ id: active.id, workoutId: active.planned.id, assignmentId: active.planned.assignmentId || null, startedAt: active.startedAt, finishedAt: active.finishedAt,
+                    body: JSON.stringify({ id: active.id, version: active.version, workoutId: active.planned.id, assignmentId: active.planned.assignmentId || null, startedAt: active.startedAt, finishedAt: active.finishedAt,
                         exercises: active.exercises.map(e => ({ exerciseIndex: e.exerciseIndex, sets: e.sets.map(s => ({ reps: Number(s.reps), kg: Number(s.kg), rir: s.rir == null || s.rir === '' ? null : Number(s.rir) })) })) })
                 });
                 const result = await response.json();
@@ -130,7 +151,8 @@
             const cancel = button('Training verwerpen', () => {
                 const confirmation = node('div', null, 'club-card');
                 confirmation.append(node('p', 'Deze lopende training verwijderen zonder resultaten op te slaan?'));
-                confirmation.append(button('Ja, verwerpen', () => {
+                confirmation.append(button('Ja, verwerpen', async () => {
+                    if (window.capReal) { try { clearTimeout(progressTimer); await progressQueue; await window.capReal.request('/api/training/active', 'DELETE'); } catch (error) { $('training-message').textContent = error.message; return; } }
                     active = null; persist(); renderActive(); $('training-message').textContent = 'Lopende training verwijderd. Geschiedenis blijft behouden.';
                 }), button('Verder trainen', () => { confirmation.remove(); cancel.disabled = false; }));
                 cancel.after(confirmation); cancel.disabled = true;
@@ -184,9 +206,12 @@
     }
     window.capTraining = {
         isActive(workoutId) { return active?.planned.id === workoutId; },
-        start(workout) {
+        async start(workout) {
             if (previewRole !== 'athlete' || !window.capAccess.signedIn) return;
-            if (!active) {
+            if (!active && window.capReal) {
+                try { active = await window.capReal.request('/api/training/active', 'POST', { assignmentId: workout.assignmentId }); $('finished-overview').hidden = true; }
+                catch (error) { location.hash = 'training'; $('training-message').textContent = error.message; renderActive(); return; }
+            } else if (!active) {
                 active = { id: crypto.randomUUID(), planned: structuredClone(workout), startedAt: new Date().toISOString(), finishedAt: null,
                     exercises: workout.exercises.map((e, i) => ({ exerciseIndex: i, sets: Array.from({ length: e.sets }, () => ({ reps: '', kg: '' })) })) };
                 persist(); $('finished-overview').hidden = true;

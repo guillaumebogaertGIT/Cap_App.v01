@@ -17,7 +17,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const membership = group.querySelector('summary').firstChild.textContent.trim();
         group.querySelectorAll('.membership-athlete, .athlete-card').forEach(item => {
             const name = item.classList.contains('athlete-card') ? item.querySelector('h3').textContent.trim() : item.querySelectorAll('span')[1].textContent.trim();
-            roster.push({ id: name === 'Guillaume' ? 'preview-guillaume' : `example-${name.toLocaleLowerCase('nl-BE').replaceAll(' ', '-')}`, name, membership });
+            roster.push({ id: item.dataset.athleteId || (name === 'Guillaume' ? 'preview-guillaume' : `example-${name.toLocaleLowerCase('nl-BE').replaceAll(' ', '-')}`), name, membership });
         });
     });
     roster.sort((a, b) => a.name.localeCompare(b.name, 'nl-BE'));
@@ -102,7 +102,7 @@ document.addEventListener('DOMContentLoaded', () => {
         request?.abort(); request = null;
         clearTraining();
         const athlete = selected(); if (!athlete || !isOpen()) return;
-        const connected = athlete.id === 'preview-guillaume';
+        const connected = Boolean(window.capReal) || athlete.id === 'preview-guillaume';
         $('coach-health-reload').hidden = !connected;
         if (!connected) {
             $('coach-health-training-status').textContent = 'Nog geen trainingsgegevens gekoppeld voor deze voorbeeldsporter.';
@@ -114,7 +114,7 @@ document.addEventListener('DOMContentLoaded', () => {
         $('coach-health-training-status').textContent = 'Trainingsgegevens laden…';
         const timeout = setTimeout(() => controller.abort(), 6000);
         try {
-            const responses = await Promise.all(['/api/training', '/api/records'].map(path => fetch(`http://localhost:8080${path}`, { signal: controller.signal, cache: 'no-store' })));
+            const responses = await Promise.all(['/api/training', '/api/records'].map(path => fetch(`http://localhost:8080${path}${window.capReal ? "?athleteId=" + encodeURIComponent(athlete.id) : ""}`, { signal: controller.signal, cache: 'no-store' })));
             if (responses.some(response => !response.ok)) throw new Error('Load failed');
             const [history, records] = await Promise.all(responses.map(response => response.json()));
             if (!Array.isArray(history) || !Array.isArray(records)) throw new Error('Invalid data');
@@ -139,7 +139,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 $('coach-health-training-history').append(row);
             });
             if (!sessions.length) $('coach-health-training-history').append(node('p', 'Nog geen afgeronde trainingen.'));
-            $('coach-health-training-status').textContent = 'Opgeslagen trainingen en records van Guillaume.';
+            $('coach-health-training-status').textContent = 'Opgeslagen trainingen en records van de geselecteerde sporter.';
         } catch {
             if (request === controller && selectedId === athlete.id && isOpen()) {
                 clearTraining();

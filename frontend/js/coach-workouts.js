@@ -445,10 +445,10 @@ document.addEventListener('cap:edit-assignment', event => {
     if (previewRole !== 'coach' || window.capTraining.isActive(event.detail.id)) return;
     if (!populateWorkout(event.detail, true)) return;
     editingAssignmentId = event.detail.assignmentId;
-    document.querySelector('#whole-workout-help').textContent = 'Verwijder de volledige workout voor deze datum bij Guillaume, inclusief alle oefeningen. Het opgeslagen voorbeeld blijft behouden.';
+    document.querySelector('#whole-workout-help').textContent = 'Verwijder de volledige workout voor deze datum bij deze sporter, inclusief alle oefeningen. Het opgeslagen voorbeeld blijft behouden.';
     copySubmit.hidden = true;
     athleteDate.min = event.detail.assignedDate;
-    document.querySelector('#create-workout-title').textContent = 'Workout van Guillaume bewerken';
+    document.querySelector('#create-workout-title').textContent = 'Toegewezen workout bewerken';
     document.querySelector('#workout-template-status').textContent = 'Je wijzigt alleen deze gedateerde toewijzing. Het opgeslagen voorbeeld en andere datums blijven behouden.';
     location.hash = 'create-workout';
 });
@@ -468,7 +468,7 @@ deleteEditedWorkout.addEventListener('click', async () => {
     }
     const assignmentId = editingAssignmentId;
     const message = assignmentId
-        ? 'De volledige workout voor deze datum verwijderen bij Guillaume? Het opgeslagen voorbeeld en afgeronde trainingen blijven behouden.'
+        ? 'De volledige workout voor deze datum verwijderen bij deze sporter? Het opgeslagen voorbeeld en afgeronde trainingen blijven behouden.'
         : 'Deze volledige workout uit de bibliotheek verwijderen, inclusief de toewijzingen? Afgeronde trainingen en PRs blijven behouden.';
     if (!window.confirm(message)) return;
     [deleteEditedWorkout, primarySubmit, copySubmit, cancelEdit].forEach(button => { button.disabled = true; });
@@ -592,10 +592,10 @@ workoutForm.addEventListener('submit', async (event) => {
         if (weeklyCreate) message = `Workout bewaard bij Workouts deze week · ${window.capAgenda.range(athleteAgenda.value().date)}.`;
         if (linksSessions()) {
             try {
-                window.capClub.assignWorkout(sessionIds, saved);
-                message = `Workout opgeslagen en gekoppeld aan ${sessionIds.length} sessie(s) in de lokale planning.`;
+                await window.capClub.assignWorkout(sessionIds, saved);
+                message = `Workout opgeslagen en gekoppeld aan ${sessionIds.length} sessie(s) in de planning.`;
             } catch {
-                message = 'Workout opgeslagen in Java, maar de sessietoewijzing is mislukt. Het programma is niet bijgewerkt. Controleer browseropslag en de planning.';
+                message = 'Workout opgeslagen in Java, maar de sessietoewijzing is mislukt. Het programma is niet bijgewerkt. Controleer de verbinding en de planning.';
             }
         }
         saveDialog.close();

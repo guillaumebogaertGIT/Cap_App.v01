@@ -9,21 +9,16 @@
     if (invitationToken) history.replaceState(null, '', location.pathname);
 
     function message(text) { $('account-status').textContent = text; }
-    function clearInvitation() {
-        $('invitation-link').value = '';
-        $('invitation-recipient').textContent = '';
-        $('invitation-result').hidden = true;
-    }
+
     function showMember(account) {
+        if (account && !invitationToken) { location.replace('/app/index.html'); return; }
         if (member?.id !== account?.id) document.querySelectorAll('form').forEach(form => form.reset());
         member = account;
         document.body.classList.toggle('is-real-member', Boolean(account));
         $('login-panel').hidden = Boolean(account) || Boolean(invitationToken);
         $('accept-panel').hidden = Boolean(account) || !invitationToken;
         $('member-panel').hidden = !account;
-        $('coach-invitations').hidden = account?.role !== 'COACH';
         $('member-identity').textContent = account ? `${account.name} · ${account.email} · ${account.role === 'COACH' ? 'Coach' : 'Sporter'}` : '';
-        clearInvitation();
         document.dispatchEvent(new CustomEvent('cap:account-ready', { detail: account }));
     }
     async function request(path, options = {}) {
@@ -98,27 +93,6 @@
             message('Je account is aangemaakt. Log in met je eigen wachtwoord.');
             $('real-login').elements.password.focus();
         });
-    });
-    $('create-invitation').addEventListener('submit', event => {
-        event.preventDefault();
-        const form = event.currentTarget;
-        run(async () => {
-            clearInvitation();
-            const email = form.elements.email.value.trim();
-            const invitation = await post('/invitations', { email });
-            const link = new URL('index.html', location.href);
-            link.hash = new URLSearchParams({ invite: invitation.token }).toString();
-            $('invitation-link').value = link.href;
-            $('invitation-recipient').textContent = `Uitnodiging voor ${email}`;
-            $('invitation-result').hidden = false;
-            message('De uitnodigingslink is klaar. Deel hem alleen met de juiste sporter.');
-            $('invitation-link').focus();
-        });
-    });
-    $('copy-invitation').addEventListener('click', async () => {
-        const link = $('invitation-link');
-        try { await navigator.clipboard.writeText(link.value); message('Uitnodigingslink gekopieerd.'); }
-        catch { link.focus(); link.select(); message('Kopieer de geselecteerde link met de kopieerfunctie van je apparaat.'); }
     });
     $('real-logout').addEventListener('click', () => run(async () => {
         await post('/logout', {});

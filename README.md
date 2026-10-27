@@ -9,8 +9,8 @@ Workout creation, example-athlete assignment, timed completion, saved history an
 rep-specific PRs are connected. Coaches can prescribe fixed kg or percentages of
 a matching rep record. The older design preview retains browser-local club data.
 
-The **real-account workspace** at `http://127.0.0.1:8081/accounts/index.html` now
-connects Planning/bookings, workout creation/assignment, exercise management and
+The **original app with real accounts** at `http://127.0.0.1:8081/app/index.html`
+keeps the same sidebar, Home, calendar, popups and workout editor, and connects Planning/bookings, workout creation/assignment, exercise management and
 athlete training/history/records to PostgreSQL. It uses coach invitations,
 cookie sessions and server-side roles/ownership. The preview remains separate;
 its data is not imported automatically. See [account setup](docs/accounts-setup.md)

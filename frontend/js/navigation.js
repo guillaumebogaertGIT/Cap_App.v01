@@ -5,7 +5,7 @@ const sidebarToggle = document.querySelector('.sidebar-toggle');
 const mobileLayout = window.matchMedia('(max-width: 800px)');
 const originalSidebarLinks = Array.from(sidebarNavigation.children);
 const coachSidebarOrder = ['dashboard', 'planning', 'bookings', 'create-workout', 'exercises', 'saved-workouts', 'athletes', 'coach-nutrition'];
-let previewRole = 'athlete';
+let previewRole = window.capReal?.account.role === 'COACH' ? 'coach' : 'athlete';
 
 document.querySelectorAll('[name="preview-role"]').forEach((input) => {
     input.checked = input.value === previewRole;

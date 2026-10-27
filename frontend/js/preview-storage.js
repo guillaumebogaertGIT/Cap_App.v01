@@ -1,11 +1,11 @@
 // Browser-local preview data; credentials are never stored here.
 window.capStorage = {
     read(key, fallback) {
-        try { return JSON.parse(localStorage.getItem(`cap-${key}-v1`)) ?? fallback; }
+        try { return JSON.parse(localStorage.getItem(`${window.capReal ? "cap-user-" + window.capReal.account.id : "cap"}-${key}-v1`)) ?? fallback; }
         catch { return fallback; }
     },
     write(key, value) {
-        try { localStorage.setItem(`cap-${key}-v1`, JSON.stringify(value)); }
+        try { localStorage.setItem(`${window.capReal ? "cap-user-" + window.capReal.account.id : "cap"}-${key}-v1`, JSON.stringify(value)); }
         catch {
             let notice = document.getElementById('storage-error');
             if (!notice) {

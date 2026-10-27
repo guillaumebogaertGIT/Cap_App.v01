@@ -7,6 +7,7 @@ connectionPanel.innerHTML = `
     <p>Workouts en toewijzingen gebruiken Java-opslag. Accounts blijven een preview; planning, boekingen en shop gebruiken browseropslag.</p>
     <button type="button" class="secondary-button" id="check-backend">Opnieuw controleren</button>`;
 document.querySelector('#settings').append(connectionPanel);
+if (window.capReal) connectionPanel.querySelectorAll('p')[1].textContent = 'Accounts, planning, boekingen, oefeningen en workouts gebruiken gedeelde serveropslag.';
 
 async function checkBackend() {
     const status = document.querySelector('#backend-status');

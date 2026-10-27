@@ -56,6 +56,9 @@ class AccountApiTests {
 
     @Test void inviteAcceptLoginAndEnforceOwnershipBoundary() throws Exception {
         var coach = client(); var athlete = client();
+        var guestApp = request(coach, "GET", "/app/index.html", null, null, false);
+        assertEquals(302, guestApp.statusCode());
+        assertEquals("/accounts/index.html", guestApp.headers().firstValue("location").orElseThrow());
         var page = request(coach, "GET", "/accounts/index.html", null, null, false);
         assertEquals(200, page.statusCode());
         assertTrue(page.body().contains("Mijn account aanmaken"));
@@ -66,6 +69,15 @@ class AccountApiTests {
         assertEquals(403, request(coach, "POST", "/api/accounts/login", "email=coach@example.test&password=wrong", null, true).statusCode());
         assertEquals(401, request(coach, "POST", "/api/accounts/login", "email=coach@example.test&password=wrong", csrf(coach), true).statusCode());
         login(coach, "COACH@example.test", "Coach-test-password-123");
+        var originalApp = request(coach, "GET", "/app/index.html", null, null, false);
+        assertEquals(200, originalApp.statusCode());
+        assertTrue(originalApp.headers().firstValue("cache-control").orElse("").contains("no-store"));
+        assertTrue(originalApp.body().contains("id=\"sidebar-navigation\""));
+        assertTrue(originalApp.body().contains("js/real-auth.js"));
+        assertFalse(originalApp.body().contains("js/auth-preview.js"));
+        assertTrue(originalApp.body().contains("id=\"cap-account-data\""));
+        assertFalse(originalApp.body().contains("Coach-test-password-123"));
+        assertEquals(200, request(coach, "GET", "/app/css/style.css", null, null, false).statusCode());
         var me = request(coach, "GET", "/api/accounts/me", null, null, false);
         assertEquals("COACH", json.readTree(me.body()).get("role").asText());
         assertFalse(me.body().contains("password"));
@@ -84,6 +96,13 @@ class AccountApiTests {
         assertNotEquals("Athlete-test-password-123", stored);
         login(athlete, "athlete@example.test", "Athlete-test-password-123");
         assertEquals("ATHLETE", json.readTree(request(athlete, "GET", "/api/accounts/me", null, null, false).body()).get("role").asText());
+        jdbc.update("UPDATE cap_user SET display_name=? WHERE email=?", "</script><script>alert(1)</script>", "athlete@example.test");
+        try {
+            var athleteApp = request(athlete, "GET", "/app/index.html", null, null, false);
+            assertEquals(200, athleteApp.statusCode());
+            assertFalse(athleteApp.body().contains("</script><script>alert(1)"));
+            assertTrue(athleteApp.body().contains("\\u003c/script>"));
+        } finally { jdbc.update("UPDATE cap_user SET display_name=? WHERE email=?", "Test Athlete", "athlete@example.test"); }
         assertEquals(403, request(athlete, "POST", "/api/workouts", "{}", csrf(athlete), false).statusCode());
         assertEquals(403, request(athlete, "POST", "/api/exercises", "{}", csrf(athlete), false).statusCode());
         assertEquals(403, request(athlete, "GET", "/api/club/people", null, null, false).statusCode());
