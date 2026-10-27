@@ -11,7 +11,9 @@ a matching rep record. Planning, bookings and shop still use browser-local previ
 
 An isolated **real-account backend foundation** now supports PostgreSQL, coach
 bootstrap, expiring athlete invitations and cookie login/logout with Spring Security.
-It is not connected to the frontend yet. See [account setup](docs/accounts-setup.md)
+The real account page at `http://127.0.0.1:8081/accounts/index.html` supports login,
+logout and coach invitation/athlete acceptance. The full app still uses preview
+data until its ownership migration. See [account setup](docs/accounts-setup.md)
 for the separate `accounts` profile and its remaining migration work. Payments
 are not implemented.
 

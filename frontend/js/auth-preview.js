@@ -220,6 +220,11 @@ document.addEventListener('DOMContentLoaded', () => {
     $('preview-plan').addEventListener('change', (event) => { access.plan = event.target.value; updateAccess(); });
     $('show-login').addEventListener('click', () => mode(false));
     $('show-signup').addEventListener('click', () => mode(true));
+    const realLogin = document.createElement('a');
+    realLogin.href = location.port === '5500' ? 'http://127.0.0.1:8081/accounts/index.html' : '/accounts/index.html';
+    realLogin.className = 'secondary-button';
+    realLogin.textContent = 'Inloggen met je echte CAP-account';
+    $('open-demo').before(realLogin);
     $('open-demo').addEventListener('click', enter);
     form.addEventListener('submit', (event) => {
         event.preventDefault();

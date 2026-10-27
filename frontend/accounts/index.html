@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="nl">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="referrer" content="no-referrer">
+    <title>CAP account</title>
+    <script src="shared/theme.js"></script>
+    <link rel="stylesheet" href="shared/style.css">
+    <link rel="stylesheet" href="shared/polish.css">
+    <link rel="stylesheet" href="accounts.css">
+    <script src="accounts.js" defer></script>
+</head>
+<body>
+<main class="account-shell">
+    <header class="account-header"><a href="index.html" aria-label="CAP account startpagina">CAP</a><span>Jouw account</span></header>
+    <p id="account-status" role="status" tabindex="-1">Je sessie controleren…</p>
+    <section id="login-panel" hidden aria-labelledby="login-title">
+        <h1 id="login-title">Inloggen</h1>
+        <p>Gebruik je eigen CAP-account. Sporters maken hun account aan via een uitnodiging van de coach.</p>
+        <form id="real-login" class="club-form">
+            <label>E-mailadres<input name="email" type="email" required maxlength="254" autocomplete="username"></label>
+            <label>Wachtwoord<input name="password" type="password" required autocomplete="current-password"></label>
+            <button class="primary-button" type="submit">Inloggen</button>
+        </form>
+        <p class="sample-notice">Wachtwoord vergeten? Wachtwoordherstel is nog niet beschikbaar.</p>
+    </section>
+    <section id="accept-panel" hidden aria-labelledby="accept-title">
+        <h1 id="accept-title">Welkom bij CAP</h1>
+        <p>De coach heeft je uitgenodigd. Kies je eigen wachtwoord om je sporteraccount aan te maken.</p>
+        <form id="accept-invitation" class="club-form">
+            <label>Naam<input name="name" required maxlength="100" autocomplete="name"></label>
+            <label>Wachtwoord<input name="password" type="password" required minlength="12" autocomplete="new-password" aria-describedby="password-guidance"></label>
+            <p id="password-guidance" class="sample-notice">Minstens 12 tekens. Gebruik een wachtwoord dat je niet voor een ander account gebruikt.</p>
+            <label>Herhaal wachtwoord<input name="confirmation" type="password" required autocomplete="new-password"></label>
+            <button class="primary-button" type="submit">Mijn account aanmaken</button>
+        </form>
+        <a class="account-text-link" href="index.html">Ik heb al een account</a>
+    </section>
+    <section id="member-panel" hidden aria-labelledby="member-title">
+        <div class="account-heading"><h1 id="member-title" tabindex="-1">Mijn account</h1><button id="real-logout" type="button" class="secondary-button">Uitloggen</button></div>
+        <p id="member-identity"></p>
+        <p class="account-notice">Je account is klaar. Planning, boekingen en workouts worden nog aangesloten op echte accounts. Je ziet hier daarom nog geen trainingen.</p>
+        <section id="coach-invitations" hidden aria-labelledby="invitation-title">
+            <h2 id="invitation-title">Sporter uitnodigen</h2>
+            <p>Maak een persoonlijke uitnodigingslink. De sporter kiest zelf een wachtwoord. De link is 7 dagen geldig en werkt één keer.</p>
+            <form id="create-invitation" class="club-form">
+                <label>E-mailadres sporter<input name="email" type="email" required maxlength="254" autocomplete="off"></label>
+                <button class="primary-button" type="submit">Uitnodigingslink maken</button>
+            </form>
+            <div id="invitation-result" hidden>
+                <p id="invitation-recipient"></p>
+                <label for="invitation-link">Persoonlijke uitnodigingslink</label>
+                <input id="invitation-link" type="text" readonly autocomplete="off">
+                <button id="copy-invitation" class="secondary-button" type="button">Link kopiëren</button>
+                <p class="sample-notice">Er wordt nog geen e-mail verstuurd. Deel de link alleen met deze sporter. Een nieuwe uitnodiging maakt de vorige link ongeldig. Op dit moment werkt de link alleen op deze computer.</p>
+            </div>
+        </section>
+    </section>
+    <noscript>Schakel JavaScript in om in te loggen of je uitnodiging te accepteren.</noscript>
+</main>
+</body>
+</html>

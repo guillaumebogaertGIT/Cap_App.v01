@@ -55,6 +55,11 @@ class AccountApiTests {
 
     @Test void inviteAcceptLoginAndEnforceOwnershipBoundary() throws Exception {
         var coach = client(); var athlete = client();
+        var page = request(coach, "GET", "/accounts/index.html", null, null, false);
+        assertEquals(200, page.statusCode());
+        assertTrue(page.body().contains("Mijn account aanmaken"));
+        assertEquals(200, request(coach, "GET", "/accounts/accounts.js", null, null, false).statusCode());
+        assertEquals(200, request(coach, "GET", "/accounts/shared/style.css", null, null, false).statusCode());
         assertEquals(401, request(coach, "GET", "/api/accounts/me", null, null, false).statusCode());
         assertEquals(403, request(coach, "POST", "/api/accounts/login", "email=coach@example.test&password=wrong", null, true).statusCode());
         assertEquals(401, request(coach, "POST", "/api/accounts/login", "email=coach@example.test&password=wrong", csrf(coach), true).statusCode());

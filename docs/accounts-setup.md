@@ -5,9 +5,34 @@ The existing design preview still runs normally on port 8080. Account mode runs
 separately on port 8081 and deliberately denies the old workout/training/exercise
 APIs, which still use example data without real athlete ownership.
 
-This step is an API foundation, not the finished real-account frontend. The app's
-current login screen remains a preview. Planning, bookings and workout ownership
-will be migrated next; existing browser/JSON data is not imported automatically.
+The real-account page is served at `http://127.0.0.1:8081/accounts/index.html`.
+It supports real login/logout, coach invitation links and athlete acceptance.
+The existing full app remains a separate preview. Planning, bookings and workout
+ownership will be migrated next; existing browser/JSON data is not imported automatically.
+
+## Use the account page
+
+After updating the code, stop the account backend with Ctrl+C and restart it in
+the same terminal (which retains your database environment variables):
+
+```powershell
+.\mvnw.cmd spring-boot:run '-Dspring-boot.run.profiles=accounts'
+```
+
+Open `http://127.0.0.1:8081/accounts/index.html` and log in using your coach email
+and coach password, not the database password. The preview entry screen also has
+an **Inloggen met je echte CAP-account** link. Use the backend-served page, not
+Live Server, for real account operations.
+
+As coach, enter an athlete email and choose **Uitnodigingslink maken**. Copy the
+link and open it in a private browser window to test accepting it as that athlete.
+The athlete chooses their own password, then logs in. Coaches cannot choose an
+athlete's password or grant coach rights through this form.
+
+For now these localhost links work only on this PC, not on an athlete's phone or
+another computer. Email delivery and public hosting are separate later steps.
+No password or session token is stored in browser localStorage. Invitation tokens
+use a URL fragment and are removed from the visible address after reading.
 
 ## Start a local persistent database
 
@@ -125,8 +150,8 @@ Invoke-WebRequest "$accountBase/logout" -Method Post -WebSession $coachSession -
 
 Invitation tokens expire after seven days, work once and are stored only as
 SHA-256 hashes. Reissuing an invitation invalidates the earlier token. Only the
-inviting coach receives the raw token from the API. Email delivery and the
-invitation acceptance page are not implemented yet.
+inviting coach receives the raw token from the API. Email delivery is not
+implemented yet; the account page provides a copyable link for local testing.
 
 ## Checks and remaining work
 
@@ -136,7 +161,7 @@ password storage, logout and denial of the legacy data APIs in account mode.
 Tests apply the actual migration to a temporary H2 database in PostgreSQL mode;
 this is not a substitute for checking against PostgreSQL itself.
 
-Before real use: connect the frontend, migrate sessions/bookings/workout ownership,
+Before real use: migrate sessions/bookings/workout ownership into the main app,
 test capacity transactions on PostgreSQL, add email delivery/password recovery and
 login/invitation abuse limits, and configure HTTPS, secure cookies, backups and
 deployment monitoring. Keep this profile on localhost during that work. Set
