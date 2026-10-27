@@ -1,7 +1,8 @@
 body { display: block; }
 main.account-shell { width: min(100%, 44rem); margin: 0 auto; padding: 1.25rem 1rem calc(2rem + env(safe-area-inset-bottom, 0px)); }
-.account-header { display: flex; align-items: baseline; gap: 1rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); }
-.account-header a { font-size: 1.75rem; font-weight: 800; color: var(--accent-text); text-decoration: none; }
+.account-header { display: flex; align-items: center; gap: 1rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); }
+.account-header a { display: inline-flex; flex-shrink: 0; }
+.account-header img { display: block; width: 6rem; max-width: 100%; height: auto; filter: var(--logo-filter); }
 .account-header span, .account-shell .sample-notice { color: var(--muted); }
 .account-shell h1 { font-size: clamp(1.75rem, 5vw, 2.25rem); line-height: 1.2; margin: 1rem 0; }
 .account-shell h2 { font-size: 1.35rem; margin: 1.75rem 0 .75rem; }
