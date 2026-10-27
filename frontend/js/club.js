@@ -77,6 +77,12 @@
     });
     let layout = 'day';
     const coach = () => previewRole === 'coach';
+    const visibleSession = session => window.capSessionAccess.canView(session, previewRole, 'preview-guillaume');
+    const ownBooking = booking => booking.athleteId ? booking.athleteId === 'preview-guillaume' : booking.athlete === 'Guillaume';
+    const athletes = Array.from(document.querySelectorAll('#athletes .membership-athlete, #athletes .athlete-card'), item => {
+        const name = (item.classList.contains('athlete-card') ? item.querySelector('h3') : item.querySelectorAll('span')[1]).textContent.trim();
+        return { name, id: name === 'Guillaume' ? 'preview-guillaume' : 'example-' + name.toLocaleLowerCase('nl-BE').replaceAll(' ', '-') };
+    }).sort((a,b) => a.name.localeCompare(b.name, 'nl-BE'));
     const element = (tag, text, className) => {
         const node = document.createElement(tag);
         if (text !== undefined) node.textContent = text;
@@ -121,10 +127,13 @@
         </section>
         <dialog id="session-dialog" class="club-dialog" aria-labelledby="session-dialog-title">
             <form id="session-form" class="club-form"><div class="session-dialog-header"><h2 id="session-dialog-title">Les toevoegen</h2><button class="secondary-button session-dialog-close" type="button" data-close="session-dialog" aria-label="Sluiten" title="Sluiten"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button></div><input name="id" type="hidden">
+                <input type="hidden" name="type" value="Groep"><input type="hidden" name="category" value="">
+                <label>Activiteit<select id="session-kind"><option value="">Andere groepsles</option><option>CAP HYROX</option><option>CAP Hybrid</option><option>CAP Move</option><option>CAP Lift &amp; HIT</option><option>Privé</option><option>Open gym</option></select></label>
+                <fieldset id="session-athletes" hidden><legend>Sporters voor deze privésessie</legend><p class="sample-notice">Alleen de coach en geselecteerde sporters zien deze afspraak. Zij worden automatisch ingeschreven.</p><label>Zoek sporter<input id="session-athlete-search" type="search" placeholder="Naam van de sporter"></label><div id="session-athlete-options"></div><p id="session-athlete-count" role="status"></p></fieldset>
                 <label>Naam<input name="title" required maxlength="100"></label>
                 <label>Programma voor sporters<textarea name="program" rows="5" maxlength="3000" placeholder="Bijvoorbeeld: opwarming, oefeningen en cooling-down"></textarea></label>
                 <p class="sample-notice" id="session-program-help">Sporters kunnen dit programma bekijken voor ze boeken. Na inschrijving verschijnt de sessie ook bij hun workouts.</p>
-                <div class="club-form-grid"><label>Datum<input name="date" type="date" required></label><label>Type<select name="type"><option>Groep</option><option>Privé</option><option>Open gym</option></select></label><label id="session-category-label">CAP groep<select name="category"><option value="">Andere groepsles</option><option>CAP HYROX</option><option>CAP Hybrid</option><option>CAP Move</option><option>CAP Lift &amp; HIT</option></select></label><label>Start<input name="start" type="time" required></label><label>Einde<input name="end" type="time" required></label><label>Coach<input name="coach" required maxlength="80"></label><label>Locatie<input name="location" required maxlength="120"></label><label>Max. deelnemers<input name="capacity" type="number" min="1" max="200" required value="8"></label><label>Wekelijks herhalen<select name="repeat"><option value="1">Eenmalig</option><option value="4">4 weken</option><option value="8">8 weken</option></select></label></div>
+                <div class="club-form-grid"><label>Datum<input name="date" type="date" required></label><label>Start<input name="start" type="time" required></label><label>Einde<input name="end" type="time" required></label><label>Coach<input name="coach" required maxlength="80"></label><label>Locatie<input name="location" required maxlength="120"></label><label>Max. deelnemers<input name="capacity" type="number" min="1" max="200" required value="8"></label><label>Wekelijks herhalen<select name="repeat"><option value="1">Eenmalig</option><option value="4">4 weken</option><option value="8">8 weken</option></select></label></div>
                 <p class="sample-notice">Wekelijkse herhalingen vallen op dezelfde weekdag als de gekozen datum. Elke herhaling is een losse les; bewerken geldt alleen voor die les.</p><p id="session-error" role="alert"></p><div class="editor-actions"><button class="primary-button" type="submit">Les bewaren</button><button class="secondary-button" type="submit" id="session-add-workout">Workout toevoegen</button></div>
                 <p class="sample-notice" id="session-workout-help">Workout toevoegen bewaart eerst de les. Daarna kun je een nieuwe workout maken of een opgeslagen workout aanpassen voor deze sessie.</p>
             </form>
@@ -164,8 +173,8 @@
         const heading = element('h3', 'Mijn geboekte sessies');
         heading.id = 'booked-session-workouts-title';
         sessionWorkouts.append(heading);
-        const sessions = data.sessions.filter(session => session.type !== 'Open gym' && !session.cancelled && !past({ ...session, start: session.end })
-            && bookingsFor(session).some(booking => booking.athlete === 'Guillaume'))
+        const sessions = data.sessions.filter(session => visibleSession(session) && session.type !== 'Open gym' && !session.cancelled && !past({ ...session, start: session.end })
+            && bookingsFor(session).some(ownBooking))
             .sort((a, b) => `${a.date}${a.start}`.localeCompare(`${b.date}${b.start}`));
         const list = element('div', undefined, 'compact-session-list');
         sessions.slice(0, visibleSessionLimit).forEach(session => {
@@ -191,7 +200,7 @@
         const title = element('span', undefined, 'slot-title');
         title.append(element('strong', session.title), element('small', session.category || session.type));
         if (session.preview) title.lastChild.textContent += ' · Voorbeeld';
-        const booked = active.some(booking => booking.athlete === 'Guillaume');
+        const booked = active.some(ownBooking);
         const capacity = element('span', `${booked && !coach() ? '✓ ' : ''}${active.length}/${session.capacity}`, 'slot-capacity');
         capacity.setAttribute('aria-label', `${active.length} van ${session.capacity} plaatsen geboekt`);
         summary.append(element('span', session.start, 'slot-time'), title, capacity);
@@ -209,16 +218,17 @@
                 ($('session-calendar-dialog').open ? $('calendar-new-session') : $('new-session')).focus();
             }));
         } else {
-            const booked = active.some((booking) => booking.athlete === 'Guillaume');
+            const booked = active.some(ownBooking);
             const permitted = window.capAccess.can(bookingFeature(session));
             const unavailable = session.cancelled || past(session) || (!booked && active.length >= session.capacity);
             const control = button(booked ? 'Boeking annuleren' : session.cancelled ? 'Geannuleerd' : past(session) ? 'Afgelopen / gestart' : unavailable ? 'Volzet' : 'Boeken', () => {
+                if (!visibleSession(session)) return;
                 if (!window.capAccess.signedIn || (!booked && !window.capAccess.can(bookingFeature(session)))) {
                     announce('Voor deze sessie is een geschikt abonnement nodig. Bekijk de voorbeeldrechten bovenaan.');
                     return;
                 }
-                if (booked) active.filter((booking) => booking.athlete === 'Guillaume').forEach((booking) => { booking.cancelled = true; });
-                else if (!session.cancelled && !past(session) && bookingsFor(session).length < session.capacity) data.bookings.push({ id: uid(), sessionId: session.id, athlete: 'Guillaume', cancelled: false, attendance: 'Onbekend' });
+                if (booked) active.filter(ownBooking).forEach((booking) => { booking.cancelled = true; });
+                else if (!session.cancelled && !past(session) && bookingsFor(session).length < session.capacity) data.bookings.push({ id: uid(), sessionId: session.id, athleteId: 'preview-guillaume', athlete: 'Guillaume', cancelled: false, attendance: 'Onbekend' });
                 save(booked ? 'Boeking geannuleerd.' : session.type === 'Open gym' ? 'Open gym geboekt. Bekijk Boekingen voor je gereserveerde plek.' : 'Geboekt voor Guillaume in de preview. De sessie staat nu ook bij Workouts.');
             }, !booked);
             control.disabled = unavailable;
@@ -240,7 +250,7 @@
         document.querySelectorAll('[data-planning-view]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.planningView === layout)));
         const selectedCoach = $('coach-filter').value;
         $('coach-filter').replaceChildren(new Option('Alle trainers', ''));
-        [...new Set(data.sessions.map((session) => session.coach))].sort().forEach((name) => $('coach-filter').add(new Option(name, name)));
+        [...new Set(data.sessions.filter(visibleSession).map((session) => session.coach))].sort().forEach((name) => $('coach-filter').add(new Option(name, name)));
         $('coach-filter').value = [...$('coach-filter').options].some((option) => option.value === selectedCoach) ? selectedCoach : '';
         const container = $('session-list');
         container.className = layout === 'calendar' ? 'club-calendar' : 'club-agenda';
@@ -250,7 +260,7 @@
             const date = shiftDate(week, day);
             const column = element('section', undefined, 'club-day');
             column.append(element('h3', dateLabel(date), date === today() ? 'club-today' : ''));
-            const sessions = data.sessions.filter((session) => session.date === date && !session.cancelled && !past({ ...session, start: session.end }) && (!$('session-filter').value || session.type === $('session-filter').value) && (!$('coach-filter').value || session.coach === $('coach-filter').value)).sort((a, b) => a.start.localeCompare(b.start));
+            const sessions = data.sessions.filter((session) => visibleSession(session) && session.date === date && !session.cancelled && !past({ ...session, start: session.end }) && (!$('session-filter').value || session.type === $('session-filter').value) && (!$('coach-filter').value || session.coach === $('coach-filter').value)).sort((a, b) => a.start.localeCompare(b.start));
             total += sessions.length;
             column.firstElementChild.append(element('span', `${sessions.length} ${sessions.length === 1 ? 'les' : 'lessen'}`, 'planning-day-count'));
             if (!sessions.length) column.append(element('p', 'Geen lessen', 'sample-notice'));
@@ -312,9 +322,9 @@
         if (coach()) { renderCoachBookings(list, openRows, focusKey); return; }
         list.className = 'club-grid';
         data.bookings.forEach((booking) => {
-            if (!coach() && booking.athlete !== 'Guillaume') return;
+            if (!ownBooking(booking)) return;
             const session = data.sessions.find((item) => item.id === booking.sessionId);
-            if (!session) return;
+            if (!session || !visibleSession(session)) return;
             const history = booking.cancelled || session.cancelled || past(session);
             if (history !== ($('booking-filter').value === 'history')) return;
             const card = element('article', undefined, 'club-card');
@@ -349,9 +359,9 @@
         if (!list.children.length) list.append(element('p', 'Geen producten in deze categorie.', 'club-empty'));
     }
     function renderDashboard() {
-        const upcoming = data.sessions.filter((session) => !session.cancelled && !past(session))
+        const upcoming = data.sessions.filter((session) => visibleSession(session) && !session.cancelled && !past(session))
             .sort((a, b) => `${a.date}${a.start}`.localeCompare(`${b.date}${b.start}`));
-        const reserved = upcoming.filter((session) => bookingsFor(session).some((booking) => booking.athlete === 'Guillaume'));
+        const reserved = upcoming.filter((session) => bookingsFor(session).some(ownBooking));
         $('home-planning-meta').textContent = reserved.length ? `${reserved.length} komende boeking(en)` : 'Bekijk het rooster';
     }
     function render() {
@@ -361,9 +371,7 @@
     function updateSessionType() {
         const form = $('session-form');
         const openGym = form.elements.namedItem('type').value === 'Open gym';
-        const group = form.elements.namedItem('type').value === 'Groep';
-        $('session-category-label').hidden = !group;
-        form.elements.namedItem('category').disabled = !group;
+        $('session-athletes').hidden = form.elements.namedItem('type').value !== 'Privé';
         const program = form.elements.namedItem('program');
         program.disabled = openGym;
         program.closest('label').hidden = openGym;
@@ -375,12 +383,29 @@
         coachInput.disabled = openGym;
         coachInput.closest('label').hidden = openGym;
     }
-    $('session-form').elements.namedItem('type').addEventListener('change', () => {
-        const form = $('session-form');
-        if (form.elements.namedItem('type').value === 'Open gym' && !form.elements.namedItem('id').value) {
-            if (form.elements.namedItem('capacity').value === '8') form.elements.namedItem('capacity').value = '7';
-            if (!form.elements.namedItem('title').value.trim()) form.elements.namedItem('title').value = 'Open gym';
-        }
+    const selectedAthletes = () => Array.from($('session-athlete-options').querySelectorAll('input:checked'), input => input.value);
+    function updateAthleteCount() {
+        const count = selectedAthletes().length;
+        $('session-athlete-count').textContent = count + ' sporter(s) geselecteerd';
+        if ($('session-form').elements.type.value === 'Privé') $('session-form').elements.capacity.value = Math.max(1, count);
+    }
+    athletes.forEach(athlete => {
+        const label = element('label', undefined, 'session-athlete-option');
+        const input = document.createElement('input'); input.type = 'checkbox'; input.value = athlete.id;
+        label.append(input, document.createTextNode(athlete.name));
+        $('session-athlete-options').append(label); input.addEventListener('change', updateAthleteCount);
+    });
+    $('session-athlete-search').addEventListener('input', event => {
+        const query = event.target.value.trim().toLocaleLowerCase('nl-BE');
+        Array.from($('session-athlete-options').children).forEach(label => { label.hidden = !label.textContent.toLocaleLowerCase('nl-BE').includes(query); });
+    });
+    $('session-kind').addEventListener('change', () => {
+        const form = $('session-form'); const choice = $('session-kind').value;
+        const previous = form.elements.category.value || (form.elements.type.value === 'Groep' ? '' : form.elements.type.value);
+        if (!form.elements.title.value.trim() || form.elements.title.value === previous) form.elements.title.value = choice;
+        form.elements.type.value = ['Privé', 'Open gym'].includes(choice) ? choice : 'Groep';
+        form.elements.category.value = form.elements.type.value === 'Groep' ? choice : '';
+        if (!form.elements.namedItem('id').value) form.elements.capacity.value = choice === 'Privé' ? Math.max(1, selectedAthletes().length) : choice === 'Open gym' ? 7 : 8;
         updateSessionType();
     });
     function openSession(session, selectedDate) {
@@ -389,6 +414,13 @@
         form.elements.namedItem('date').min = today();
         const values = session || { id: '', date: selectedDate || week, start: '18:00', end: '19:00', coach: 'Glenn', location: 'CAP Gistel', capacity: 8, type: 'Groep' };
         Object.entries(values).forEach(([name, value]) => { if (form.elements.namedItem(name)) form.elements.namedItem(name).value = value; });
+        $('session-kind').value = values.type === 'Groep' ? values.category || '' : values.type;
+        $('session-athlete-search').value = '';
+        Array.from($('session-athlete-options').children).forEach(label => {
+            label.hidden = false;
+            label.querySelector('input').checked = (session?.athleteIds || []).includes(label.querySelector('input').value);
+        });
+        $('session-athlete-count').textContent = selectedAthletes().length + ' sporter(s) geselecteerd';
         form.elements.repeat.disabled = Boolean(session);
         updateSessionType();
         $('session-error').textContent = '';
@@ -419,8 +451,11 @@
                 const existing = data.sessions.find((session) => session.id === values.id);
                 if (values.date < today()) { $('session-error').textContent = 'Kies vandaag of een toekomstige datum.'; return; }
                 if (values.end <= values.start) { $('session-error').textContent = 'De eindtijd moet na de starttijd liggen.'; return; }
-                if (existing && Number(values.capacity) < bookingsFor(existing).length) { $('session-error').textContent = 'De capaciteit kan niet lager zijn dan het aantal boekingen.'; return; }
-                const session = { ...values, capacity: Number(values.capacity), cancelled: existing?.cancelled || false };
+                const athleteIds = values.type === 'Privé' ? selectedAthletes() : [];
+                if (values.type === 'Privé' && !athleteIds.length) { $('session-error').textContent = 'Selecteer minstens een sporter voor deze privésessie.'; $('session-athlete-search').focus(); return; }
+                if (Number(values.capacity) < athleteIds.length) { $('session-error').textContent = 'Voorzie een plaats voor elke geselecteerde sporter.'; return; }
+                if (existing && values.type !== 'Privé' && Number(values.capacity) < bookingsFor(existing).length) { $('session-error').textContent = 'De capaciteit kan niet lager zijn dan het aantal boekingen.'; return; }
+                const session = { ...values, athleteIds, capacity: Number(values.capacity), cancelled: existing?.cancelled || false };
                 session.workoutSnapshot = existing?.program === values.program ? existing?.workoutSnapshot || null : null;
                 if (values.type !== 'Groep') session.category = '';
                 if (values.type === 'Open gym') { session.coach = ''; session.program = ''; }
@@ -432,10 +467,18 @@
                     const created = { ...session, id: uid(), date: shiftDate(values.date, index * 7) };
                     data.sessions.push(created); targetIds.push(created.id);
                 }
+                targetIds.forEach(sessionId => {
+                    if (values.type !== 'Privé') return;
+                    data.bookings = data.bookings.filter(booking => booking.sessionId !== sessionId || athleteIds.includes(booking.athleteId));
+                    athleteIds.forEach(athleteId => {
+                        const booking = data.bookings.find(item => item.sessionId === sessionId && item.athleteId === athleteId);
+                        if (!booking) data.bookings.push({ id: uid(), sessionId, athleteId, athlete: athletes.find(item => item.id === athleteId).name, cancelled: false, attendance: 'Onbekend' });
+                    });
+                });
                 week = values.date;
                 $('session-filter').value = '';
                 $('coach-filter').value = '';
-                $('session-dialog').close(); save('Les bewaard. De planning is bijgewerkt voor beide rollen.');
+                $('session-dialog').close(); save(values.type === 'Privé' ? 'Privésessie bewaard voor de geselecteerde sporters.' : 'Les bewaard. De planning is bijgewerkt.');
                 document.dispatchEvent(new CustomEvent('cap:session-saved', { detail: { date: values.date, id: targetIds[0] } }));
                 if (event.submitter?.id === 'session-add-workout') {
                     location.hash = 'create-workout';
@@ -476,7 +519,7 @@
     document.addEventListener('cap:viewchange', render);
     window.capClub = {
         calendarSessions() {
-            return data.sessions.filter(session => !session.cancelled)
+            return data.sessions.filter(session => visibleSession(session) && !session.cancelled)
                 .map(({ id, title, date, start, end, coach, category, type }) => ({ id, title, date, start, end, coach, category, type }));
         },
         planSession(date) {
@@ -484,7 +527,7 @@
         },
         renderCalendarDay(date, container, expandedId) {
             container.replaceChildren();
-            const sessions = data.sessions.filter(session => session.date === date && !session.cancelled)
+            const sessions = data.sessions.filter(session => visibleSession(session) && session.date === date && !session.cancelled)
                 .sort((a, b) => a.start.localeCompare(b.start));
             sessions.forEach(session => {
                 const card = sessionCard(session);
@@ -498,7 +541,7 @@
             if (!sessions.length) container.append(element('p', 'Geen sessies op deze dag.', 'club-empty'));
         },
         sessions() {
-            return data.sessions.filter(session => session.type !== 'Open gym' && !session.cancelled && !past(session))
+            return data.sessions.filter(session => session.type !== 'Open gym' && visibleSession(session) && !session.cancelled && !past(session))
                 .sort((a, b) => `${a.date}${a.start}`.localeCompare(`${b.date}${b.start}`))
                 .map(session => ({ id: session.id, title: session.title, date: session.date, start: session.start, coach: session.coach, category: session.category || '' }));
         },

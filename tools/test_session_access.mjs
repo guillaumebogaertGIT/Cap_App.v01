@@ -1,0 +1,17 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import vm from 'node:vm';
+const context = { window: {} };
+vm.runInNewContext(fs.readFileSync('frontend/js/session-access.js', 'utf8'), context);
+const { canView } = context.window.capSessionAccess;
+const privateSession = { type: 'Privé', athleteIds: ['guillaume', 'anna'] };
+assert.equal(canView(privateSession, 'coach'), true);
+assert.equal(canView(privateSession, 'athlete', 'guillaume'), true);
+assert.equal(canView(privateSession, 'athlete', 'anna'), true);
+assert.equal(canView(privateSession, 'athlete', 'other'), false);
+assert.equal(canView({ type: 'Privé' }, 'athlete', 'guillaume'), false);
+assert.equal(canView(privateSession, 'athlete'), false);
+assert.equal(canView({ type: 'Groep' }, 'athlete', 'other'), true);
+assert.equal(canView({ type: 'Open gym' }, 'athlete', 'other'), true);
+assert.equal(canView(privateSession, 'guest', 'anna'), false);
+console.log('Session visibility checks passed.');
