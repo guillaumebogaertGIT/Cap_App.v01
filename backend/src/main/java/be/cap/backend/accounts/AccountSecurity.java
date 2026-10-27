@@ -11,6 +11,13 @@ import org.springframework.security.web.SecurityFilterChain;
 @Configuration
 @Profile("accounts")
 class AccountSecurity {
+    private static final org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger(AccountSecurity.class);
+    private static void error(jakarta.servlet.http.HttpServletResponse response, int status, String message) throws java.io.IOException {
+        response.setStatus(status);
+        response.setContentType("application/json;charset=UTF-8");
+        response.setHeader("Cache-Control", "no-store");
+        response.getWriter().write("{\"message\":\"" + message + "\"}");
+    }
     @Bean
     PasswordEncoder passwordEncoder() { return new BCryptPasswordEncoder(12); }
 
@@ -30,13 +37,13 @@ class AccountSecurity {
                 .anyRequest().denyAll())
             .requestCache(cache -> cache.disable())
             .exceptionHandling(errors -> errors
-                .authenticationEntryPoint((request, response, error) -> response.sendError(401))
-                .accessDeniedHandler((request, response, error) -> response.sendError(403)))
+                .authenticationEntryPoint((request, response, exception) -> error(response, 401, "Log in om verder te gaan."))
+                .accessDeniedHandler((request, response, exception) -> error(response, 403, "Deze actie is niet toegestaan. Vernieuw de pagina als je sessie is verlopen.")))
             .formLogin(login -> login.loginPage("/api/accounts/login").loginProcessingUrl("/api/accounts/login").usernameParameter("email")
-                .successHandler((request, response, auth) -> response.setStatus(204))
-                .failureHandler((request, response, error) -> response.sendError(401)))
+                .successHandler((request, response, auth) -> { LOG.info("CAP login succeeded"); response.setStatus(204); })
+                .failureHandler((request, response, exception) -> { LOG.info("CAP login rejected"); error(response, 401, "Controleer je e-mailadres en wachtwoord."); }))
             .logout(logout -> logout.logoutUrl("/api/accounts/logout")
-                .logoutSuccessHandler((request, response, auth) -> response.setStatus(204)))
+                .logoutSuccessHandler((request, response, auth) -> { LOG.info("CAP logout completed"); response.setStatus(204); }))
             .build();
     }
 }

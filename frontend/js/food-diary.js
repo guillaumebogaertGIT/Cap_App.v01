@@ -44,7 +44,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const $ = id => document.getElementById(id);
     const math = window.capFoodMath;
     const foods = window.capFoodDatabase.foods;
-    const athleteId = 'preview-guillaume';
+    const athleteId = window.capReal?.account.id || 'preview-guillaume';
     const meals = [['breakfast', 'Ontbijt'], ['snack', 'Tussendoor'], ['lunch', 'Middagmaal'], ['dinner', 'Avondmaal'], ['bedtime', 'Voor slapen'], ['pre', 'Pre-workout'], ['post', 'Post-workout']];
     const metrics = [['calories', 'Calorieën', 'kcal'], ['proteinG', 'Eiwitten', 'g'], ['carbsG', 'Koolhydraten', 'g'], ['fatG', 'Vetten', 'g']];
     const entries = window.capStorage.map('food-entries');

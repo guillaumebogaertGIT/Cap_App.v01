@@ -12,7 +12,7 @@
             return nativeFetch(input, options);
         const headers = new Headers(options.headers);
         if (!['GET', 'HEAD', 'OPTIONS'].includes((options.method || 'GET').toUpperCase())) {
-            const tokenResponse = await nativeFetch('/api/accounts/csrf', { cache: 'no-store' });
+            const tokenResponse = await nativeFetch('/api/accounts/csrf', { cache: 'no-store', signal: AbortSignal.timeout(8000) });
             if (!tokenResponse.ok) throw new Error('Vernieuw de pagina en log opnieuw in.');
             const csrf = await tokenResponse.json();
             headers.set(csrf.headerName, csrf.token);
@@ -22,15 +22,18 @@
         return response;
     };
     async function request(path, method = 'GET', body) {
-        const response = await fetch(path, { method, cache: 'no-store',
+        let response;
+        try { response = await fetch(path, { method, cache: 'no-store',
             headers: body === undefined ? {} : { 'Content-Type': 'application/json' },
             body: body === undefined ? undefined : JSON.stringify(body), signal: AbortSignal.timeout(15000) });
+        } catch { throw new Error('Geen verbinding met CAP. Controleer je verbinding en probeer opnieuw.'); }
         if (!response.ok) {
             const error = await response.json().catch(() => ({}));
-            throw new Error(error.message || 'Opslaan mislukt. Vernieuw en probeer opnieuw.');
+            throw new Error(error.message || (response.status === 403 ? 'Deze actie is niet toegestaan. Vernieuw de pagina als je sessie is verlopen.' : 'Opslaan mislukt. Vernieuw en probeer opnieuw.'));
         }
         return response.status === 204 ? null : response.json();
     }
+    window.addEventListener('pageshow', event => { if (event.persisted) location.reload(); });
     let rosterRequest;
     async function refreshAthletes() {
         if (data.account.role !== 'COACH') return;

@@ -124,7 +124,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     function renderAthlete() {
         const container = $('athlete-nutrition-targets'); container.replaceChildren();
-        const plan = plans.get('preview-guillaume');
+        const plan = plans.get(window.capReal?.account.id || 'preview-guillaume');
         $('athlete-nutrition-status').textContent = plan ? `Van je coach · bijgewerkt ${stamp(plan.savedAt)}` : 'Je coach heeft nog geen dagdoelen voor je bewaard.';
         $('athlete-nutrition-energy-note').textContent = plan ? energyNote(plan.targets) : '';
         if (!plan) return;

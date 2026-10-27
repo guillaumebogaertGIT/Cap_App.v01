@@ -81,7 +81,7 @@ class AccountApiTests {
         var me = request(coach, "GET", "/api/accounts/me", null, null, false);
         assertEquals("COACH", json.readTree(me.body()).get("role").asText());
         assertFalse(me.body().contains("password"));
-        assertEquals("[]", request(coach, "GET", "/api/workouts", null, null, false).body());
+        assertTrue(json.readTree(request(coach, "GET", "/api/workouts", null, null, false).body()).isArray());
         var invitation = request(coach, "POST", "/api/accounts/invitations", "{\"email\":\" Athlete@example.test \"}", csrf(coach), false);
         assertEquals(201, invitation.statusCode());
         String token = json.readTree(invitation.body()).get("token").asText();
@@ -151,5 +151,53 @@ class AccountApiTests {
         assertEquals(404, request(guest, "GET", "/api/accounts/profile/photo", null, null, false).statusCode());
         assertEquals(204, request(coach, "DELETE", "/api/accounts/profile/photo", null, csrf(coach), false).statusCode());
         assertEquals(404, request(coach, "GET", "/api/accounts/profile/photo", null, null, false).statusCode());
+    }
+
+    @Autowired org.springframework.context.ApplicationContext context;
+    String acceptTestAthlete(HttpClient coach, HttpClient athlete, String email) throws Exception {
+        var invite = request(coach,"POST","/api/accounts/invitations",json.writeValueAsString(java.util.Map.of("email",email)),csrf(coach),false);
+        assertEquals(201,invite.statusCode());
+        var token=json.readTree(invite.body()).get("token").asText();
+        var accepted=request(athlete,"POST","/api/accounts/accept",json.writeValueAsString(java.util.Map.of("token",token,"name","API test athlete","password","Boundary-test-password-25")),csrf(athlete),false);
+        assertEquals(201,accepted.statusCode());
+        login(athlete,email,"Boundary-test-password-25");
+        return json.readTree(accepted.body()).get("id").asText();
+    }
+    @Test void directApiOwnershipGuestLogoutAndDemoBoundaries() throws Exception {
+        var coach=client();var first=client();var other=client();var guest=client();
+        for(String path:java.util.List.of("/api/accounts/me","/api/accounts/profile","/api/workouts","/api/workout-assignments","/api/training","/api/records","/api/club/bookings","/api/exercises")) {
+            var denied=request(guest,"GET",path,null,null,false);
+            assertEquals(401,denied.statusCode(),path);
+            assertTrue(denied.body().contains("message"));
+        }
+        login(coach,"coach@example.test","Coach-test-password-123");
+        String owner=acceptTestAthlete(coach,first,"boundary-first@example.test");
+        String peer=acceptTestAthlete(coach,other,"boundary-other@example.test");
+        var workout=request(coach,"POST","/api/workouts","{\"name\":\"API ownership workout\",\"description\":\"\",\"athleteId\":\"\",\"assignedDate\":\"\",\"exercises\":[{\"name\":\"Squat\",\"sets\":1,\"reps\":5,\"loadMode\":\"none\"}]}",csrf(coach),false);
+        assertEquals(201,workout.statusCode());
+        String id=json.readTree(workout.body()).get("id").asText();
+        String day=java.time.LocalDate.now(java.time.ZoneId.of("Europe/Brussels")).plusDays(1).toString();
+        var assigned=request(coach,"POST","/api/workouts/"+id+"/assignment",json.writeValueAsString(java.util.Map.of("athleteId",owner,"date",day)),csrf(coach),false);
+        assertEquals(200,assigned.statusCode());
+        var assignments=json.readTree(request(first,"GET","/api/workout-assignments",null,null,false).body());
+        String assignment=assignments.get(0).get("assignmentId").asText();
+        assertEquals("[]",request(other,"GET","/api/workout-assignments",null,null,false).body());
+        assertEquals("[]",request(other,"GET","/api/workouts",null,null,false).body());
+        assertEquals(404,request(other,"GET","/api/training?athleteId="+owner,null,null,false).statusCode());
+        assertEquals(404,request(first,"GET","/api/records?athleteId="+peer,null,null,false).statusCode());
+        assertEquals(404,request(other,"PUT","/api/workout-assignments/"+assignment+"/schedule",json.writeValueAsString(java.util.Map.of("date",day)),csrf(other),false).statusCode());
+        assertEquals(404,request(other,"POST","/api/training/active",json.writeValueAsString(java.util.Map.of("assignmentId",assignment)),csrf(other),false).statusCode());
+        assertEquals(403,request(other,"POST","/api/accounts/invitations","{\"email\":\"forbidden@example.test\"}",csrf(other),false).statusCode());
+        assertEquals(403,request(other,"PUT","/api/workout-assignments/"+assignment+"/note","{\"note\":\"forbidden\"}",csrf(other),false).statusCode());
+        // Identical URL names are backed by account controllers, never the old demo stores.
+        assertTrue(context.getBeansOfType(WorkoutController.class).isEmpty());
+        assertTrue(context.getBeansOfType(TrainingController.class).isEmpty());
+        assertEquals(404,request(first,"GET","/api/training?athleteId=preview-guillaume",null,null,false).statusCode());
+        assertEquals(400,request(coach,"POST","/api/workouts/"+id+"/assignment",json.writeValueAsString(java.util.Map.of("athleteId","preview-guillaume","date",day)),csrf(coach),false).statusCode());
+        var malformed=request(coach,"PUT","/api/accounts/profile","{broken-json-password-example",csrf(coach),false);
+        assertEquals(400,malformed.statusCode());assertFalse(malformed.body().contains("password-example"));
+        assertEquals(204,request(first,"POST","/api/accounts/logout","",csrf(first),false).statusCode());
+        for(String path:java.util.List.of("/api/accounts/me","/api/training","/api/workouts","/api/accounts/profile"))
+            assertEquals(401,request(first,"GET",path,null,null,false).statusCode(),path);
     }
 }

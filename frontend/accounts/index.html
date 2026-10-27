@@ -9,16 +9,18 @@
     <script src="shared/theme.js"></script>
     <link rel="stylesheet" href="shared/style.css">
     <link rel="stylesheet" href="shared/polish.css">
+    <link rel="stylesheet" href="/app/css/auth.css">
     <link rel="stylesheet" href="accounts.css">
     <script src="accounts.js" defer></script>
 </head>
 <body>
 <svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" aria-hidden="true" style="position:absolute"><defs><filter id="logo-white" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values="0 0 0 0 1 -1 1 0 0 1 -1 0 1 0 1 0 0 0 1 0"/></filter></defs></svg>
-<main class="account-shell">
-    <header class="account-header"><a href="index.html" aria-label="CAP account startpagina"><img src="shared/Cap-logo.png" alt="CAP - Complete Athletic Program" width="96" height="96"></a><span>Jouw account</span></header>
+<main class="auth-screen">
+    <div class="auth-story"><img class="auth-cap-logo" src="/app/img/Cap-logo.png" alt="CAP"><h1><img class="auth-wordmark" src="/app/img/Stronger-Together.png" alt="Stronger together"><span>Elke dag opnieuw.</span></h1><p>Jouw trainingen, jouw club en jouw vooruitgang. Allemaal op &eacute;&eacute;n plek.</p></div>
+    <div class="auth-card">
     <p id="account-status" role="status" tabindex="-1">Je sessie controleren…</p>
     <section id="login-panel" hidden aria-labelledby="login-title">
-        <h1 id="login-title">Inloggen</h1>
+        <h2 id="login-title">Inloggen</h2>
         <p>Gebruik je eigen CAP-account. Sporters maken hun account aan via een uitnodiging van de coach.</p>
         <form id="real-login" class="club-form">
             <label>E-mailadres<input name="email" type="email" required maxlength="254" autocomplete="username"></label>
@@ -28,7 +30,7 @@
         <p class="sample-notice">Wachtwoord vergeten? Wachtwoordherstel is nog niet beschikbaar.</p>
     </section>
     <section id="accept-panel" hidden aria-labelledby="accept-title">
-        <h1 id="accept-title">Welkom bij CAP</h1>
+        <h2 id="accept-title">Welkom bij CAP</h2>
         <p>De coach heeft je uitgenodigd. Kies je eigen wachtwoord om je sporteraccount aan te maken.</p>
         <form id="accept-invitation" class="club-form">
             <label>Naam<input name="name" required maxlength="100" autocomplete="name"></label>
@@ -40,11 +42,12 @@
         <a class="account-text-link" href="index.html">Ik heb al een account</a>
     </section>
     <section id="member-panel" hidden aria-labelledby="member-title">
-        <div class="account-heading"><h1 id="member-title" tabindex="-1">Mijn account</h1><button id="real-logout" type="button" class="secondary-button">Uitloggen</button></div>
+        <div class="account-heading"><h2 id="member-title" tabindex="-1">Mijn account</h2><button id="real-logout" type="button" class="secondary-button">Uitloggen</button></div>
         <p id="member-identity"></p>
         <p>Log eerst uit voordat je een uitnodiging voor een ander account accepteert. Open daarna de uitnodigingslink opnieuw.</p>
     </section>
     <noscript>Schakel JavaScript in om in te loggen of je uitnodiging te accepteren.</noscript>
+    </div>
 </main>
 </body>
 </html>

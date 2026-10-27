@@ -2,6 +2,9 @@
 
 A Java learning project building toward a coaching platform for CAP in Gistel, Belgium.
 
+Local real-account launch: `.\scripts\start-accounts.cmd` from the project root.
+See [verified behavior, pgAdmin and manual checks](docs/accounts-verification.md).
+
 ## Current status
 
 Local web prototype with a responsive frontend and a Java 25 / Spring Boot backend.

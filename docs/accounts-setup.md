@@ -12,6 +12,12 @@ preview data is not imported automatically or assigned to real people.
 
 ## Use the account page
 
+Recommended from the project root: `.\scripts\start-accounts.cmd`. This privately
+prompts for the database-role password and preserves existing accounts. Stop the
+old backend first if 8081 is occupied. See [verification and pgAdmin guide](accounts-verification.md)
+and [read-only SQL](accounts-review.sql).
+
+
 After updating the code, stop the account backend with Ctrl+C and restart it in
 the same terminal (which retains your database environment variables):
 

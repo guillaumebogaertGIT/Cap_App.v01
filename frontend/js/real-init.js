@@ -41,6 +41,12 @@
         if (['#athletes', '#create-workout', '#saved-workouts'].includes(location.hash)) refresh();
     });
     group.append(heading, list); groups.replaceChildren(group);
+    for (const id of ['nutrition', 'coach-nutrition', 'coach-health']) {
+        const section = document.getElementById(id);
+        const note = document.createElement('p'); note.className = 'sample-notice';
+        note.textContent = 'Dit onderdeel gebruikt nog browseropslag en wordt niet gedeeld tussen accounts of apparaten.';
+        section?.querySelector('header')?.after(note);
+    }
     const invite = document.createElement('form'); invite.className = 'club-form settings-card';
     invite.innerHTML = '<h3>Sporter uitnodigen</h3><label>E-mailadres<input name="email" type="email" required autocomplete="email" maxlength="254"></label><button class="primary-button" type="submit">Uitnodigingslink maken</button><p role="status"></p><label hidden>Uitnodigingslink<input name="link" readonly></label>';
     groups.before(invite);
