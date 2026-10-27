@@ -528,6 +528,10 @@ workoutForm.addEventListener('submit', async (event) => {
         pendingSubmitter = event.submitter || primarySubmit;
         saveStatus.textContent = '';
         updateAssignmentOptions();
+        if (window.capReal) {
+            try { await window.capReal.refreshAthletes(); }
+            catch (error) { saveStatus.textContent = error.message; }
+        }
         saveDialog.showModal();
         return;
     }

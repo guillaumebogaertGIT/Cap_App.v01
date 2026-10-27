@@ -213,7 +213,11 @@
     if (window.capReal) assignmentForm.elements.athleteId.replaceChildren(...window.capReal.athletes.map(p => new Option(p.name, p.id)));
     let returnToAthlete = false;
     const assignmentAgenda = window.capAgenda.mount($('#assignment-date'), { onChange: () => updateAssignmentTargets() });
-    function openAssignment(workout, fromAthlete = false) {
+    async function openAssignment(workout, fromAthlete = false) {
+        if (window.capReal) {
+            try { await window.capReal.refreshAthletes(); }
+            catch (error) { $('#coach-workout-status').textContent = error.message; return; }
+        }
         assigningWorkout = workout; returnToAthlete = fromAthlete;
         if (window.capReal && fromAthlete) assignmentForm.elements.athleteId.value = athleteId();
         assignmentAgenda.reset();

@@ -31,7 +31,20 @@
         }
         return response.status === 204 ? null : response.json();
     }
-    window.capReal = { ...data, request,
+    let rosterRequest;
+    async function refreshAthletes() {
+        if (data.account.role !== 'COACH') return;
+        if (rosterRequest) return rosterRequest;
+        rosterRequest = request('/api/club/people').then(people => {
+            const athletes = people.filter(person => person.role === 'ATHLETE');
+            const current = window.capReal.athletes;
+            if (JSON.stringify(current) === JSON.stringify(athletes)) return;
+            current.splice(0, current.length, ...athletes);
+            document.dispatchEvent(new CustomEvent('cap:athletes-changed'));
+        }).finally(() => { rosterRequest = null; });
+        return rosterRequest;
+    }
+    window.capReal = { ...data, request, refreshAthletes,
         athletes: data.people.filter(person => person.role === 'ATHLETE'),
         coaches: data.people.filter(person => person.role === 'COACH') };
 })();

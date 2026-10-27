@@ -370,12 +370,18 @@
         $('session-athlete-count').textContent = count + ' sporter(s) geselecteerd';
         if ($('session-form').elements.type.value === 'Privé') $('session-form').elements.capacity.value = Math.max(1, count);
     }
-    athletes.forEach(athlete => {
+    function renderSessionAthletes() {
+        const checked = new Set(selectedAthletes());
+        $('session-athlete-options').replaceChildren();
+        athletes.forEach(athlete => {
         const label = element('label', undefined, 'session-athlete-option');
-        const input = document.createElement('input'); input.type = 'checkbox'; input.value = athlete.id;
+        const input = document.createElement('input'); input.type = 'checkbox'; input.value = athlete.id; input.checked = checked.has(athlete.id);
         label.append(input, document.createTextNode(athlete.name));
         $('session-athlete-options').append(label); input.addEventListener('change', updateAthleteCount);
     });
+    }
+    renderSessionAthletes();
+    if (real) document.addEventListener('cap:athletes-changed', renderSessionAthletes);
     $('session-athlete-search').addEventListener('input', event => {
         const query = event.target.value.trim().toLocaleLowerCase('nl-BE');
         Array.from($('session-athlete-options').children).forEach(label => { label.hidden = !label.textContent.toLocaleLowerCase('nl-BE').includes(query); });

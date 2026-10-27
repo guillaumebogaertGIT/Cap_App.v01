@@ -10,18 +10,36 @@
     const group = document.createElement('details'); group.className = 'membership-group'; group.open = true;
     const heading = document.createElement('summary'); heading.textContent = `Sporters (${real.athletes.length})`;
     const list = document.createElement('ul'); list.className = 'membership-athletes';
-    for (const person of real.athletes) {
-        const item = document.createElement('li'); item.className = 'athlete-card'; item.dataset.athleteId = person.id;
-        const name = document.createElement('h3'); name.textContent = person.name;
-        const identity = document.createElement('div'); identity.append(name);
-        const actions = document.createElement('div'); actions.className = 'athlete-actions';
-        item.append(identity, actions);
-        for (const [label, target] of [['Workouts bekijken', 'review-athlete-workouts'], ['Workout toewijzen', 'assign-athlete-workout']]) {
-            const button = document.createElement('button'); button.type = 'button'; button.className = 'secondary-button'; button.textContent = label;
-            button.addEventListener('click', () => { real.selectedAthleteId = person.id; document.getElementById(target).click(); }); actions.append(button);
+    function renderAthletes() {
+        heading.textContent = `Sporters (${real.athletes.length})`;
+        list.replaceChildren();
+        if (!real.athletes.some(person => person.id === real.selectedAthleteId)) real.selectedAthleteId = real.athletes[0]?.id || '';
+        for (const select of document.querySelectorAll('select[name="athlete"], select[name="athleteId"]')) {
+            const selected = select.value;
+            select.replaceChildren(...real.athletes.map(person => new Option(person.name, person.id)));
+            if (real.athletes.some(person => person.id === selected)) select.value = selected;
+            select.dispatchEvent(new Event('change', { bubbles: true }));
         }
-        list.append(item);
+        for (const person of real.athletes) {
+            const item = document.createElement('li'); item.className = 'athlete-card'; item.dataset.athleteId = person.id;
+            const name = document.createElement('h3'); name.textContent = person.name;
+            const identity = document.createElement('div'); identity.append(name);
+            const actions = document.createElement('div'); actions.className = 'athlete-actions';
+            item.append(identity, actions);
+            for (const [label, target] of [['Workouts bekijken', 'review-athlete-workouts'], ['Workout toewijzen', 'assign-athlete-workout']]) {
+                const button = document.createElement('button'); button.type = 'button'; button.className = 'secondary-button'; button.textContent = label;
+                button.addEventListener('click', () => { real.selectedAthleteId = person.id; document.getElementById(target).click(); }); actions.append(button);
+            }
+            list.append(item);
+        }
     }
+    renderAthletes();
+    document.addEventListener('cap:athletes-changed', renderAthletes);
+    const refresh = () => real.refreshAthletes().catch(error => { invite.querySelector('[role="status"]').textContent = error.message; });
+    window.addEventListener('focus', refresh);
+    document.addEventListener('cap:viewchange', () => {
+        if (['#athletes', '#create-workout', '#saved-workouts'].includes(location.hash)) refresh();
+    });
     group.append(heading, list); groups.replaceChildren(group);
     const invite = document.createElement('form'); invite.className = 'club-form settings-card';
     invite.innerHTML = '<h3>Sporter uitnodigen</h3><label>E-mailadres<input name="email" type="email" required autocomplete="email" maxlength="254"></label><button class="primary-button" type="submit">Uitnodigingslink maken</button><p role="status"></p><label hidden>Uitnodigingslink<input name="link" readonly></label>';
