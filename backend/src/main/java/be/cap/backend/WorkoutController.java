@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 @CrossOrigin(origins = "http://127.0.0.1:5500")
 @RestController
+@org.springframework.context.annotation.Profile("!accounts")
 public class WorkoutController {
     public record Assignment(String athleteId, String date, String weekStart) {}
     private final WorkoutStore store;

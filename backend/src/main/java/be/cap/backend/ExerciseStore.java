@@ -17,16 +17,20 @@ import tools.jackson.databind.json.JsonMapper;
 
 /** Shared local catalog. Only coach additions/overrides are written to disk. */
 @Service
+@org.springframework.context.annotation.Profile("!accounts")
 public class ExerciseStore {
     public record Exercise(String id, String name, String region, String category, String subcategory,
                            String instructions, String notes, boolean archived) {}
 
     private final Path file;
+    private final StateWriter<List<Exercise>> writer;
     private final JsonMapper mapper = JsonMapper.builder().build();
     private final Map<String, Exercise> imported = new LinkedHashMap<>();
     private Map<String, Exercise> overrides = new LinkedHashMap<>();
 
+    @org.springframework.beans.factory.annotation.Autowired
     public ExerciseStore(@Value("${cap.exercises.file:data/exercises.json}") String filename) throws IOException {
+        writer = null;
         file = Path.of(filename).toAbsolutePath();
         try (var source = ExerciseStore.class.getResourceAsStream("/exercise-catalog.json")) {
             if (source == null) throw new IOException("Exercise catalog resource missing.");
@@ -37,6 +41,12 @@ public class ExerciseStore {
                 overrides.put(exercise.id(), exercise);
             }
         }
+    }
+    public ExerciseStore(List<Exercise> seed, List<Exercise> overrides, StateWriter<List<Exercise>> writer) {
+        file = null;
+        this.writer = writer;
+        seed.forEach(exercise -> imported.put(exercise.id(),exercise));
+        overrides.forEach(exercise -> this.overrides.put(exercise.id(),exercise));
     }
 
     public synchronized List<Exercise> list() {
@@ -109,6 +119,7 @@ public class ExerciseStore {
     private void save(Exercise exercise) throws IOException {
         Map<String, Exercise> updated = new LinkedHashMap<>(overrides);
         updated.put(exercise.id(), exercise);
+        if (writer != null) { writer.write(List.copyOf(updated.values())); overrides=updated; return; }
         Files.createDirectories(file.getParent());
         Path temporary = Files.createTempFile(file.getParent(), "exercises-", ".tmp");
         try {

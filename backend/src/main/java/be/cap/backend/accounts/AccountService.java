@@ -126,6 +126,7 @@ public class AccountService implements UserDetailsService {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Dit e-mailadres heeft al een account.");
         }
         jdbc.update("UPDATE athlete_invitation SET accepted_at = ? WHERE token_hash = ?", Timestamp.from(Instant.now()), tokenHash);
+        jdbc.update("INSERT INTO athlete_training (athlete_id) VALUES (?)", account(email).id());
         return account(email);
     }
 }

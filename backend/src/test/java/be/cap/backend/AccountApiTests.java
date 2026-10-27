@@ -28,6 +28,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class AccountApiTests {
     @TempDir static Path directory;
     @DynamicPropertySource static void paths(DynamicPropertyRegistry registry) {
+        PostgresTestDatabase.configure(registry,"accounts");
         registry.add("cap.exercises.file", () -> directory.resolve("exercises.json").toString());
         registry.add("cap.workouts.file", () -> directory.resolve("workouts.json").toString());
         registry.add("cap.training.file", () -> directory.resolve("training.json").toString());
@@ -61,13 +62,14 @@ class AccountApiTests {
         assertEquals(200, request(coach, "GET", "/accounts/accounts.js", null, null, false).statusCode());
         assertEquals(200, request(coach, "GET", "/accounts/shared/style.css", null, null, false).statusCode());
         assertEquals(401, request(coach, "GET", "/api/accounts/me", null, null, false).statusCode());
+        assertEquals(401, request(coach, "GET", "/api/club/sessions", null, null, false).statusCode());
         assertEquals(403, request(coach, "POST", "/api/accounts/login", "email=coach@example.test&password=wrong", null, true).statusCode());
         assertEquals(401, request(coach, "POST", "/api/accounts/login", "email=coach@example.test&password=wrong", csrf(coach), true).statusCode());
         login(coach, "COACH@example.test", "Coach-test-password-123");
         var me = request(coach, "GET", "/api/accounts/me", null, null, false);
         assertEquals("COACH", json.readTree(me.body()).get("role").asText());
         assertFalse(me.body().contains("password"));
-        assertEquals(403, request(coach, "GET", "/api/workouts", null, null, false).statusCode());
+        assertEquals("[]", request(coach, "GET", "/api/workouts", null, null, false).body());
         var invitation = request(coach, "POST", "/api/accounts/invitations", "{\"email\":\" Athlete@example.test \"}", csrf(coach), false);
         assertEquals(201, invitation.statusCode());
         String token = json.readTree(invitation.body()).get("token").asText();
@@ -82,8 +84,12 @@ class AccountApiTests {
         assertNotEquals("Athlete-test-password-123", stored);
         login(athlete, "athlete@example.test", "Athlete-test-password-123");
         assertEquals("ATHLETE", json.readTree(request(athlete, "GET", "/api/accounts/me", null, null, false).body()).get("role").asText());
+        assertEquals(403, request(athlete, "POST", "/api/workouts", "{}", csrf(athlete), false).statusCode());
+        assertEquals(403, request(athlete, "POST", "/api/exercises", "{}", csrf(athlete), false).statusCode());
+        assertEquals(403, request(athlete, "GET", "/api/club/people", null, null, false).statusCode());
+        assertEquals(200, request(athlete, "GET", "/api/club/sessions", null, null, false).statusCode());
         assertEquals(403, request(athlete, "POST", "/api/accounts/invitations", "{\"email\":\"other@example.test\"}", csrf(athlete), false).statusCode());
-        assertEquals(403, request(athlete, "GET", "/api/training", null, null, false).statusCode());
+        assertEquals("[]", request(athlete, "GET", "/api/training", null, null, false).body());
         assertEquals(204, request(athlete, "POST", "/api/accounts/logout", "", csrf(athlete), false).statusCode());
         assertEquals(401, request(athlete, "GET", "/api/accounts/me", null, null, false).statusCode());
     }

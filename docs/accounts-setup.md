@@ -1,14 +1,13 @@
-# Real accounts: first backend step
+# Real accounts and shared CAP data
 
-The `accounts` Spring profile adds PostgreSQL-backed accounts and athlete invitations.
-The existing design preview still runs normally on port 8080. Account mode runs
-separately on port 8081 and deliberately denies the old workout/training/exercise
-APIs, which still use example data without real athlete ownership.
+The `accounts` Spring profile uses PostgreSQL for accounts, lessons, private
+recipients, bookings, workouts, exercise-library changes and athlete training.
+The existing design preview still runs separately on port 8080 with its old data.
 
 The real-account page is served at `http://127.0.0.1:8081/accounts/index.html`.
-It supports real login/logout, coach invitation links and athlete acceptance.
-The existing full app remains a separate preview. Planning, bookings and workout
-ownership will be migrated next; existing browser/JSON data is not imported automatically.
+It supports real login/logout, coach invitations, Planning, bookings, workouts,
+exercise management, training entry, history and PRs. Existing browser/JSON
+preview data is not imported automatically or assigned to real people.
 
 ## Use the account page
 
@@ -28,6 +27,40 @@ As coach, enter an athlete email and choose **Uitnodigingslink maken**. Copy the
 link and open it in a private browser window to test accepting it as that athlete.
 The athlete chooses their own password, then logs in. Coaches cannot choose an
 athlete's password or grant coach rights through this form.
+
+The account page now has task navigation:
+
+- **Planning & boekingen:** month calendar, CAP group/private/open-gym lessons,
+  one/4/8-week creation, per-lesson editing/removal, booking/cancellation and
+  attendance. Private recipients come from real accepted athlete accounts.
+- **Workouts & training:** coach workout library/editor, sets with individual
+  reps/weights/percentages, rest/tempo/supersets, assignments to a real athlete
+  on a fixed day or flexible week, and snapshots attached to booked sessions.
+  Athletes start their own assigned or booked workout, log results and view
+  their own history/rep-specific records. Coaches select an athlete to review.
+- **Oefeningen:** coaches add/edit/archive/restore shared definitions. Existing
+  workout names and completed history remain snapshots when definitions change.
+- **Sporters uitnodigen:** coaches create athlete accounts through invitations.
+
+To review the complete flow, create an athlete invitation and accept it in a
+private browser window. In the coach window, create a future group lesson, save
+a workout and choose **Toewijzen → Geplande les**. In the athlete window, refresh
+Planning, book the lesson and open Workouts. Start, enter results, wait for the
+saved-progress message (or press **Voortgang bewaren**), refresh, then complete.
+Verify history/PRs and that another athlete cannot see a private appointment.
+
+Training starts with a server-frozen workout snapshot. Progress is saved after a
+short typing pause and can resume after refresh/login on another browser.
+Concurrent edits from another device are rejected by version checks rather than
+silently overwriting results. Completion retries reuse the same server ID.
+Changing a template does not rewrite a training already in progress or completed.
+
+Each booking locks its lesson while checking capacity. Roles, private visibility
+and athlete ownership are enforced on the server, not by the browser selector.
+Membership billing/paid-package entitlement rules are not implemented; invited
+athletes can book public lessons and their explicitly assigned private lessons.
+Nutrition, health/profile tracking, shop/payments and messaging remain outside
+this connected core and available only in the earlier preview where applicable.
 
 For now these localhost links work only on this PC, not on an athlete's phone or
 another computer. Email delivery and public hosting are separate later steps.
@@ -157,12 +190,16 @@ implemented yet; the account page provides a copyable link for local testing.
 
 `./mvnw.cmd test` includes real HTTP tests for coach login, CSRF rejection,
 guest/athlete restrictions, invitation acceptance/reuse/expiry/reissue, hashed
-password storage, logout and denial of the legacy data APIs in account mode.
-Tests apply the actual migration to a temporary H2 database in PostgreSQL mode;
-this is not a substitute for checking against PostgreSQL itself.
+password storage and logout. Service tests also cover booking capacity races,
+private-recipient edits, training ownership, frozen snapshots, version conflicts,
+percentage targets and shared exercise persistence. The default suite uses H2.
+All 32 backend tests have also passed with account/club tests configured against
+an isolated PostgreSQL 18 cluster; V1–V4 migrations and restart persistence were
+checked without accessing the developer's CAP database. For repeat PostgreSQL
+tests, set `CAP_TEST_POSTGRES_URL` to a dedicated test database (never production),
+plus `CAP_TEST_POSTGRES_USER`/`CAP_TEST_POSTGRES_PASSWORD`; tests create fresh schemas.
 
-Before real use: migrate sessions/bookings/workout ownership into the main app,
-test capacity transactions on PostgreSQL, add email delivery/password recovery and
+Before deployment: add email delivery/password recovery and
 login/invitation abuse limits, and configure HTTPS, secure cookies, backups and
 deployment monitoring. Keep this profile on localhost during that work. Set
 `CAP_COOKIE_SECURE=true` behind HTTPS. Login sessions currently live in server

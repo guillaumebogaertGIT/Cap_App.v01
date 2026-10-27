@@ -73,7 +73,7 @@
 			<resource><directory>src/main/resources</directory></resource>
 			<resource><directory>../frontend/accounts</directory><targetPath>static/accounts</targetPath></resource>
 			<resource><directory>../frontend/css</directory><targetPath>static/accounts/shared</targetPath><includes><include>style.css</include><include>polish.css</include></includes></resource>
-			<resource><directory>../frontend/js</directory><targetPath>static/accounts/shared</targetPath><includes><include>theme.js</include></includes></resource>
+			<resource><directory>../frontend/js</directory><targetPath>static/accounts/shared</targetPath><includes><include>theme.js</include><include>date-time.js</include><include>date-inputs.js</include><include>workout-view.js</include></includes></resource>
 			<resource><directory>../frontend/img</directory><targetPath>static/accounts/shared</targetPath><includes><include>Cap-logo.png</include></includes></resource>
 		</resources>
 		<plugins>

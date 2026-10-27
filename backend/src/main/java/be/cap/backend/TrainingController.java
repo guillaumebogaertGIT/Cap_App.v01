@@ -5,6 +5,7 @@ import java.util.List;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
+@org.springframework.context.annotation.Profile("!accounts")
 @CrossOrigin(origins = "http://127.0.0.1:5500")
 public class TrainingController {
     private final TrainingStore training;

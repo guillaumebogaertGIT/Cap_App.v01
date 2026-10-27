@@ -1,4 +1,24 @@
 body { display: block; }
+body.is-real-member main.account-shell { width: min(100%, 84rem); }
+.real-tabs { display: flex; flex-wrap: wrap; gap: .5rem; margin-block: 1.25rem; }
+.real-tabs [aria-current="page"] { background: var(--highlight); border-color: var(--accent-text); }
+#real-planning > .account-heading > div { display: flex; flex-wrap: wrap; gap: .5rem; }
+.real-exercise-library-row { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem 1rem; padding-block: .75rem; border-bottom: 1px solid var(--border); }
+.real-exercise-library-row strong { flex: 1 1 15rem; overflow-wrap: anywhere; }
+.real-exercise-library-row span { flex: 1 1 10rem; color: var(--muted); }
+.real-inline-check { display: flex; align-items: center; gap: .75rem; min-height: 44px; }
+.account-shell .real-inline-check input { width: 1.25rem; min-height: 1.25rem; }
+.real-exercise-row { min-width: 0; margin-block: 1rem; padding: 1rem; border: 1px solid var(--border); border-radius: .75rem; }
+.real-set-target, .real-training-set { display: flex; flex-wrap: wrap; align-items: end; gap: .75rem; margin-block: 1rem; }
+.real-set-target > *, .real-training-set > * { flex: 1 1 7rem; min-width: 0; }
+.real-training-set > strong, .real-set-target > strong { flex-basis: 100%; }
+#real-workout-list, #real-history { display: grid; gap: .75rem; }
+#real-assign-dialog { width: min(40rem, calc(100% - 1rem)); max-width: calc(100% - 1rem); }
+#real-day-sessions, #real-bookings { display: grid; gap: .75rem; }
+#real-day-sessions .planning-slot > summary { display: block; min-height: 44px; padding-block: .75rem; }
+#real-recipient-list .real-recipient { display: flex; flex-direction: row; align-items: center; gap: .75rem; min-height: 44px; }
+#real-recipient-list input { width: 1.25rem; min-height: 1.25rem; height: 1.25rem; }
+#real-session-dialog { width: min(44rem, calc(100% - 1rem)); max-width: calc(100% - 1rem); }
 main.account-shell { width: min(100%, 44rem); margin: 0 auto; padding: 1.25rem 1rem calc(2rem + env(safe-area-inset-bottom, 0px)); }
 .account-header { display: flex; align-items: center; gap: 1rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); }
 .account-header a { display: inline-flex; flex-shrink: 0; }

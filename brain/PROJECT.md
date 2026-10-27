@@ -12,8 +12,8 @@ Basketball belongs to the separate RAW Hoops scope and is explicitly excluded fr
 
 - One responsive HTML/CSS/JavaScript application with Dutch interface text, CAP images, light/dark/system themes and athlete/coach previews.
 - Java 25 / Spring Boot 4.1.1 API: workout creation, assignment to example athlete Guillaume, timed completion, saved history and exact-rep personal records. Prescriptions support no target, fixed kg or a percentage of a matching record.
-- Planning, bookings, attendance and shop use browser-local example data. Login, registration, roles and subscriptions are simulations; no real accounts or payments exist.
-- Backend storage is local JSON, not a database. The earlier Java console application remains separately in `src/`.
+- The accounts profile now uses PostgreSQL and real cookie login for Planning/bookings, private recipients, attendance, workout creation/assignment, shared exercises and athlete training/history/PRs. The original design preview remains separately browser-local. Payments/subscription entitlements are not implemented.
+- Real-account storage uses PostgreSQL (Flyway V1?V4); the original preview still uses local JSON/browser data. The earlier Java console application remains separately in `src/`.
 - October 26: shared coach exercise management persists additions/edits/archive/restore in Java JSON. Workout popup uses active definitions; existing workouts/history/PR names are preserved. No new hosting service/dependency; real authorization remains future work.
 - Nutrition has a coach macro-calculator/manual-target preview and athlete day-target view; athlete food logging and coach diary viewing are session-only; meal planning is not implemented. Recovery, coaches and AI remain unimplemented. “Coach Glenn” is a provisional future AI name.
 

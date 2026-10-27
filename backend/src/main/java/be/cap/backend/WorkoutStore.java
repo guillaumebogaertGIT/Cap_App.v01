@@ -13,8 +13,11 @@ import tools.jackson.databind.json.JsonMapper;
 
 /** Local prototype storage. Real account authorization must be added before deployment. */
 @Service
+@org.springframework.context.annotation.Profile("!accounts")
 public class WorkoutStore {
     private final Path file;
+    private final StateWriter<State> writer;
+    private final java.util.function.Predicate<String> athleteExists;
     private final JsonMapper mapper = JsonMapper.builder().build();
     private List<Workout> workouts;
     public record DatedWorkout(String assignmentId, Workout planned, String note, String weekStart) {
@@ -24,7 +27,10 @@ public class WorkoutStore {
     private List<DatedWorkout> assignments;
     private boolean legacyFormat;
 
+    @org.springframework.beans.factory.annotation.Autowired
     public WorkoutStore(@Value("${cap.workouts.file:data/workouts.json}") String filename) throws IOException {
+        writer = null;
+        athleteExists = "preview-guillaume"::equals;
         file = Path.of(filename).toAbsolutePath();
         workouts = new ArrayList<>();
         assignments = new ArrayList<>();
@@ -39,6 +45,14 @@ public class WorkoutStore {
                 workouts.addAll(state.workouts()); assignments.addAll(state.assignments());
             }
         }
+    }
+
+    public WorkoutStore(State state, StateWriter<State> writer, java.util.function.Predicate<String> athleteExists) {
+        file = null;
+        this.writer = writer;
+        this.athleteExists = athleteExists;
+        workouts = new ArrayList<>(state.workouts());
+        assignments = new ArrayList<>(state.assignments());
     }
 
     public synchronized List<Workout> list() { return List.copyOf(workouts); }
@@ -91,7 +105,7 @@ public class WorkoutStore {
         return write(input, null);
     }
     public synchronized Workout createWeekly(Workout input, String weekStart) throws IOException {
-        if (!"preview-guillaume".equals(input.athleteId())) throw invalid();
+        if (!athleteExists.test(input.athleteId())) throw invalid();
         return write(input, null, validWeek(weekStart));
     }
 
@@ -110,7 +124,7 @@ public class WorkoutStore {
 
     public synchronized Workout assignWeekly(String id, Workout resolved, String weekStart) throws IOException {
         String week = validWeek(weekStart);
-        if (!"preview-guillaume".equals(resolved.athleteId()) || workouts.stream().noneMatch(w -> w.id().equals(id))) throw invalid();
+        if (!athleteExists.test(resolved.athleteId()) || workouts.stream().noneMatch(w -> w.id().equals(id))) throw invalid();
         Workout planned = new Workout(id, resolved.name(), resolved.description(), resolved.exercises(), resolved.athleteId(), "", resolved.category(), resolved.workoutType());
         DatedWorkout next = weekly(planned, week);
         // Repeating the same weekly assignment preserves its chosen day, edits and notes.
@@ -175,7 +189,7 @@ public class WorkoutStore {
         String category = input.category() == null ? "" : input.category();
         String workoutType = input.workoutType() == null ? "other" : input.workoutType();
         String athlete = existing != null ? existing.athleteId() : input.athleteId() == null ? "" : input.athleteId();
-        if (!athlete.isEmpty() && !athlete.equals("preview-guillaume")) throw invalid();
+        if (!athlete.isEmpty() && !athleteExists.test(athlete)) throw invalid();
         String date = weekStart != null ? "" : existing != null ? existing.assignedDate() : athlete.isEmpty() ? "" : assignmentDate(input.assignedDate());
         Workout saved = new Workout(id == null ? UUID.randomUUID().toString() : id, input.name().trim(),
             input.description() == null ? "" : input.description().trim(),
@@ -203,7 +217,7 @@ public class WorkoutStore {
     }
 
     public synchronized Workout assign(String id, Workout resolved) throws IOException {
-        if (!"preview-guillaume".equals(resolved.athleteId())) throw invalid();
+        if (!athleteExists.test(resolved.athleteId())) throw invalid();
         if (workouts.stream().noneMatch(w -> w.id().equals(id))) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Workout niet gevonden.");
         }
@@ -220,6 +234,11 @@ public class WorkoutStore {
     }
 
     private void save(List<Workout> updated, List<DatedWorkout> scheduled) throws IOException {
+        if (writer != null) {
+            writer.write(new State(updated, scheduled));
+            workouts = updated; assignments = scheduled;
+            return;
+        }
         Files.createDirectories(file.getParent());
         if (legacyFormat && Files.exists(file)) {
             Path backup = file.resolveSibling(file.getFileName() + ".legacy-backup");

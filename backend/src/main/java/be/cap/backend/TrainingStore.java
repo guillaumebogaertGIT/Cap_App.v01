@@ -12,6 +12,7 @@ import tools.jackson.databind.json.JsonMapper;
 
 /** Completed sessions are immutable snapshots. This prototype has one example athlete. */
 @Service
+@org.springframework.context.annotation.Profile("!accounts")
 public class TrainingStore {
     public record SetResult(int reps, Double kg, Integer rir) {
         public SetResult(int reps, Double kg) { this(reps, kg, null); }
@@ -27,12 +28,23 @@ public class TrainingStore {
     public record Session(String id, String athleteId, Workout planned, Instant startedAt, Instant finishedAt,
                           long durationSeconds, List<ExerciseResult> exercises, List<Record> newRecords, String assignmentId) {}
     private final Path file;
+    private final String athleteId;
+    private final StateWriter<List<Session>> writer;
     private final JsonMapper mapper = JsonMapper.builder().build();
     private List<Session> sessions;
 
+    @org.springframework.beans.factory.annotation.Autowired
     public TrainingStore(@Value("${cap.training.file:data/training.json}") String filename) throws IOException {
+        athleteId = "preview-guillaume";
+        writer = null;
         file = Path.of(filename).toAbsolutePath();
         sessions = Files.exists(file) ? new ArrayList<>(Arrays.asList(mapper.readValue(Files.readString(file), Session[].class))) : new ArrayList<>();
+    }
+    public TrainingStore(List<Session> sessions, String athleteId, StateWriter<List<Session>> writer) {
+        file = null;
+        this.sessions = new ArrayList<>(sessions);
+        this.athleteId = athleteId;
+        this.writer = writer;
     }
     public synchronized List<Session> history() { return List.copyOf(sessions); }
     private static String key(String name, int reps) { return name.trim().toLowerCase(Locale.ROOT).replaceAll("\\s+", " ") + ":" + reps; }
@@ -70,7 +82,7 @@ public class TrainingStore {
             if (value == null || !Double.isFinite(value) || value < 0 || value > 2000) throw invalid("Ongeldig gewicht of percentage.");
             if (mode.equals("fixed")) return new Workout.Exercise(e.name(), e.sets(), e.reps(), mode, value, value, null, e.restSeconds(), e.tempo(), e.supersetGroup());
             if (!mode.equals("percent") || value <= 0 || value > 200 || e.name() == null
-                || !"preview-guillaume".equals(input.athleteId())) throw invalid("Een percentage vereist een toegewezen sporter en een waarde van 1 tot 200.");
+                || !athleteId.equals(input.athleteId())) throw invalid("Een percentage vereist een toegewezen sporter en een waarde van 1 tot 200.");
             Record reference = records().stream().filter(r -> key(r.exercise(), r.reps()).equals(key(e.name(), e.reps()))).findFirst()
                 .orElseThrow(() -> invalid("Geen PR voor " + e.name() + " met " + e.reps() + " herhalingen. Kies een vast gewicht."));
             double target = Math.round(reference.kg() * value) / 100.0;
@@ -111,7 +123,7 @@ public class TrainingStore {
         }
         if (totalSets == 0) throw invalid("Vul minstens één uitgevoerde set in.");
         List<ExerciseResult> results = input.exercises().stream().map(e -> new ExerciseResult(e.exerciseIndex(), List.copyOf(e.sets()))).toList();
-        Session session = new Session(input.id(), "preview-guillaume", planned, start, end, duration, results, List.copyOf(improvements.values()), input.assignmentId());
+        Session session = new Session(input.id(), athleteId, planned, start, end, duration, results, List.copyOf(improvements.values()), input.assignmentId());
         List<Session> updated = new ArrayList<>(sessions);
         updated.add(session);
         saveSessions(updated);
@@ -121,6 +133,7 @@ public class TrainingStore {
 
     /** Replace the file before the caller updates the in-memory history. */
     private void saveSessions(List<Session> updated) throws IOException {
+        if (writer != null) { writer.write(updated); return; }
         Files.createDirectories(file.getParent());
         Path temporary = Files.createTempFile(file.getParent(), "training-", ".tmp");
         try {

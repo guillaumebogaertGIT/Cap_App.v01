@@ -15,18 +15,21 @@
         $('invitation-result').hidden = true;
     }
     function showMember(account) {
+        if (member?.id !== account?.id) document.querySelectorAll('form').forEach(form => form.reset());
         member = account;
+        document.body.classList.toggle('is-real-member', Boolean(account));
         $('login-panel').hidden = Boolean(account) || Boolean(invitationToken);
         $('accept-panel').hidden = Boolean(account) || !invitationToken;
         $('member-panel').hidden = !account;
         $('coach-invitations').hidden = account?.role !== 'COACH';
         $('member-identity').textContent = account ? `${account.name} · ${account.email} · ${account.role === 'COACH' ? 'Coach' : 'Sporter'}` : '';
         clearInvitation();
+        document.dispatchEvent(new CustomEvent('cap:account-ready', { detail: account }));
     }
     async function request(path, options = {}) {
         let response;
         try {
-            response = await fetch(base + path, { ...options, credentials: 'same-origin', cache: 'no-store', signal: AbortSignal.timeout(15000) });
+            response = await fetch(path.startsWith('/api/') ? path : base + path, { ...options, credentials: 'same-origin', cache: 'no-store', signal: AbortSignal.timeout(15000) });
         } catch {
             throw new Error('Geen verbinding met CAP. Controleer je verbinding en probeer opnieuw.');
         }
@@ -56,15 +59,17 @@
     async function run(action) {
         if (busy) return;
         busy = true;
-        document.querySelectorAll('button').forEach(button => { button.disabled = true; });
+        const buttons = Array.from(document.querySelectorAll('button'), button => [button, button.disabled]);
+        buttons.forEach(([button]) => { button.disabled = true; });
         message('Even geduld…');
         try { await action(); }
         catch (error) { message(error.message); $('account-status').focus(); }
         finally {
             busy = false;
-            document.querySelectorAll('button').forEach(button => { button.disabled = false; });
+            buttons.forEach(([button, disabled]) => { if (button.isConnected) button.disabled = disabled; });
         }
     }
+    window.capAccount = { request, post, run, message, get member() { return member; } };
     $('real-login').addEventListener('submit', event => {
         event.preventDefault();
         const form = event.currentTarget;
@@ -139,6 +144,7 @@
     }
     window.addEventListener('pageshow', refreshSession);
     window.addEventListener('hashchange', () => {
+        if (!location.hash.startsWith('#invite=')) return;
         invitationToken = new URLSearchParams(location.hash.slice(1)).get('invite');
         if (invitationToken) history.replaceState(null, '', location.pathname);
         refreshSession();
