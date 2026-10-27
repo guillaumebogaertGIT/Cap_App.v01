@@ -267,90 +267,6 @@
 .exercise-picker label {
     margin-bottom: 0.5rem;
 }
-.exercise-search-control {
-    position: relative;
-}
-.exercise-search-control input {
-    padding-right: 3.25rem;
-}
-.exercise-dropdown-toggle {
-    position: absolute;
-    top: 1px;
-    right: 1px;
-    width: 3rem;
-    height: calc(3rem - 2px);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border: 0;
-    border-radius: 0 0.5rem 0.5rem 0;
-    background: transparent;
-    color: var(--accent-text);
-    cursor: pointer;
-}
-.exercise-dropdown-toggle svg {
-    width: 1.25rem;
-    height: 1.25rem;
-}
-.exercise-dropdown-toggle[aria-expanded="true"] svg {
-    transform: rotate(180deg);
-}
-.exercise-dropdown {
-    position: absolute;
-    top: calc(100% + 0.3rem);
-    left: 0;
-    right: 0;
-    z-index: 5;
-    padding: 0.5rem;
-    border: 1px solid var(--border);
-    border-radius: 0.5rem;
-    background: var(--surface);
-    box-shadow: 0 0.5rem 1.25rem #0003;
-}
-.exercise-search-help,
-.exercise-result-count {
-    margin: 0.5rem 0;
-    color: var(--muted);
-    font-size: 0.85rem;
-}
-.exercise-results {
-    max-height: 13rem;
-    overflow-y: auto;
-    overscroll-behavior: contain;
-    list-style: none;
-    padding: 0;
-    margin: 0;
-    border: 1px solid var(--border);
-    border-radius: 0.5rem;
-    background: var(--background);
-}
-.exercise-results:empty {
-    display: none;
-}
-.exercise-results li + li {
-    border-top: 1px solid var(--border);
-}
-.exercise-results button {
-    display: block;
-    width: 100%;
-    min-height: 3rem;
-    padding: 0.65rem 0.75rem;
-    border: 0;
-    background: transparent;
-    color: var(--text);
-    font: inherit;
-    text-align: left;
-    overflow-wrap: anywhere;
-    cursor: pointer;
-}
-.exercise-results button:hover,
-.exercise-results button:focus-visible {
-    background: var(--highlight);
-    color: var(--accent-text);
-}
-.exercise-results button:focus-visible {
-    outline-offset: -3px;
-}
 .exercise-row {
     min-width: 0;
     margin: 0 0 1.25rem;
@@ -599,13 +515,6 @@
         align-self: center;
     }
 }
-.dashboard-cards.coach-cards {
-    grid-template-columns: 1fr;
-}
-.coach-create-card {
-    grid-column: 1 / -1;
-    background: var(--highlight);
-}
 .dashboard-cards .preview-note {
     font-size: 0.85rem;
     margin-bottom: 0;
@@ -614,11 +523,6 @@
     background: var(--hover);
     color: var(--muted);
     cursor: not-allowed;
-}
-@media (min-width: 1000px) {
-    .dashboard-cards.coach-cards {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
 }
 
 .settings-card {

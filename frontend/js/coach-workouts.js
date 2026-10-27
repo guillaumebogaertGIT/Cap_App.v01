@@ -115,7 +115,6 @@ const typeHeading = document.createElement('h3'); typeHeading.id = 'workout-type
 typeHeading.textContent = 'Wat voor workout maak je?';
 const bodyTiles = document.createElement('div'); bodyTiles.className = 'home-tiles';
 typeChooser.append(typeHeading, bodyTiles);
-let afterTypeChoice = 'editor';
 const categoryChooser = document.createElement('section');
 categoryChooser.hidden = true;
 categoryChooser.setAttribute('aria-labelledby', 'workout-category-title');
@@ -131,15 +130,14 @@ const categorySummary = document.createElement('strong'); categorySummary.setAtt
 const changeCategory = document.createElement('button'); changeCategory.type = 'button';
 changeCategory.className = 'secondary-button'; changeCategory.textContent = 'Categorie wijzigen';
 const changeType = document.createElement('button'); changeType.type = 'button'; changeType.className = 'secondary-button'; changeType.textContent = 'Workout type wijzigen';
-changeType.addEventListener('click', () => showTypeChooser(true, 'editor'));
+changeType.addEventListener('click', () => showTypeChooser());
 const categoryBack = document.createElement('button'); categoryBack.type = 'button'; categoryBack.className = 'secondary-button'; categoryBack.textContent = 'Workout type wijzigen';
 categoryBack.addEventListener('click', () => showTypeChooser());
 categoryHeading.after(categoryBack);
 categoryToolbar.append(categorySummary, changeType, changeCategory);
 // Name the workout after choosing its body focus, before selecting exercises.
 editorPanel.append(nameLabel, categoryToolbar, workoutForm);
-function showTypeChooser(moveFocus = true, next = 'editor') {
-    afterTypeChoice = next;
+function showTypeChooser(moveFocus = true) {
     typeChooser.hidden = false; categoryChooser.hidden = true; editorPanel.hidden = true;
     if (moveFocus) typeHeading.focus();
 }
@@ -155,7 +153,7 @@ bodyTypes.forEach(([value, label]) => {
     tile.addEventListener('click', () => {
         typeSelect.value = value;
         document.dispatchEvent(new CustomEvent('cap:workout-type-changed'));
-        if (afterTypeChoice === 'editor') showWorkoutEditor(); else showCategoryChooser();
+        showWorkoutEditor();
     });
     bodyTiles.append(tile);
 });
@@ -168,7 +166,7 @@ function showCategoryChooser(moveFocus = true) {
     if (moveFocus) categoryHeading.focus();
 }
 function showWorkoutEditor(moveFocus = true) {
-    if (!typeSelect.value) { showTypeChooser(moveFocus, 'editor'); return; }
+    if (!typeSelect.value) { showTypeChooser(moveFocus); return; }
     typeChooser.hidden = true;
     categoryChooser.hidden = true;
     editorPanel.hidden = false;
@@ -269,7 +267,7 @@ document.addEventListener('cap:workout-for-sessions', event => {
     sessionAgenda.reset(firstSession?.date || clubToday());
     updateAssignmentOptions();
     sessionOptions.querySelectorAll('input').forEach(input => { input.checked = event.detail.includes(input.value); });
-    showTypeChooser(true, 'editor');
+    showTypeChooser();
 });
 // Athlete assignment now opens Saved Workouts (handled by workouts-api.js).
 // Do not bind the retired Create Workout link: it no longer exists in the page.

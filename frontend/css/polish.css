@@ -44,8 +44,7 @@ body { font-family: "Segoe UI", Arial, sans-serif; }
 }
 :root[data-theme="dark"] #welcome-name { color: #ffbb62; }
 :root[data-theme="dark"] .dashboard-overview .overview-stats strong { color: #ffca81; }
-:root[data-theme="dark"] .dashboard-cards .workout-card,
-:root[data-theme="dark"] .dashboard-cards .coach-create-card {
+:root[data-theme="dark"] .dashboard-cards .workout-card {
     background: var(--highlight);
 }
 :root[data-theme="dark"] .club-toolbar,
@@ -60,7 +59,6 @@ body { font-family: "Segoe UI", Arial, sans-serif; }
     background: #ffca76;
 }
 :root[data-theme="dark"] .account-links,
-:root[data-theme="dark"] .exercise-dropdown,
 :root[data-theme="dark"] .club-dialog {
     background: #1d232c;
     border-color: #46505d;
@@ -185,7 +183,7 @@ main { width: 100%; max-width: 1600px; padding: 1.25rem; }
 }
 :root[data-theme="light"] .dashboard-cards > section,
 :root[data-theme="light"] .dashboard-cards > div { border-top: 1px solid var(--border); }
-.dashboard-cards .workout-card, .dashboard-cards .coach-create-card {
+.dashboard-cards .workout-card {
     border: 1px solid var(--highlight-border);
     background: var(--highlight);
 }
@@ -220,15 +218,6 @@ main { width: 100%; max-width: 1600px; padding: 1.25rem; }
 .club-dialog { box-shadow: 0 8px 20px #0003; border-radius: var(--panel-radius); }
 .club-form h2 { letter-spacing: -0.035em; }
 .club-empty { padding: 1.25rem 0; background: transparent; border-radius: 0; color: var(--muted); }
-/* Supporting coach sections read as sections, not more competing cards. */
-.dashboard-cards.coach-cards > section:not(.coach-create-card) {
-    padding: 1.25rem 0;
-    border: 0;
-    border-top: 1px solid var(--border);
-    border-radius: 0;
-    background: transparent;
-    box-shadow: none;
-}
 @media (min-width: 801px) {
     main { padding: 2rem; }
     .sidebar { position: sticky; top: 0; height: 100dvh; overflow-y: auto; padding: 1.5rem 1rem; width: 220px; }
@@ -337,8 +326,6 @@ main { width: 100%; max-width: 1600px; padding: 1.25rem; }
 .exercise-group .exercise-picker { grid-column: 1 / -1; }
 .exercise-group .exercise-inputs > label { font-size: 0.78rem; }
 .exercise-group .sample-notice { font-size: 0.72rem; line-height: 1.35; }
-.exercise-help { margin-top: 0.4rem; }
-.exercise-help > summary { min-height: 2.75rem; padding: 0.6rem 0; font-size: 0.75rem; color: var(--muted); cursor: pointer; }
 .workout-editor .next-exercise { width: 2.75rem; padding: 0; font-size: 1.4rem; border-style: dashed; margin-bottom: 0.5rem; }
 .editor-template-tools { max-width: 30rem; margin-bottom: 0.7rem; }
 .editor-template-tools > summary { min-height: 2.75rem; padding-block: 0.65rem; font-size: 0.85rem; cursor: pointer; }
@@ -484,11 +471,6 @@ button.home-tile { font: inherit; text-align: left; cursor: pointer; }
 .exercise-row-actions .secondary-button { font-size: 0.8rem; padding: 0.45rem 0.6rem; }
 .exercise-row-actions .add-superset { margin-left: auto; color: var(--accent-text); border-color: var(--highlight-border); }
 /* The editor uses short search results; the separate library supports browsing. */
-.exercise-results button strong { display: block; font-size: 0.85rem; font-weight: 600; line-height: 1.45; }
-.exercise-results button small { display: block; margin-top: 0.25rem; color: var(--muted); font-size: 0.72rem; line-height: 1.4; }
-.exercise-catalog-info > summary { min-height: 2.75rem; padding-block: 0.6rem; font-size: 0.8rem; cursor: pointer; }
-.exercise-dropdown .exercise-more { min-height: 2.75rem; padding: 0.5rem 0.7rem; margin-top: 0.4rem; font-size: 0.8rem; }
-.exercise-dropdown .exercise-more { width: 100%; }
 .exercise-source-values { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.5rem; margin: 0.4rem 0; }
 .exercise-source-values > div { min-width: 0; }
 .exercise-source-values dt { font-size: 0.73rem; color: var(--muted); }
@@ -500,13 +482,7 @@ button.home-tile { font: inherit; text-align: left; cursor: pointer; }
 .exercise-library-item > div { flex: 1 1 14rem; min-width: 0; }
 .exercise-library-item strong { display: block; font-size: 0.9rem; line-height: 1.5; overflow-wrap: anywhere; }
 .exercise-library-item small { display: block; margin-top: 0.2rem; font-size: 0.75rem; color: var(--muted); }
-.exercise-library-item > button { min-height: 2.75rem; padding: 0.5rem 0.7rem; font-size: 0.8rem; }
 .exercise-library-details summary { width: fit-content; min-height: 2.75rem; padding-block: 0.65rem; font-size: 0.78rem; cursor: pointer; }
-.exercise-catalog-info a { display: inline-flex; align-items: center; min-height: 2.75rem; color: var(--accent-text); }
-@media (max-width: 800px) {
-    .exercise-dropdown { position: static; margin-top: 0.4rem; box-shadow: none; }
-    .exercise-results { max-height: 15rem; }
-}
 .superset-strip .exercise-row { display: flex; flex-direction: column; }
 .superset-strip .exercise-inputs { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.5rem; }
 .superset-strip .exercise-picker { grid-column: 1 / -1; }
@@ -700,16 +676,16 @@ main { padding: 1rem; }
 .mobile-bottom-nav a.active { background: var(--nav-surface); color: var(--brand-teal); }
 #welcome-name, :root[data-theme="dark"] #welcome-name { color: var(--brand-teal); }
 .dashboard-overview .overview-stats strong, :root[data-theme="dark"] .dashboard-overview .overview-stats strong { color: var(--brand-teal); }
-.dashboard-cards .workout-card, .dashboard-cards .coach-create-card,
-:root[data-theme="dark"] .dashboard-cards .workout-card, :root[data-theme="dark"] .dashboard-cards .coach-create-card {
+.dashboard-cards .workout-card,
+:root[data-theme="dark"] .dashboard-cards .workout-card {
     background: var(--surface); border-color: var(--highlight-border); border-top: 2px solid var(--brand-teal);
 }
 .club-toolbar, .role-preview, .account-toggle,
 :root[data-theme="dark"] .club-toolbar, :root[data-theme="dark"] .role-preview, :root[data-theme="dark"] .account-toggle { background: var(--surface); }
-.account-links, .exercise-dropdown, .club-dialog,
-:root[data-theme="dark"] .account-links, :root[data-theme="dark"] .exercise-dropdown, :root[data-theme="dark"] .club-dialog { background: var(--surface); border-color: var(--border); }
+.account-links, .club-dialog,
+:root[data-theme="dark"] .account-links, :root[data-theme="dark"] .club-dialog { background: var(--surface); border-color: var(--border); }
 #dashboard .dashboard-support { gap: 1rem; margin-top: 1rem; }
-#dashboard .dashboard-support > section, .dashboard-cards.coach-cards > section:not(.coach-create-card) { padding-block: 0.85rem; }
+#dashboard .dashboard-support > section { padding-block: 0.85rem; }
 .club-day > h3.club-today { color: var(--brand-teal); }
 @media (min-width: 801px) {
     main { padding: 1.5rem; }
