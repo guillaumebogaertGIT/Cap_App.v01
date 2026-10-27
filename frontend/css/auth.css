@@ -21,3 +21,7 @@
 .access-preview select { max-width: 100%; min-height: 3rem; font: inherit; background: var(--surface); color: var(--text); border: 1px solid var(--border); border-radius: 0.5rem; padding: 0.5rem; }
 .access-preview p { margin: 0.5rem 0 0; font-size: 0.85rem; color: var(--muted); }
 @media (min-width: 900px) { .auth-screen { grid-template-columns: 1fr 1.1fr; align-items: center; padding: 3rem; } .auth-card { padding: 2rem; } }
+
+/* Profile pictures share the existing account avatar and dialog layout. */
+.account-avatar img { width: 100%; height: 100%; object-fit: cover; border-radius: inherit; }
+.account-profile-photo { width: 6rem; height: 6rem; object-fit: cover; border-radius: 50%; max-width: 100%; }

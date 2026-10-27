@@ -127,4 +127,29 @@ class AccountApiTests {
         assertEquals(400, request(guest, "POST", "/api/accounts/accept", acceptance.formatted(current), csrf(guest), false).statusCode());
         assertEquals(0L, jdbc.queryForObject("SELECT COUNT(*) FROM cap_user WHERE email = 'expired@example.test'", Long.class));
     }
+
+    @Test void ownProfileAndPhotoPersistAndValidate() throws Exception {
+        var coach = client(); var guest = client();
+        assertEquals(401, request(guest, "GET", "/api/accounts/profile", null, null, false).statusCode());
+        login(coach, "coach@example.test", "Coach-test-password-123");
+        var saved = request(coach, "PUT", "/api/accounts/profile", "{\"name\":\"Updated coach\",\"heightCm\":180,\"weightKg\":75,\"sex\":\"male\"}", csrf(coach), false);
+        assertEquals(200, saved.statusCode());
+        assertEquals(180, json.readTree(request(coach, "GET", "/api/accounts/profile", null, null, false).body()).get("values").get("heightCm").asInt());
+        assertEquals(400, request(coach, "PUT", "/api/accounts/profile", "{\"name\":\"Coach\",\"heightCm\":999}", csrf(coach), false).statusCode());
+        assertEquals(400, request(coach, "PUT", "/api/accounts/profile/photo", "{\"image\":\"not an image\"}", csrf(coach), false).statusCode());
+        var image = new java.awt.image.BufferedImage(16, 16, java.awt.image.BufferedImage.TYPE_INT_RGB);
+        var bytes = new java.io.ByteArrayOutputStream(); javax.imageio.ImageIO.write(image, "jpg", bytes);
+        String payload = json.writeValueAsString(java.util.Map.of("image", "data:image/jpeg;base64," + java.util.Base64.getEncoder().encodeToString(bytes.toByteArray())));
+        assertEquals(204, request(coach, "PUT", "/api/accounts/profile/photo", payload, csrf(coach), false).statusCode());
+        assertEquals(200, request(coach, "GET", "/api/accounts/profile/photo", null, null, false).statusCode());
+        var invite = request(coach, "POST", "/api/accounts/invitations", "{\"email\":\"profile-owner@example.test\"}", csrf(coach), false);
+        String token = json.readTree(invite.body()).get("token").asText();
+        String acceptance = json.writeValueAsString(java.util.Map.of("token", token, "name", "Other athlete", "password", "Profile-athlete-password-25"));
+        assertEquals(201, request(guest, "POST", "/api/accounts/accept", acceptance, csrf(guest), false).statusCode());
+        login(guest, "profile-owner@example.test", "Profile-athlete-password-25");
+        assertFalse(json.readTree(request(guest, "GET", "/api/accounts/profile", null, null, false).body()).get("hasPhoto").asBoolean());
+        assertEquals(404, request(guest, "GET", "/api/accounts/profile/photo", null, null, false).statusCode());
+        assertEquals(204, request(coach, "DELETE", "/api/accounts/profile/photo", null, csrf(coach), false).statusCode());
+        assertEquals(404, request(coach, "GET", "/api/accounts/profile/photo", null, null, false).statusCode());
+    }
 }

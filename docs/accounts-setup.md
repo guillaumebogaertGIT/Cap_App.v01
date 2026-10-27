@@ -60,7 +60,7 @@ Each booking locks its lesson while checking capacity. Roles, private visibility
 and athlete ownership are enforced on the server, not by the browser selector.
 Membership billing/paid-package entitlement rules are not implemented; invited
 athletes can book public lessons and their explicitly assigned private lessons.
-Nutrition, health/profile tracking, shop/payments and messaging remain outside
+Nutrition, health measurements/history, shop/payments and messaging remain outside
 this connected core. Their original screens remain visible; browser-only tools
 do not become shared storage. Only the core features listed above use PostgreSQL.
 
@@ -195,7 +195,7 @@ guest/athlete restrictions, invitation acceptance/reuse/expiry/reissue, hashed
 password storage and logout. Service tests also cover booking capacity races,
 private-recipient edits, training ownership, frozen snapshots, version conflicts,
 percentage targets and shared exercise persistence. The default suite uses H2.
-All 32 backend tests have also passed with account/club tests configured against
+The original 32 backend tests have also passed with account/club tests configured against
 an isolated PostgreSQL 18 cluster; V1–V4 migrations and restart persistence were
 checked without accessing the developer's CAP database. For repeat PostgreSQL
 tests, set `CAP_TEST_POSTGRES_URL` to a dedicated test database (never production),
@@ -210,3 +210,12 @@ memory, so restarting requires login again; accounts remain in PostgreSQL.
 Framework references: [Spring password storage](https://docs.spring.io/spring-security/reference/features/authentication/password-storage.html),
 [Spring CSRF protection](https://docs.spring.io/spring-security/reference/servlet/exploits/csrf.html),
 [Flyway initialization](https://docs.spring.io/spring-boot/how-to/data-initialization.html).
+
+## Profile editing
+
+Open the account menu ? Profiel to edit name, birth date, sex, height, weight,
+goal and experience. Email is read-only. Profile fields and photo persist in
+PostgreSQL through migration V5. Choose a photo up to 8 MB; the browser crops
+and compresses it to 256px JPEG, and the server validates/re-encodes it. Choose
+Profiel bewaren to save a photo selection or removal. Profiles/photos are
+available only to their signed-in owner. Measurement history remains separate.

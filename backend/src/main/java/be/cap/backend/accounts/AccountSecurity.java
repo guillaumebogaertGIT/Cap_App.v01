@@ -21,7 +21,7 @@ class AccountSecurity {
                 .requestMatchers(HttpMethod.GET, "/accounts/**", "/app/**").permitAll()
                 .requestMatchers("/api/health", "/api/accounts/csrf", "/api/accounts/accept", "/api/accounts/login").permitAll()
                 .requestMatchers("/api/accounts/invitations").hasRole("COACH")
-                .requestMatchers("/api/accounts/me").authenticated()
+                .requestMatchers("/api/accounts/me", "/api/accounts/profile/**").authenticated()
                 .requestMatchers("/api/club/**").authenticated()
                 .requestMatchers("/api/workouts/**", "/api/workout-assignments/**", "/api/training/**", "/api/records", "/api/session-workouts").authenticated()
                 .requestMatchers(HttpMethod.GET, "/api/exercises").authenticated()
