@@ -46,3 +46,5 @@ Possible post-MVP integrations/wearables and other ideas are not commitments. `d
 Review Planning activity dropdown and private athlete selection: create/repeat/edit recipients, switch to Guillaume preview, verify unassigned private sessions are hidden. Implement server authentication and session ownership before real private appointments.
 
 Review calendar-first Planning: month arrows/Today, date selection, athlete booking/cancellation, private-session counts, coach add/edit and workout handoff. Phone/tablet list below calendar; desktop list beside it. Local preview storage and real authorization limitations remain.
+
+Accounts next: install/start PostgreSQL locally and verify Flyway/persistence on PostgreSQL (current 26 backend tests pass with H2 for account flows). Connect Dutch coach invitation/athlete acceptance/login UI, then migrate real sessions/bookings and workouts/results with server-side ownership and capacity transactions. Add password recovery/email delivery, abuse limits, HTTPS/secure cookies and backups before deployment. Current frontend remains preview; do not imply accounts protect its browser-local data.

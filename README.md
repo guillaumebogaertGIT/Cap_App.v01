@@ -7,8 +7,13 @@ A Java learning project building toward a coaching platform for CAP in Gistel, B
 Local web prototype with a responsive frontend and a Java 25 / Spring Boot backend.
 Workout creation, example-athlete assignment, timed completion, saved history and
 rep-specific PRs are connected. Coaches can prescribe fixed kg or percentages of
-a matching rep record. Real authentication, a database and payments are not yet
-implemented. Planning, bookings and shop still use browser-local preview data.
+a matching rep record. Planning, bookings and shop still use browser-local preview data.
+
+An isolated **real-account backend foundation** now supports PostgreSQL, coach
+bootstrap, expiring athlete invitations and cookie login/logout with Spring Security.
+It is not connected to the frontend yet. See [account setup](docs/accounts-setup.md)
+for the separate `accounts` profile and its remaining migration work. Payments
+are not implemented.
 
 Read the [development overview](docs/SESSION-2026-09-27.md) for the architecture,
 test results, limitations and next steps. Open [the printable overview](docs/CAP-overview.html)

@@ -1,0 +1,21 @@
+# Local development only. Start with: docker compose -f compose.accounts.yaml up -d
+services:
+  database:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: cap
+      POSTGRES_USER: ${CAP_DATABASE_USER:-cap}
+      POSTGRES_PASSWORD: ${CAP_DATABASE_PASSWORD:?Set CAP_DATABASE_PASSWORD first}
+    ports:
+      - "127.0.0.1:55432:5432"
+    volumes:
+      - cap_accounts_database:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d cap"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+    restart: unless-stopped
+
+volumes:
+  cap_accounts_database:

@@ -27,3 +27,8 @@
 
 # Generated browser verification snapshots and logs
 /.playwright-mcp/
+
+# Account/database credentials belong in the environment, never Git.
+.env
+.env.*
+!.env.example
