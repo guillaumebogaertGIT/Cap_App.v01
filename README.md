@@ -29,19 +29,36 @@ are ignored by Git; back them up separately. Do not expose the preview publicly.
 
 Run backend checks with `./mvnw clean test` (Windows: `.\mvnw.cmd clean test`).
 
-For Windows VS Code, set the user environment variable `JAVA25_HOME` to your
-installed JDK 25 directory, then fully restart VS Code and create a new terminal.
-CAP's workspace settings use this variable for terminal `JAVA_HOME` and prepend
-its `bin` directory to `PATH`; other projects keep their existing Java defaults.
+Coaches can open **Oefeningen** from the sidebar/mobile menu to search the shared
+catalog, add or edit definitions, and archive/restore entries. Active definitions
+appear in the workout picker. Existing workout snapshots and name-based PRs keep
+their saved names after catalog edits; renaming does not migrate old records.
+Coach changes persist in `backend/data/exercises.json` (`cap.exercises.file` can
+override the path). The 1,078 imported definitions are bundled in the backend;
+only additions/overrides are written to disk. Search/filtering runs in the browser
+against a session cache, with 24 rows initially displayed. No new service or
+runtime dependency is required. Hosting must retain/back up this data directory;
+real server authorization remains required before public deployment.
+
+After updating the original Excel import, run `node tools/export_exercise_seed.mjs`
+to regenerate the bundled backend seed. Existing override IDs refer to the current
+import's row IDs; review overrides before replacing/reordering the source workbook.
+Restart Spring Boot after backend changes, then refresh the browser.
+
+For Windows VS Code, workspace settings select JDK 25 from
+`%USERPROFILE%/.jdks/openjdk-25/jdk-25.0.2` for terminal `JAVA_HOME` and prepend
+its `bin` directory to `PATH`. Adjust that location if your JDK is installed
+elsewhere. Close existing terminals and open a new terminal after changes;
+other projects keep their existing Java defaults.
 Register JDK 25 as `JavaSE-25` in **user** `java.configuration.runtimes` settings,
 retaining valid entries for older JDKs. Maven takes the backend language level
-from `backend/pom.xml`. Keep machine-specific JDK paths out of workspace settings.
+from `backend/pom.xml`. The workspace path uses USERPROFILE rather than a fixed username.
 
 In a PowerShell terminal outside VS Code, select Java 25 for that session before
 running Maven (this does not change Windows' default Java):
 
 ```powershell
-$env:JAVA_HOME = $env:JAVA25_HOME
+$env:JAVA_HOME = "$env:USERPROFILE/.jdks/openjdk-25/jdk-25.0.2"
 $env:Path = "$env:JAVA_HOME/bin;$env:Path"
 java -version
 .\mvnw.cmd -version

@@ -24,3 +24,6 @@
 /backups/
 # Obsidian local configuration
 .obsidian/
+
+# Generated browser verification snapshots and logs
+/.playwright-mcp/

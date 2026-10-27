@@ -2,6 +2,14 @@
 (() => {
     const $ = id => document.getElementById(id);
     const catalog = window.capExercisePicker;
+    const api = window.capExerciseCatalog;
+    const definitionForm = $('exercise-definition-form');
+    const definitionFields = ['name', 'region', 'category', 'subcategory', 'instructions', 'notes'];
+    let editingId = null;
+    let dirty = false;
+    let saving = false;
+    let loading = false;
+    const isCoach = () => previewRole === 'coach' && window.capAccess.signedIn;
     const node = (tag, text, className) => {
         const item = document.createElement(tag);
         if (text != null) item.textContent = text;
@@ -11,9 +19,9 @@
     let limit = 24;
     const filterFields = ['region', 'category', 'subcategory'];
     const filterLabels = { region: "Full body / alle regio's", category: 'Alle categorieën', subcategory: 'Alle bewegingen' };
-    const filters = () => Object.fromEntries(filterFields.map(field => [field, $(`exercise-filter-${field}`).value]));
+    const filters = () => ({ ...Object.fromEntries(filterFields.map(field => [field, $(`exercise-filter-${field}`).value])), status: $('exercise-library-state').value });
     function updateFilters() {
-        const parents = {};
+        const parents = { status: $('exercise-library-state').value };
         filterFields.forEach(field => {
             const select = $(`exercise-filter-${field}`);
             const previous = select.value;
@@ -42,13 +50,18 @@
             return;
         }
         renderDraft();
-        $('exercise-library-feedback').textContent = exercise.name + ' toegevoegd. Kies verder of bekijk je workout. Sla daarna je workout op.';
+        $('exercise-library-feedback').textContent = exercise.name + ' toegevoegd. Voeg meer oefeningen toe of ga terug naar je workout om op te slaan.';
     }
     function renderDraft() {
         const draft = window.capWorkoutDraft.summary();
+        const choosing = Boolean(draft.name) && $('exercise-library-state').value === 'active';
+        $('exercise-library-open').parentElement.hidden = !draft.name;
+        document.querySelector('.exercise-library-selection').hidden = !choosing;
+        $('exercise-selection-help').hidden = !choosing;
         const typeName = { 'upper-body': 'Upper body', 'lower-body': 'Lower body', 'full-body': 'Full body' }[draft.type] || 'Alle oefeningen';
-        $('exercise-library-draft').textContent = `${typeName} · ${draft.editing ? 'Bewerken' : 'Workout in opbouw'}: ${draft.name || 'Naamloos'} · ${draft.count} oefeningen`;
-        $('exercise-library-open').textContent = `Workout bekijken (${draft.count})`;
+        const exerciseCount = `${draft.count} ${draft.count === 1 ? 'oefening' : 'oefeningen'}`;
+        $('exercise-library-draft').textContent = `${draft.name || 'Naamloze workout'} · ${typeName} · ${exerciseCount} · Nog niet opgeslagen`;
+        $('exercise-library-open').textContent = 'Terug naar mijn workout';
     }
     function closeSuggestions() {
         $('exercise-library-suggestions').hidden = true;
@@ -81,7 +94,8 @@
         const previous = select.value;
         const placeholder = node('option', matches.length ? 'Kies een oefening (' + matches.length + ')' : 'Geen oefeningen gevonden'); placeholder.value = '';
         select.replaceChildren(placeholder);
-        matches.forEach(exercise => {
+        const selectingForDraft = Boolean(window.capWorkoutDraft.summary().name) && $('exercise-library-state').value === 'active';
+        (selectingForDraft ? matches : []).forEach(exercise => {
             const option = node('option', exercise.name + ' — ' + exercise.category + ' / ' + (exercise.subcategory || exercise.region));
             option.value = exercise.id; select.append(option);
         });
@@ -89,7 +103,7 @@
         select.disabled = !matches.length;
         updateSelection();
         const list = $('exercise-library-list'); list.replaceChildren();
-        $('exercise-library-count').textContent = matches.length ? `${Math.min(limit, matches.length)} van ${matches.length} oefeningen · alfabetisch` : 'Geen oefeningen gevonden. Zoek op een andere naam of categorie.';
+        $('exercise-library-count').textContent = !api.ready ? (loading ? 'Oefenbibliotheek laden…' : 'Laad de bibliotheek om oefeningen te bekijken.') : matches.length ? `${Math.min(limit, matches.length)} van ${matches.length} oefeningen · alfabetisch` : 'Geen oefeningen gevonden. Pas je zoekterm, filters of weergave aan.';
         matches.slice(0, limit).forEach(exercise => {
             const item = node('li', null, 'exercise-library-item');
             const content = node('div');
@@ -108,16 +122,108 @@
                 details.append(values);
             });
             content.append(details);
-            const add = node('button', '+ Toevoegen', 'secondary-button'); add.type = 'button';
+            const actions = node('div', null, 'exercise-management-actions');
+            const edit = node('button', 'Bewerken', 'secondary-button'); edit.type = 'button';
+            edit.setAttribute('aria-label', exercise.name + ' bewerken');
+            edit.addEventListener('click', () => openDefinition(exercise));
+            const archive = node('button', exercise.archived ? 'Herstellen' : 'Archiveren', 'secondary-button'); archive.type = 'button';
+            archive.setAttribute('aria-label', exercise.name + (exercise.archived ? ' herstellen' : ' archiveren'));
+            archive.addEventListener('click', () => changeArchive(exercise, archive));
+            edit.disabled = saving || loading; archive.disabled = saving || loading;
+            actions.append(edit, archive);
+            const add = node('button', 'Aan workout toevoegen', 'secondary-button'); add.type = 'button';
             add.setAttribute('aria-label', `${exercise.name} toevoegen aan de workout`);
             const draft = window.capWorkoutDraft.summary();
-            add.disabled = !draft.name || !catalog.matchesType(exercise, draft.type);
-            if (add.disabled) content.append(node('small', !draft.name ? 'Geef je workout eerst een naam in Workout maken.' : 'Buiten je workout type. Wijzig het workout type om toe te voegen.'));
+            add.hidden = !draft.name || exercise.archived;
+            add.disabled = saving || loading || !catalog.matchesType(exercise, draft.type);
+            if (draft.name && !exercise.archived && !catalog.matchesType(exercise, draft.type)) content.append(node('small', 'Buiten je workout type.'));
             add.addEventListener('click', () => addToDraft(exercise));
-            item.append(content, add); list.append(item);
+            actions.append(add); item.append(content, actions); list.append(item);
         });
         $('exercise-library-more').hidden = matches.length <= limit;
     }
+    function openDefinition(exercise = null) {
+        if (!isCoach() || !api.ready || saving || loading) return;
+        if (dirty && !window.confirm('Je onopgeslagen wijzigingen vervangen?')) return;
+        editingId = exercise?.id || null;
+        definitionForm.reset();
+        definitionFields.forEach(field => { definitionForm.elements.namedItem(field).value = exercise?.[field] || ''; });
+        $('exercise-definition-title').textContent = exercise ? 'Oefening bewerken' : 'Nieuwe oefening';
+        $('exercise-definition-status').textContent = '';
+        definitionForm.hidden = false; dirty = false;
+        definitionForm.scrollIntoView({ block: 'start' });
+        definitionForm.elements.namedItem('name').focus({ preventScroll: true });
+    }
+    function closeDefinition() {
+        if (saving || (dirty && !window.confirm('Onopgeslagen wijzigingen weggooien?'))) return;
+        definitionForm.hidden = true; dirty = false; editingId = null;
+        $('exercise-new').focus();
+    }
+    function setSaving(value) {
+        saving = value;
+        definitionForm.querySelectorAll('input, select, textarea, button').forEach(input => { input.disabled = value; });
+        $('exercise-new').disabled = value || loading || !api.ready;
+        render();
+    }
+    async function changeArchive(exercise) {
+        if (!isCoach() || saving || loading) return;
+        if (!exercise.archived && !window.confirm(`“${exercise.name}” archiveren? Je kunt de oefening later herstellen. Bestaande workouts en historiek blijven behouden.`)) return;
+        if (!definitionForm.hidden) {
+            $('exercise-library-feedback').textContent = 'Sla je bewerking eerst op of annuleer ze voordat je een oefening archiveert of herstelt.';
+            definitionForm.scrollIntoView({ block: 'start' });
+            return;
+        }
+        setSaving(true);
+        try {
+            await api.archive(exercise.id, !exercise.archived);
+            $('exercise-library-feedback').textContent = exercise.name + (exercise.archived ? ' hersteld.' : ' gearchiveerd. Je vindt de oefening onder Gearchiveerde oefeningen.');
+        } catch (error) { $('exercise-library-feedback').textContent = error.message; }
+        finally { setSaving(false); }
+    }
+    definitionForm.addEventListener('input', () => { dirty = true; });
+    definitionForm.addEventListener('change', () => { dirty = true; });
+    definitionForm.addEventListener('submit', async event => {
+        event.preventDefault();
+        if (!isCoach() || saving || !definitionForm.reportValidity()) return;
+        const input = Object.fromEntries(definitionFields.map(field => [field, definitionForm.elements.namedItem(field).value.trim()]));
+        setSaving(true);
+        $('exercise-definition-status').textContent = 'Opslaan…';
+        try {
+            const saved = editingId ? await api.update(editingId, input) : await api.create(input);
+            definitionForm.hidden = true; dirty = false; editingId = null;
+            $('exercise-library-state').value = saved.archived ? 'archived' : 'active';
+            filterFields.forEach(field => { $(`exercise-filter-${field}`).value = ''; });
+            $('exercise-library-search').value = saved.name;
+            updateFilters(); limit = 24; render(); renderDraft(); closeSuggestions();
+            $('exercise-library-feedback').textContent = saved.name + ' opgeslagen in de bibliotheek. Bestaande workouts en PR’s behouden hun opgeslagen naam.';
+            $('exercise-library-search').focus();
+        } catch (error) { $('exercise-definition-status').textContent = error.message; }
+        finally { setSaving(false); }
+    });
+    $('exercise-new').addEventListener('click', () => openDefinition());
+    $('exercise-definition-cancel').addEventListener('click', closeDefinition);
+    async function loadCatalog() {
+        if (loading || saving || !isCoach()) return;
+        loading = true; $('exercise-new').disabled = true;
+        $('exercise-catalog-status').textContent = 'Oefenbibliotheek laden…'; $('exercise-catalog-retry').hidden = true;
+        render();
+        try {
+            await api.load(true);
+            $('exercise-catalog-status').textContent = 'Bibliotheek geladen. Wijzigingen blijven bewaard na vernieuwen.';
+        } catch (error) {
+            $('exercise-catalog-status').textContent = error.message;
+            $('exercise-catalog-retry').hidden = false;
+        } finally { loading = false; $('exercise-new').disabled = !api.ready; updateFilters(); renderDraft(); render(); }
+    }
+    $('exercise-catalog-retry').addEventListener('click', loadCatalog);
+    $('exercise-library-state').addEventListener('change', () => {
+        updateFilters(); limit = 24; renderDraft(); render(); closeSuggestions();
+    });
+    document.addEventListener('cap:exercise-catalog-changed', () => {
+        const categories = [...new Set(api.entries.map(exercise => exercise.category))].sort((a, b) => a.localeCompare(b, 'nl-BE'));
+        $('exercise-categories').replaceChildren(...categories.map(category => { const option = node('option'); option.value = category; return option; }));
+        updateFilters(); renderDraft(); render(); closeSuggestions();
+    });
     updateFilters();
     filterFields.forEach(field => $(`exercise-filter-${field}`).addEventListener('change', () => {
         updateFilters(); limit = 24; render(); closeSuggestions();
@@ -150,7 +256,8 @@
     $('exercise-library-open').addEventListener('click', () => window.capWorkoutDraft.open());
     document.addEventListener('cap:viewchange', () => {
         closeSuggestions();
-        if (location.hash === '#exercises' && previewRole === 'coach' && window.capAccess.signedIn) { renderDraft(); render(); }
-        if (!window.capAccess.signedIn) { $('exercise-library-search').value = ''; $('exercise-library-feedback').textContent = ''; limit = 24; filterFields.forEach(field => { $(`exercise-filter-${field}`).value = ''; }); updateFilters(); }
+        if (location.hash === '#exercises' && isCoach()) { renderDraft(); render(); loadCatalog(); }
+        if (!isCoach()) { definitionForm.hidden = true; definitionForm.reset(); editingId = null; dirty = false; $('exercise-library-search').value = ''; $('exercise-library-feedback').textContent = ''; limit = 24; filterFields.forEach(field => { $(`exercise-filter-${field}`).value = ''; }); updateFilters(); }
     });
+    if (location.hash === '#exercises' && isCoach()) loadCatalog();
 })();

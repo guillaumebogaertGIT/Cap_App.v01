@@ -1,4 +1,4 @@
-﻿# Session Log
+# Session Log
 
 ## October 20, 2026 — Compact athlete workouts
 
@@ -244,3 +244,16 @@ October 24 editor startup repair: Removed an obsolete event binding to the absen
 October 24 named workout flow: Moved title out of save dialog to above exercise-page button. Added shared nonblank-name guard for page links, +, submit and catalog additions. Exercise page Add controls explain missing names and retain the same named draft. Syntax/whitespace and VM name-validation checks passed; actual browser verification pending.
 
 October 24 per-set progression: Added backward-compatible setPlan model, exact-rep target resolution, persistence and optional coach set editor. Updated workout, training/history and group previews; athletes still enter actual kg/reps. All 19 backend tests pass, including new mixed per-set percentage/fixed/free targets, frozen references, persistence and independent actual weights. Node VM checks cover edit/load/serialization and set-count growth; modified scripts parse and whitespace checks pass. Browser layout review remains pending.
+
+## October 26 — Workout navigation cleanup
+- Replaced duplicate exercise-library links and + entry with one labelled Oefening toevoegen button opening the existing exercise page. Return link says Terug naar mijn workout; draft summary shows name, body type, count and unsaved status. Existing row picker/superset behavior retained.
+- Existing save button stays above bottom navigation at <=800px with content clearance. Desktop save placement unchanged.
+- Browser checks passed for add/return draft preservation and save dialog open/cancel. Layout geometry checked at 390/768/1440px, with phone/desktop screenshots inspected; no horizontal overflow or save/nav overlap. JavaScript syntax and whitespace checks passed. No workout saved during verification. User visual review remains next.
+
+October 26 clarification: user prefers the shared exercise-picker popup for initial and subsequent additions, matching supersets. Oefening toevoegen now calls the existing addExercise() flow; updated helper text. Browser verified initial/additional picker, selection and superset picker; no backend changes.
+
+## October 26 — Persistent coach exercise library
+- Added shared Oefeningen management with independent add/edit forms, active/archive browsing and archive/restore. Uses the same live catalog as the existing workout popup. Saved workout snapshots, history and name-based PRs remain unchanged; renamed definitions do not migrate old PR names.
+- Java ExerciseStore/Controller load 1,078 bundled definitions and persist only additions/overrides atomically in data/exercises.json. Stable IDs, duplicate validation, bounded fields, recoverable error feedback. Existing preview authorization limitations remain. No new dependency or hosting service.
+- Added reproducible export_exercise_seed.mjs. Browser searches use one session cache and paged rows; verified typing makes zero API calls. Manager refreshes on entry; successful mutations update the popup immediately.
+- Validation: all 24 backend tests passed; store/API checks cover persistence, archive/restore, duplicates, missing/invalid region, failed-write atomicity and saved-workout-name preservation. Browser checks covered create/edit/reload, archive exclusion/restore, popup selection, duplicate/offline input preservation. Layout measured at 390/768/1440px; inspected light desktop and dark phone screenshots, with 16px inputs and 44px targets. Syntax/whitespace checks passed. Temporary port-8081 backend used separate target-directory data and was stopped; user's data unchanged. User review and backend restart on port 8080 remain next.

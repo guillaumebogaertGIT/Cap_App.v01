@@ -9,17 +9,31 @@ import org.springframework.web.bind.annotation.*;
 public class TrainingController {
     private final TrainingStore training;
     private final WorkoutStore workouts;
-    public TrainingController(TrainingStore training, WorkoutStore workouts) { this.training = training; this.workouts = workouts; }
+
+    public TrainingController(TrainingStore training, WorkoutStore workouts) {
+        this.training = training;
+        this.workouts = workouts;
+    }
+
     @GetMapping("/api/training")
-    public List<TrainingStore.Session> history() { return training.history(); }
+    public List<TrainingStore.Session> history() {
+        return training.history();
+    }
+
     @GetMapping("/api/records")
-    public List<TrainingStore.Record> records() { return training.records(); }
+    public List<TrainingStore.Record> records() {
+        return training.records();
+    }
+
     @PostMapping("/api/training")
     public TrainingStore.Session finish(@RequestBody TrainingStore.Completion completion) throws IOException {
-        Workout plan = completion.assignmentId() == null
+        return training.finish(completion, findPlannedWorkout(completion));
+    }
+
+    private Workout findPlannedWorkout(TrainingStore.Completion completion) {
+        return completion.assignmentId() == null
             ? workouts.list().stream().filter(w -> w.id().equals(completion.workoutId())).findFirst().orElse(null)
             : workouts.assignments().stream().filter(a -> a.assignmentId().equals(completion.assignmentId()))
                 .map(WorkoutStore.DatedWorkout::planned).findFirst().orElse(null);
-        return training.finish(completion, plan);
     }
 }

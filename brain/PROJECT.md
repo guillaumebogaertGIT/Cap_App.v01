@@ -14,6 +14,7 @@ Basketball belongs to the separate RAW Hoops scope and is explicitly excluded fr
 - Java 25 / Spring Boot 4.1.1 API: workout creation, assignment to example athlete Guillaume, timed completion, saved history and exact-rep personal records. Prescriptions support no target, fixed kg or a percentage of a matching record.
 - Planning, bookings, attendance and shop use browser-local example data. Login, registration, roles and subscriptions are simulations; no real accounts or payments exist.
 - Backend storage is local JSON, not a database. The earlier Java console application remains separately in `src/`.
+- October 26: shared coach exercise management persists additions/edits/archive/restore in Java JSON. Workout popup uses active definitions; existing workouts/history/PR names are preserved. No new hosting service/dependency; real authorization remains future work.
 - Nutrition has a coach macro-calculator/manual-target preview and athlete day-target view; athlete food logging and coach diary viewing are session-only; meal planning is not implemented. Recovery, coaches and AI remain unimplemented. “Coach Glenn” is a provisional future AI name.
 
 ## Working requirements
@@ -28,7 +29,7 @@ Maintain one responsive codebase for phones (especially iPhones), tablets and de
 - `docs/PROJECT_PLAN.md`: canonical scope and learning principles. Its original review-only task is historical, as clarified by README.
 - `docs/SESSION-2026-09-27.md`: prior handoff; `docs/CAP-overview.html`: printable companion.
 - `docs/account-access-plan.md`: provisional access design and unresolved CAP decisions.
-- From `backend/`, with JDK 25: `.\mvnw.cmd spring-boot:run`. Windows VS Code terminals use the user `JAVA25_HOME` variable; see README for setup. Open `http://127.0.0.1:5500/frontend/index.html` through Live Server and enter the design preview. API port: 8080. Current access controls are not production security; use example data.
+- From `backend/`, with JDK 25: `.\mvnw.cmd spring-boot:run`. Windows VS Code terminals select the JDK under USERPROFILE/.jdks/openjdk-25/jdk-25.0.2; see README for setup. Open `http://127.0.0.1:5500/frontend/index.html` through Live Server and enter the design preview. API port: 8080. Current access controls are not production security; use example data.
 
 October 23 persistence update: preview login/role/plan, profile/measurements, nutrition targets/drafts, food diary and saved meals now survive reloads in this browser. Logout ends the session without deleting records. Local preview only; no real accounts or cross-device sync. Live Server ignores backend writes. This supersedes session-only descriptions above.
 

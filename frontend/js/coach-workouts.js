@@ -84,18 +84,13 @@ const nameLabel = workoutForm.elements.namedItem('title').closest('label');
 const workoutName = workoutForm.elements.namedItem('title');
 // Keep the name visible before choosing exercises, with the same form ownership.
 workoutName.setAttribute('form', workoutForm.id);
-document.querySelector('.workout-exercises-button').before(nameLabel);
+workoutForm.before(nameLabel);
 function requireWorkoutName() {
     workoutName.setCustomValidity(workoutName.value.trim() ? '' : 'Geef je workout eerst een naam.');
     if (workoutName.reportValidity()) return true;
     workoutName.focus();
     return false;
 }
-document.querySelectorAll('#create-workout a[href="#exercises"]').forEach(link => {
-    link.addEventListener('click', event => {
-        if (!requireWorkoutName()) event.preventDefault();
-    });
-});
 const descriptionLabel = workoutForm.elements.namedItem('description').closest('label');
 const categoryLabel = categorySelect.closest('label');
 saveDialog.append(saveHeading, typeLabel, destinationFieldset, categoryLabel, descriptionLabel, saveStatus, confirmSave, closeSave);
@@ -140,7 +135,7 @@ categoryBack.addEventListener('click', () => showTypeChooser());
 categoryHeading.after(categoryBack);
 categoryToolbar.append(categorySummary, changeType, changeCategory);
 // Name the workout after choosing its body focus, before selecting exercises.
-editorPanel.append(nameLabel, document.querySelector('.workout-exercises-button'), categoryToolbar, workoutForm);
+editorPanel.append(nameLabel, categoryToolbar, workoutForm);
 function showTypeChooser(moveFocus = true, next = 'editor') {
     afterTypeChoice = next;
     typeChooser.hidden = false; categoryChooser.hidden = true; editorPanel.hidden = true;

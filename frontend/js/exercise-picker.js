@@ -9,14 +9,25 @@
         if (grouped.has(key)) grouped.get(key).sourceRows.push(exercise.sourceRow);
         else grouped.set(key, { ...exercise, sourceRows: [exercise.sourceRow], search: normalize([exercise.name, exercise.region, exercise.category, exercise.subcategory, exercise.notes].join(' ')) });
     });
-    const catalog = Array.from(grouped.values()).sort((a, b) => a.name.localeCompare(b.name, 'nl-BE'));
+    const imported = new Map(Array.from(grouped.values()).map(item => [item.id, item]));
+    const catalog = [];
+    let allExercises = [];
+    function updateCatalog() {
+        allExercises = window.capExerciseCatalog.entries.map(exercise => ({
+            ...imported.get(exercise.id), ...exercise,
+            search: normalize([exercise.name, exercise.region, exercise.category, exercise.subcategory, exercise.notes, exercise.instructions].join(' '))
+        })).sort((a, b) => a.name.localeCompare(b.name, 'nl-BE'));
+        catalog.splice(0, catalog.length, ...allExercises.filter(exercise => !exercise.archived));
+        refreshType();
+    }
     const regionForType = type => ({ 'upper-body': 'Upper Body', 'lower-body': 'Lower Body' })[type] || '';
     const matchesType = (exercise, type) => !regionForType(type) || exercise.region === regionForType(type);
     const currentType = () => document.getElementById('workout-kind')?.value || '';
     const typeLabel = () => ({ 'upper-body': 'Upper body', 'lower-body': 'Lower body', 'full-body': 'Full body' })[currentType()] || 'Alle oefeningen';
     function search(query, filters = {}) {
         const words = normalize(query).split(' ').filter(Boolean);
-        return catalog.filter(exercise => words.every(word => exercise.search.includes(word)) && ['region', 'category', 'subcategory'].every(field => !filters[field] || exercise[field] === filters[field]));
+        const source = filters.status === 'archived' ? allExercises.filter(exercise => exercise.archived) : catalog;
+        return source.filter(exercise => words.every(word => exercise.search.includes(word)) && ['region', 'category', 'subcategory'].every(field => !filters[field] || exercise[field] === filters[field]));
     }
     const searchForType = (query, type = currentType()) => search(query, { region: regionForType(type) });
     const node = (tag, text, className) => {
@@ -35,12 +46,13 @@
     const query = node('input'); query.type = 'search'; query.maxLength = 100; query.autocomplete = 'off'; query.spellcheck = false; label.append(query);
     const shortcuts = node('div', null, 'exercise-quick-search'); shortcuts.setAttribute('aria-label', 'Snel zoeken');
     const count = node('p', '', 'sample-notice'); count.setAttribute('role', 'status');
+    const retry = node('button', 'Opnieuw laden', 'secondary-button'); retry.type = 'button'; retry.hidden = true;
     const results = node('ul', null, 'exercise-search-results'); results.setAttribute('aria-label', 'Gevonden oefeningen');
     const more = node('button', 'Meer oefeningen tonen', 'secondary-button'); more.type = 'button';
     const custom = node('details', null, 'exercise-custom'); custom.append(node('summary', 'Eigen oefeningnaam gebruiken'));
     const customHelp = node('p', 'Typ de naam in het zoekvak hierboven.', 'sample-notice');
     const useCustom = node('button', 'Deze naam gebruiken', 'secondary-button'); useCustom.type = 'button'; custom.append(customHelp, useCustom);
-    dialog.append(header, scope, label, shortcuts, count, results, more, custom); document.body.append(dialog);
+    dialog.append(header, scope, label, shortcuts, count, retry, results, more, custom); document.body.append(dialog);
     const controllers = new WeakMap();
     let active = null;
     let limit = 12;
@@ -49,6 +61,11 @@
         active.input.value = name; active.input.setCustomValidity(''); active.input.dispatchEvent(new Event('change')); dialog.close();
     }
     function render() {
+        if (!window.capExerciseCatalog.ready) {
+            results.replaceChildren(); more.hidden = true; useCustom.disabled = true;
+            count.textContent = 'Oefenbibliotheek laden…';
+            return;
+        }
         const matches = searchForType(query.value);
         scope.textContent = `${typeLabel()} · oefeningen uit de coachbibliotheek`;
         count.textContent = matches.length ? `${Math.min(limit, matches.length)} van ${matches.length} oefeningen` : 'Geen match binnen dit workout type. Probeer een andere zoekterm.';
@@ -60,9 +77,9 @@
         });
         more.hidden = matches.length <= limit;
         const name = query.value.trim();
-        const known = catalog.find(exercise => normalize(exercise.name) === normalize(name));
-        useCustom.disabled = !name || name.length > 100 || Boolean(known && !matchesType(known, currentType()));
-        customHelp.textContent = known && !matchesType(known, currentType()) ? 'Deze oefening hoort bij een ander workout type.' : name ? `Eigen naam: ${name}` : 'Typ de naam in het zoekvak hierboven.';
+        const known = allExercises.find(exercise => normalize(exercise.name) === normalize(name));
+        useCustom.disabled = !name || name.length > 100 || Boolean(known && (known.archived || !matchesType(known, currentType())));
+        customHelp.textContent = known?.archived ? 'Deze oefening is gearchiveerd. Herstel ze in Oefeningen om ze opnieuw te gebruiken.' : known && !matchesType(known, currentType()) ? 'Deze oefening hoort bij een ander workout type.' : name ? `Eigen naam: ${name} (alleen voor deze workout)` : 'Typ de naam in het zoekvak hierboven.';
     }
     function open(row) {
         const controller = controllers.get(row);
@@ -76,6 +93,12 @@
             button.addEventListener('click', () => { query.value = term; limit = 12; render(); query.focus(); }); shortcuts.append(button);
         });
         render(); dialog.showModal(); query.focus();
+        loadCatalog();
+    }
+    async function loadCatalog() {
+        retry.hidden = true;
+        try { await window.capExerciseCatalog.load(); if (dialog.open) render(); }
+        catch (error) { if (dialog.open) { count.textContent = error.message; retry.hidden = false; } }
     }
     function setup(row) {
         const input = row.querySelector('[name="exercise"]'); const button = row.querySelector('.exercise-choice');
@@ -104,6 +127,8 @@
         document.querySelectorAll('#exercise-fields .exercise-row').forEach(row => controllers.get(row)?.refresh()); if (dialog.open) render();
     }
     document.addEventListener('cap:workout-type-changed', refreshType);
+    document.addEventListener('cap:exercise-catalog-changed', updateCatalog);
+    retry.addEventListener('click', loadCatalog);
     document.addEventListener('cap:viewchange', () => { if (dialog.open && (location.hash !== '#create-workout' || !window.capAccess.signedIn)) dialog.close(); });
     window.capExercisePicker = { setup, open, search, searchForType, matchesType, regionForType, catalog, refreshType };
 })();

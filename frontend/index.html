@@ -17,6 +17,7 @@
     <script src="js/assignment-agenda.js" defer></script>
     <script src="js/club.js" defer></script>
     <script src="js/exercise-data.js" defer></script>
+    <script src="js/exercise-catalog.js" defer></script>
     <script src="js/exercise-picker.js" defer></script>
     <script src="js/coach-workouts.js" defer></script>
     <script src="js/exercise-library.js" defer></script>
@@ -67,6 +68,7 @@
             <a href="#coach-health" data-view-link="coach-health" data-coach-only hidden>Gezondheid &amp; Progress</a>
             <a href="#create-workout" data-view-link="create-workout" data-coach-only hidden>Workout maken</a>
             <a href="#saved-workouts" data-view-link="saved-workouts" data-coach-only hidden>Opgeslagen workouts</a>
+            <a href="#exercises" data-view-link="exercises" data-coach-only hidden>Oefeningen</a>
             <a href="#athletes" data-view-link="athletes" data-coach-only hidden>Sporters</a>
             <a href="#group-classes" data-view-link="group-classes" data-coach-only hidden>Groepslessen</a>
             <a href="#planning" data-view-link="planning">Planning</a>
@@ -358,7 +360,24 @@
         </section>
 
         <section id="exercises" data-view aria-labelledby="exercises-title" hidden>
-            <header class="dashboard-header"><div><h2 id="exercises-title" tabindex="-1">Oefeningen</h2><p class="dashboard-intro">De volledige coachbibliotheek. Zoek een oefening en voeg die toe aan je workout.</p></div></header>
+            <header class="dashboard-header"><div><h2 id="exercises-title" tabindex="-1">Oefeningen</h2><p class="dashboard-intro">Beheer de gedeelde CAP-bibliotheek voor je workouts.</p></div><button type="button" id="exercise-new" class="primary-button" disabled>Nieuwe oefening</button></header>
+            <p class="sample-notice">Archiveren verbergt een oefening bij het kiezen. Bestaande workouts, trainingshistoriek en PR's behouden hun opgeslagen naam.</p>
+            <div class="exercise-library-toolbar"><p id="exercise-catalog-status" role="status"></p><button type="button" id="exercise-catalog-retry" class="secondary-button" hidden>Opnieuw laden</button></div>
+            <form id="exercise-definition-form" class="exercise-definition-form" hidden>
+                <h3 id="exercise-definition-title" tabindex="-1">Nieuwe oefening</h3>
+                <div class="exercise-definition-fields">
+                    <label>Naam<input name="name" required maxlength="100" autocomplete="off"></label>
+                    <label>Lichaamsregio<select name="region" required><option value="">Kies een regio</option><option value="Upper Body">Upper body</option><option value="Lower Body">Lower body</option><option value="Full Body">Full body</option></select></label>
+                    <label>Categorie<input name="category" required maxlength="100" list="exercise-categories" placeholder="Bijv. Squat of Chest"></label>
+                    <label>Beweging / subcategorie (optioneel)<input name="subcategory" maxlength="100" placeholder="Bijv. Bilateral"></label>
+                    <label>Instructies (optioneel)<textarea name="instructions" maxlength="4000" rows="3"></textarea></label>
+                    <label>Notities (optioneel)<textarea name="notes" maxlength="2000" rows="3"></textarea></label>
+                </div>
+                <datalist id="exercise-categories"></datalist>
+                <p id="exercise-definition-status" role="status"></p>
+                <div class="exercise-management-actions"><button type="submit" class="primary-button">Oefening opslaan</button><button type="button" id="exercise-definition-cancel" class="secondary-button">Annuleren</button></div>
+            </form>
+            <label class="exercise-library-state">Weergave<select id="exercise-library-state"><option value="active">Actieve oefeningen</option><option value="archived">Gearchiveerde oefeningen</option></select></label>
             <div class="exercise-library-filters">
                 <label>Lichaamsregio<select id="exercise-filter-region"><option value="">Full body / alle regio's</option></select></label>
                 <label>Categorie<select id="exercise-filter-category"><option value="">Alle categorieën</option></select></label>
@@ -369,7 +388,7 @@
                     <label>Zoek een oefening<input id="exercise-library-search" type="search" placeholder="Bijv. squat, triceps of standing BB" autocomplete="off" spellcheck="false" aria-controls="exercise-library-suggestions" aria-expanded="false"></label>
                     <ul id="exercise-library-suggestions" class="exercise-library-suggestions" aria-label="Oefeningsuggesties" hidden></ul>
                 </div>
-                <div><p id="exercise-library-draft" class="sample-notice"></p><a href="#create-workout" id="exercise-library-open" class="secondary-button">Workout bekijken</a></div>
+                <div><p id="exercise-library-draft" class="sample-notice" role="status"></p><a href="#create-workout" id="exercise-library-open" class="secondary-button">Terug naar mijn workout</a></div>
             </div>
             <div class="exercise-library-toolbar exercise-library-selection">
                 <label class="library-search">Kies een oefening<select id="exercise-library-select" aria-describedby="exercise-selection-help"><option value="">Kies een oefening</option></select></label>
@@ -393,7 +412,6 @@
                     <span>Open jouw bibliotheek &rarr;</span>
                 </a>
             </header>
-            <a class="secondary-button workout-exercises-button" href="#exercises">Oefeningen kiezen</a>
 
 
             <form id="coach-workout-form" class="workout-editor">
@@ -419,10 +437,9 @@
                     <textarea name="description" rows="3" maxlength="1000" placeholder="Wat is het doel van deze training?"></textarea>
                 </label>
                 <h3>Oefeningen</h3>
-                <p class="sample-notice">Klik op + om een oefening toe te voegen. De zoeklijst past zich aan je workout type aan.</p>
-                <a class="secondary-button" href="#exercises">Oefeningenbibliotheek openen</a>
+                <p class="sample-notice">Klik op Oefening toevoegen en kies een oefening in het zoekvenster. Stel daarna hier je sets en herhalingen in.</p>
                 <div id="exercise-fields"></div>
-                <button id="add-exercise" class="secondary-button next-exercise" type="button" aria-label="Volgende oefening toevoegen" title="Volgende oefening toevoegen">+</button>
+                <button id="add-exercise" class="secondary-button next-exercise" type="button">Oefening toevoegen</button>
                 <p id="exercise-status" role="status"></p>
                 <fieldset class="workout-destination">
                     <legend>Voor wie is deze workout?</legend>

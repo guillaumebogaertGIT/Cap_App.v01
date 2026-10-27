@@ -786,7 +786,6 @@ main { padding: 1rem; }
 }
 
 /* Exercise page filters stack on phones and expand on larger screens. */
-.workout-exercises-button { margin-bottom: 1rem; }
 .workout-name-card { display: grid; gap: 0.4rem; width: 100%; max-width: 30rem; margin: 0 0 0.75rem; }
 .workout-name-label { font-size: 0.9rem; font-weight: 600; }
 .workout-name-card input { box-sizing: border-box; width: 100%; min-width: 0; min-height: 2.75rem; padding: 0.6rem 0.75rem; font: inherit; font-size: 1rem; color: var(--text); background: var(--background); border: 1px solid var(--border); border-radius: 0.5rem; }
@@ -809,3 +808,61 @@ main { padding: 1rem; }
 .set-target-row label { min-width: 0; }
 .set-target-row input, .set-target-row select { width: 100%; min-width: 0; box-sizing: border-box; min-height: 2.75rem; }
 @media (min-width: 650px) { .set-target-row { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+
+/* One explicit add action; keep the existing save action within thumb reach. */
+#coach-workout-form .next-exercise {
+    width: auto;
+    min-height: 2.75rem;
+    height: auto;
+    padding: 0.75rem 1rem;
+    font-size: 1rem;
+}
+#exercise-library-draft { overflow-wrap: anywhere; }
+.exercise-definition-form {
+    padding: 1rem;
+    margin-block: 1rem 1.5rem;
+    border: 1px solid var(--border);
+    border-radius: 0.75rem;
+    background: var(--surface);
+    scroll-margin-top: 1rem;
+}
+.exercise-definition-form h3 { margin-top: 0; }
+.exercise-definition-fields { display: grid; grid-template-columns: minmax(0, 1fr); gap: 0.75rem; }
+.exercise-definition-fields label { display: grid; gap: 0.35rem; min-width: 0; }
+.exercise-definition-fields input, .exercise-definition-fields select, .exercise-definition-fields textarea {
+    width: 100%; min-width: 0; min-height: 2.75rem; box-sizing: border-box;
+}
+#exercises input:not([type="checkbox"]), #exercises select, #exercises textarea {
+    font: inherit;
+    font-size: 1rem;
+    padding: 0.6rem;
+    color: var(--text);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 0.5rem;
+}
+#exercises :is(input, select, textarea, button):focus-visible {
+    outline: 2px solid var(--accent-text);
+    outline-offset: 2px;
+}
+.exercise-management-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: start; }
+.exercise-management-actions button { min-height: 2.75rem; padding: 0.55rem 0.75rem; font-size: 0.85rem; }
+.exercise-library-item > .exercise-management-actions { flex: 0 1 auto; }
+.exercise-library-state { display: grid; gap: 0.35rem; max-width: 22rem; margin-block: 1rem; }
+.exercise-library-state select { min-height: 2.75rem; }
+@media (min-width: 650px) {
+    .exercise-definition-fields { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 800px) {
+    body:has(#create-workout:not([hidden])) > main {
+        padding-bottom: calc(11rem + env(safe-area-inset-bottom, 0px));
+    }
+    #coach-workout-form > .editor-actions > .primary-button {
+        position: fixed;
+        left: max(1rem, env(safe-area-inset-left, 0px));
+        right: max(1rem, env(safe-area-inset-right, 0px));
+        bottom: calc(5.5rem + env(safe-area-inset-bottom, 0px));
+        z-index: 40;
+        min-height: 2.75rem;
+    }
+}

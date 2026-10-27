@@ -10,6 +10,8 @@ Reviewed: September 29, 2026. Explicit rules and implemented choices only; undoc
 
 ## Implemented choices
 
+- October 26: user prioritizes easy use, performance and low hosting cost for coach exercise management. Keep one shared CAP catalog in the existing Java service with sparse JSON overrides and no new service/dependency. Offer archive/restore rather than permanent deletion. Retain existing workout/history/PR names after catalog edits. Search locally against a session cache. This does not introduce real coach authentication or a production database.
+
 - October 20: categories organise saved workouts (CAP HYROX/Hybrid/Move/Lift & HIT), not automatic assignments to all matching sessions. Coach chooses dates and specific sessions. Personal workouts support independent dated snapshots; athlete list shows name/date, expandable blocks and Start training, with earlier dates separately selectable. This supersedes today's-single-workout-only display/storage assumptions.
 
 - October 20: busy Planning starts in compact day view (expandable time/title/capacity rows), with week/list views retained. Open gym represents a booked place, not a session workout: no programme/assignment entry and no booked-workout card. Seven places is an editable preview default, not a business limit. Open gym access is provisionally in the Uitgebreid preview plan; real entitlements await CAP.

@@ -32,6 +32,10 @@ The lesson editor's Workout toevoegen saves the lesson and dispatches `cap:worko
 
 ## API and persistence
 
+October 26 exercise catalog: `ExerciseStore` overlays sparse `data/exercises.json` additions/changes on bundled `exercise-catalog.json` (1,078 deduplicated imported definitions). Atomic writes precede in-memory updates. `cap.exercises.file` overrides the path. `ExerciseController` exposes GET/POST `/api/exercises`, PUT `/{id}` and PATCH `/{id}/archive`; create/update inputs cannot change IDs or archive state. Name/region duplicates, including archived entries, are rejected on creation/new names. Existing imported collisions remain editable.
+
+`exercise-catalog.js` caches API definitions per session; `exercise-picker.js` merges source metadata and rebuilds active search data. The manager refreshes on entry, supports independent create/edit/archive/restore, and shares successful mutations with the popup. Searches make no API requests; lists render 24 rows, popup 12. Initial load failure blocks selection and offers retry; failed writes retain inputs. Existing workout names and name-keyed PRs are not migrated on rename. This is one shared preview catalog without real server role enforcement. `node tools/export_exercise_seed.mjs` reproduces the seed from the original static import; source row IDs need review before future workbook replacements.
+
 Exercise prescriptions also carry optional `restSeconds` (0–3600) and `tempo` (up to 40 characters). Both persist through load-target resolution and training snapshots, and display in workout/training/session previews. Missing values in older JSON are null.
 
 Optional `supersetGroup` (A–F) pairs exercises, with at least two exercises per used letter. Group labels persist through editing/copying, target resolution and snapshots, and appear in workout/session/training views. Performed sets carry optional integer `rir` (0–10); missing values remain null and do not affect PR calculations. Existing Java constructors remain available for older call sites.

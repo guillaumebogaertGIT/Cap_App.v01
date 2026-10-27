@@ -112,15 +112,26 @@ public class TrainingStore {
         if (totalSets == 0) throw invalid("Vul minstens één uitgevoerde set in.");
         List<ExerciseResult> results = input.exercises().stream().map(e -> new ExerciseResult(e.exerciseIndex(), List.copyOf(e.sets()))).toList();
         Session session = new Session(input.id(), "preview-guillaume", planned, start, end, duration, results, List.copyOf(improvements.values()), input.assignmentId());
-        List<Session> updated = new ArrayList<>(sessions); updated.add(session);
+        List<Session> updated = new ArrayList<>(sessions);
+        updated.add(session);
+        saveSessions(updated);
+        sessions = updated;
+        return session;
+    }
+
+    /** Replace the file before the caller updates the in-memory history. */
+    private void saveSessions(List<Session> updated) throws IOException {
         Files.createDirectories(file.getParent());
         Path temporary = Files.createTempFile(file.getParent(), "training-", ".tmp");
         try {
             Files.writeString(temporary, mapper.writeValueAsString(updated));
             Files.move(temporary, file, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
-        } finally { Files.deleteIfExists(temporary); }
-        sessions = updated;
-        return session;
+        } finally {
+            Files.deleteIfExists(temporary);
+        }
     }
-    private ResponseStatusException invalid(String message) { return new ResponseStatusException(HttpStatus.BAD_REQUEST, message); }
+
+    private ResponseStatusException invalid(String message) {
+        return new ResponseStatusException(HttpStatus.BAD_REQUEST, message);
+    }
 }
