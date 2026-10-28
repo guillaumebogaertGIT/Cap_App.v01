@@ -1,10 +1,10 @@
 # CAP Stripe TEST MODE
 
-This integration is implemented locally. **Actual Stripe testing is blocked until
-you create/select a Stripe test environment and configure its credentials.** No
-Stripe products, prices, customers, subscriptions or charges were created during
-implementation. Automated payment tests replace Stripe with a fake boundary and
-use an isolated PostgreSQL test database. This is not a live-payment release.
+**One actual Stripe sandbox checkout is now verified (October 28, 2026).**
+The EUR10 test payment completed and the same CAP athlete account showed active
+membership after a verified subscription-update webhook. No live payment was used.
+Automated tests remain separate: they mock Stripe and use isolated PostgreSQL.
+Declines, 3-D Secure, portal operations and renewals still need provider testing.
 
 ## What the app does
 
@@ -30,12 +30,21 @@ paused collection fail closed. These rules are placeholders, not actual CAP offe
 
 ## Current PC setup (October 28, 2026)
 
-Stripe CLI 1.55.3 is installed and `stripe.cmd version` works. PostgreSQL 18
-is running; the existing launcher can select JDK 25. No Stripe login/configuration
-was found in the inspected locations and no CAP Stripe variables were set in
-the current process or user environment. CAP was not running on 8081 during the
-check. Dashboard sign-in/test environment and private credentials are still needed.
-No test checkout has been performed yet.
+Stripe CLI 1.55.3 is installed; use stripe.cmd on this Restricted-policy Windows
+PC. PostgreSQL18 and the project JDK25 are available. The user configured CAP
+sandbox, an existing EUR10 monthly test price, a saved period-end cancellation
+portal and private runtime credentials. Credentials/Stripe object IDs are not
+recorded here. CLI account matching, a completed paid test Checkout and its CAP
+account reference were verified without displaying secrets.
+
+The initial payment did not reach CAP because no forwarding listener was running.
+Recovery: start the test listener, restart CAP using that listener's private
+whsec secret, then update only a harmless metadata marker on the existing paid
+test subscription. This emitted a real customer.subscription.updated webhook;
+the user confirmed Status Actief and Testlidmaatschap Actief without pressing
+Status bijwerken. No second Checkout/payment was created. Original checkout
+completion delivery was missed; subscription-update delivery/recovery is verified.
+Keep the listener running while testing.
 
 ## Set up Stripe once
 
@@ -128,9 +137,9 @@ fallback. There are no live-mode variables or live-mode switch. Future live
 billing needs a separate reviewed implementation/configuration and business
 decisions; do not reuse this test database or remove the guards to launch.
 
-## Manual Stripe test checklist (not performed yet)
+## Manual Stripe test checklist (partially verified)
 
-- Subscribe with Stripe's successful test card, `4242 4242 4242 4242`, a future
+- **Paid sandbox Checkout + webhook recovery verified:** subscribe with Stripe's successful test card, `4242 4242 4242 4242`, a future
   expiry and any three-digit CVC. Check CLI delivery, database row and the correct
   CAP account. The success screen can show pending briefly until webhooks arrive.
 - Open `/app/index.html?billing=success` directly as another unpaid account:
@@ -239,11 +248,14 @@ not public data. The tables intentionally contain no API or webhook secrets.
 - Browser: real CAP login/account menu/unconfigured state checked. Mocked billing
   responses checked success-pending, period-end cancellation and errors. Phone,
   tablet and desktop widths checked without horizontal overflow; light/dark
-  screenshots inspected. No real Stripe redirects or payments were performed.
+  screenshots inspected. These implementation browser checks used mocks; the later
+  actual Stripe sandbox result is recorded in Current PC setup above.
 - Initial test fixture reused fake customer IDs across tests and failed uniqueness
   checks; fixed with unique IDs and rerun successfully. No unresolved automated
-  test failures. Stripe API/version compatibility, Checkout, portal, CLI signatures,
-  real test payments, 3-D Secure and renewals remain **unverified** until setup.
+  test failures. The first actual Stripe test Checkout, paid subscription lookup,
+  CLI forwarding/signature and canonical subscription sync now work end to end.
+  Provider declines/3-D Secure, customer-portal operations, renewals and restart
+  persistence of this particular provider-created subscription remain unverified.
 
 Run the automated suite with the existing `scripts/test-postgres.ps1` against a
 dedicated local `cap_test...` database; it refuses the ordinary `cap` database.

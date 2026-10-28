@@ -11,8 +11,8 @@ See [verified behavior, pgAdmin and manual checks](docs/accounts-verification.md
 Stripe billing is **TEST MODE only** and disabled until configured. Open the
 account menu -> Betalingen. See [Stripe test setup and verification limits](docs/stripe-test-setup.md)
 for the private-prompt launcher, test price/portal, webhook forwarding and checks.
-No existing feature requires a paid membership. Actual Stripe payments remain
-unverified until test credentials and CLI forwarding are set up.
+No existing feature requires a paid membership. One paid sandbox Checkout and webhook recovery are verified;
+provider portal, decline/3DS and renewal checks remain.
 
 ## Current status
 
