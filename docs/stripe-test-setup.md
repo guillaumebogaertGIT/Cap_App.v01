@@ -17,6 +17,12 @@ Stripe-hosted Checkout collects card details outside CAP. Your signed-in session
 determines the CAP account and server configuration determines the only allowed
 price. The success URL only displays local status; visiting it cannot activate
 membership. A signed webhook synchronizes Stripe's current subscription state.
+Checkout and the customer portal open in a new tab, keeping the original CAP tab
+open. After finishing, close the extra tab or switch back to CAP; its open billing
+panel reloads local status on return. This does not reconcile or grant membership
+by itself. If the browser blocks the tab, allow pop-ups for CAP and try again;
+the blocked attempt does not send a billing request. Failed link requests close
+the temporary blank tab and show an error in CAP.
 **Status bijwerken** explicitly reconciles the signed-in account with Stripe if
 an event was missed. The customer portal manages that account's own subscription.
 

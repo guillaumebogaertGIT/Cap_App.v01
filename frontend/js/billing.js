@@ -15,6 +15,7 @@ document.addEventListener('DOMContentLoaded', () => {
         <p id="billing-return-note" role="status"></p>
         <dl id="billing-details" class="billing-details"></dl>
         <p id="billing-feedback" role="status" aria-live="polite"></p>
+        <p class="sample-notice">Stripe opent in een nieuw tabblad. CAP blijft hier open.</p>
         <div class="billing-actions"><button type="button" class="primary-button" data-billing-subscribe>Testabonnement starten</button>
         <button type="button" class="secondary-button" data-billing-portal>Abonnement beheren</button>
         <button type="button" class="secondary-button" data-billing-refresh>Status bijwerken</button></div>`;
@@ -27,7 +28,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const statuses = { none: 'Geen testabonnement', active: 'Actief', incomplete: 'Betaling nog niet voltooid',
         incomplete_expired: 'Onvoltooide betaling verlopen', past_due: 'Betaling achterstallig', unpaid: 'Onbetaald',
         canceled: 'Beëindigd', paused: 'Gepauzeerd', trialing: 'Proefperiode: geen toegang in deze test', missing: 'Status moet worden gecontroleerd' };
-    let current, busy = false, timer, generation = 0;
+    let current, busy = false, timer, focusTimer, generation = 0;
     const date = value => value ? new Intl.DateTimeFormat('nl-BE', { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'Europe/Brussels' }).format(new Date(value)) : '—';
     function controls() {
         subscribe.disabled = busy || !current?.configured || !['none', 'canceled', 'incomplete_expired'].includes(current.status);
@@ -67,19 +68,50 @@ document.addEventListener('DOMContentLoaded', () => {
         catch (error) { feedback.textContent = error.message; }
         finally { busy = false; controls(); }
     }
-    function redirect(value, host) {
-        const url = new URL(value.url);
-        if (url.protocol !== 'https:' || url.hostname !== host) throw new Error('Geen geldige Stripe TEST-link ontvangen.');
-        location.assign(url.href);
+    function openStripe(path, host) {
+        if (busy) return;
+        // Open during the click, before awaiting the server, so mobile browsers allow it.
+        const tab = window.open('about:blank', '_blank');
+        if (!tab) {
+            feedback.textContent = 'Je browser blokkeert het nieuwe tabblad. Sta pop-ups toe voor CAP en probeer opnieuw.';
+            return;
+        }
+        tab.opener = null;
+        tab.document.title = 'Stripe openen';
+        tab.document.body.textContent = 'Stripe wordt geopend. CAP blijft in het oorspronkelijke tabblad beschikbaar.';
+        act(async () => {
+            try {
+                const value = await real.request(path, 'POST', {});
+                const url = new URL(value.url);
+                if (url.protocol !== 'https:' || url.hostname !== host || url.username || url.password)
+                    throw new Error('Geen geldige Stripe TEST-link ontvangen.');
+                if (tab.closed) {
+                    feedback.textContent = 'Het nieuwe tabblad is gesloten. Klik opnieuw om verder te gaan.';
+                    return;
+                }
+                tab.location.replace(url.href);
+                feedback.textContent = 'Stripe is geopend in een nieuw tabblad. Bij terugkeer wordt je status opnieuw geladen.';
+            } catch (error) {
+                if (!tab.closed) tab.close();
+                throw error;
+            }
+        });
     }
-    subscribe.addEventListener('click', () => act(async () => redirect(await real.request('/api/billing/checkout', 'POST', {}), 'checkout.stripe.com')));
-    portal.addEventListener('click', () => act(async () => redirect(await real.request('/api/billing/portal', 'POST', {}), 'billing.stripe.com')));
+    subscribe.addEventListener('click', () => openStripe('/api/billing/checkout', 'checkout.stripe.com'));
+    portal.addEventListener('click', () => openStripe('/api/billing/portal', 'billing.stripe.com'));
     refresh.addEventListener('click', () => act(async () => {
         if (!current?.configured) await load();
         else render(await real.request('/api/billing/reconcile', 'POST', {}));
     }));
     dialog.querySelector('[data-billing-close]').addEventListener('click', () => dialog.close());
-    dialog.addEventListener('close', () => { ++generation; clearTimeout(timer); document.getElementById('account-toggle').focus(); });
+    dialog.addEventListener('close', () => { ++generation; clearTimeout(timer); clearTimeout(focusTimer); document.getElementById('account-toggle').focus(); });
+    function refreshOnReturn() {
+        if (!dialog.open || busy || document.visibilityState === 'hidden') return;
+        clearTimeout(focusTimer);
+        focusTimer = setTimeout(() => { if (dialog.open && !busy) load(); }, 100);
+    }
+    window.addEventListener('focus', refreshOnReturn);
+    document.addEventListener('visibilitychange', refreshOnReturn);
     window.capOpenBilling = () => { if (!dialog.open) dialog.showModal(); load(); };
     if (['success', 'cancel', 'return'].includes(returned)) {
         parameters.delete('billing');
