@@ -4,7 +4,8 @@
 The EUR10 test payment completed and the same CAP athlete account showed active
 membership after a verified subscription-update webhook. No live payment was used.
 Automated tests remain separate: they mock Stripe and use isolated PostgreSQL.
-Declines, 3-D Secure, portal operations and renewals still need provider testing.
+Portal access and scheduled period-end cancellation are also user-verified.
+Declines, 3-D Secure, actual period expiry and renewals still need provider testing.
 
 ## What the app does
 
@@ -55,6 +56,9 @@ test subscription. This emitted a real customer.subscription.updated webhook;
 the user confirmed Status Actief and Testlidmaatschap Actief without pressing
 Status bijwerken. No second Checkout/payment was created. Original checkout
 completion delivery was missed; subscription-update delivery/recovery is verified.
+User also verified the portal opens the matching test subscription in a separate
+tab, then confirmed scheduled cancellation. CAP retained active status and showed
+planned cancellation/access until 28/11/2026. Actual period expiry is not yet tested.
 Keep the listener running while testing.
 
 ## Set up Stripe once
@@ -265,7 +269,9 @@ not public data. The tables intentionally contain no API or webhook secrets.
   checks; fixed with unique IDs and rerun successfully. No unresolved automated
   test failures. The first actual Stripe test Checkout, paid subscription lookup,
   CLI forwarding/signature and canonical subscription sync now work end to end.
-  Provider declines/3-D Secure, customer-portal operations, renewals and restart
+  User verified portal access and scheduled cancellation through 28/11/2026,
+  with CAP retaining active access and displaying the planned cancellation.
+  Provider declines/3-D Secure, actual period expiry, renewals and restart
   persistence of this particular provider-created subscription remain unverified.
 
 Run the automated suite with the existing `scripts/test-postgres.ps1` against a
