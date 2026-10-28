@@ -92,3 +92,5 @@ October 27: User explicitly requires the exact existing CAP app after real login
 October 27: User flagged add-exercise text regression and missing profile editing/photo. Restore accessible + button in shared original HTML. Preserve original profile fields; store self-service profile and a small sanitized JPEG in PostgreSQL rather than add an image-hosting service. Email stays read-only because login-email change requires a separate verification flow.
 
 October 27: User approved connecting saved nutrition targets using existing coach/athlete screens. Persist only the five published targets plus origin/save metadata; leave calculator inputs and food diary local. No new service/dependency or layout changes. Do not auto-import/publish existing browser targets. Athletes read own values; coaches publish updates.
+
+October 27: User approved sharing food diaries through PostgreSQL while retaining existing screens. Athletes edit only their own entries; coaches read diaries. No automatic import of browser logs. Saved meal templates remain local and are separated by account. No new dependency or external service.

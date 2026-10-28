@@ -32,6 +32,8 @@ class AccountSecurity {
                 .requestMatchers("/api/club/**").authenticated()
                 .requestMatchers("/api/workouts/**", "/api/workout-assignments/**", "/api/training/**", "/api/records", "/api/session-workouts").authenticated()
                 .requestMatchers(HttpMethod.GET, "/api/nutrition-targets").authenticated()
+                .requestMatchers(HttpMethod.GET, "/api/food-diary").authenticated()
+                .requestMatchers("/api/food-diary/**").hasRole("ATHLETE")
                 .requestMatchers("/api/nutrition-targets/**").hasRole("COACH")
                 .requestMatchers(HttpMethod.GET, "/api/exercises").authenticated()
                 .requestMatchers("/api/exercises/**").hasRole("COACH")

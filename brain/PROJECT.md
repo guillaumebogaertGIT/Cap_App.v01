@@ -13,9 +13,9 @@ Basketball belongs to the separate RAW Hoops scope and is explicitly excluded fr
 - One responsive HTML/CSS/JavaScript application with Dutch interface text, CAP images, light/dark/system themes and athlete/coach previews.
 - Java 25 / Spring Boot 4.1.1 API: real-account workout creation, assignment, timed completion, saved history and exact-rep personal records; the separate preview retains its example athlete. Prescriptions support no target, fixed kg or a percentage of a matching record.
 - The accounts profile now uses PostgreSQL and real cookie login for Planning/bookings, private recipients, attendance, workout creation/assignment, shared exercises and athlete training/history/PRs. Real login opens the original app design at /app/index.html; the Live Server design preview remains separately browser-local. Payments/subscription entitlements are not implemented.
-- Real-account storage uses PostgreSQL (Flyway V1-V6); the original preview still uses local JSON/browser data. The earlier Java console application remains separately in `src/`.
+- Real-account storage uses PostgreSQL (Flyway V1-V7); the original preview still uses local JSON/browser data. The earlier Java console application remains separately in `src/`.
 - October 26: shared coach exercise management persists additions/edits/archive/restore in Java JSON. Workout popup uses active definitions; existing workouts/history/PR names are preserved. The real-account profile now also uses PostgreSQL overrides and coach authorization.
-- Nutrition now saves coach targets to PostgreSQL and loads only the signed-in athlete's targets in the existing view; calculator drafts remain local; athlete food logging and coach diary viewing remain browser-local; meal planning is not implemented. Recovery, coaches and AI remain unimplemented. “Coach Glenn” is a provisional future AI name.
+- Nutrition now saves coach targets to PostgreSQL and loads only the signed-in athlete's targets in the existing view; calculator drafts remain local; athlete food logs now persist in PostgreSQL and coaches read the selected athlete's diary; saved meal templates remain browser-local; meal planning is not implemented. Recovery, coaches and AI remain unimplemented. “Coach Glenn” is a provisional future AI name.
 
 ## Working requirements
 

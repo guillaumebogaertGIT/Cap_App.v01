@@ -4,7 +4,7 @@ import fs from 'node:fs/promises';
 import vm from 'node:vm';
 const elements = new Map(), listeners = new Map(), storage = new Map();
 class Element {
-    constructor() { this.value = ''; this.children = []; this.events = {}; }
+    constructor() { this.value = ''; this.children = []; this.events = {}; this.dataset = {}; }
     append(...items) { this.children.push(...items); }
     replaceChildren(...items) { this.children = items; }
     add(item) { this.append(item); if (!this.value) this.value = item.value; }
@@ -13,11 +13,11 @@ class Element {
 }
 const get = id => { if (!elements.has(id)) elements.set(id, new Element()); return elements.get(id); };
 let selected = { id: 'preview-guillaume', name: 'Guillaume' };
-const context = { window: { capAccess: { signedIn: true }, capNutritionTargets: { get: () => null, selectedAthlete: () => selected } },
+const context = { location: { hash: '#nutrition' }, window: { addEventListener() {}, capAccess: { signedIn: true }, capNutritionTargets: { get: () => null, selectedAthlete: () => selected } },
     localStorage: { getItem: key => storage.get(key) ?? null, setItem: (key, value) => storage.set(key, value) },
     previewRole: 'athlete', Intl, Date, crypto: { randomUUID: () => String(Math.random()) },
     Option: class extends Element { constructor(text, value) { super(); this.textContent = text; this.value = value; } },
-    document: { getElementById: get, createElement: () => new Element(), addEventListener: (event, fn) => listeners.set(event, fn) } };
+    document: { querySelectorAll: () => [], getElementById: get, createElement: () => new Element(), addEventListener: (event, fn) => listeners.set(event, fn) } };
 vm.createContext(context);
 for (const file of ['preview-storage.js', 'food-data.js', 'food-diary.js']) vm.runInContext(await fs.readFile(new URL('../frontend/js/' + file, import.meta.url), 'utf8'), context);
 const math = context.window.capFoodMath, foods = context.window.capFoodDatabase.foods;
@@ -43,7 +43,7 @@ assert.equal(portionCalories(), new Intl.NumberFormat('nl-BE', { maximumFraction
 get('food-amount').value = '300'; fire('food-amount', 'input');
 assert.equal(portionCalories(), new Intl.NumberFormat('nl-BE', { maximumFractionDigits: 1 }).format(food.calories * 3));
 get('food-amount').value = '150';
-fire('food-entry-form', 'submit');
+await fire('food-entry-form', 'submit');
 assert.equal(portionCalories(), '0'); // Submitted portion resets; daily totals remain logged.
 assert.equal(get('athlete-food-totals').children[0].children.some(child => child.className === 'macro-bar macro-bar-calories'), true);
 assert.match(get('athlete-food-status').textContent, /^1 product /);
@@ -53,13 +53,13 @@ const saveForm = meal.children.at(-1).children[1];
 saveForm.children[0].children[0].value = 'Overnight oats';
 saveForm.events.submit({ preventDefault() {} });
 assert.equal(get('food-saved-meals').children[0].children[0].children[0].textContent, 'Overnight oats');
-meal.children[1].children[1].events.click();
+await meal.children[1].children[1].events.click();
 assert.match(get('athlete-food-status').textContent, /^0 producten /);
-fire('food-undo', 'click'); assert.match(get('athlete-food-status').textContent, /^1 product /);
+await fire('food-undo', 'click'); assert.match(get('athlete-food-status').textContent, /^1 product /);
 const day = get('athlete-food-date').value;
 get('athlete-food-date').value = '2026-01-01'; fire('athlete-food-date', 'change');
 assert.match(get('athlete-food-status').textContent, /^0 producten /);
-get('food-saved-meals').children[0].children[1].events.click();
+await get('food-saved-meals').children[0].children[1].events.click();
 assert.match(get('athlete-food-status').textContent, /^1 product /);
 assert.equal(get('athlete-food-entries').children[0].children[1].children[0].children[0].textContent, 'Overnight oats');
 get('athlete-food-date').value = day; fire('athlete-food-date', 'change');
@@ -71,3 +71,47 @@ context.window.capAccess.signedIn = false; listeners.get('cap:viewchange')();
 assert.match(get('athlete-food-status').textContent, /^1 product /);
 assert.equal(get('food-saved-meals').children[0].children[0].children[0].textContent, 'Overnight oats');
 console.log('Food diary: portion/date validation, add/delete/undo, date and athlete isolation, role guard and retained records on signout passed.');
+
+// Real-account diary must never read/write the preview entry map.
+elements.clear(); listeners.clear();
+context.previewRole = 'athlete'; context.window.capAccess.signedIn = true;
+const serverEntries = new Map();
+let failSave = false;
+context.window.capReal = { account: { id: 'real-owner' }, request: async (path, method = 'GET', input) => {
+    if (method === 'GET') return [...serverEntries.values()].filter(entry => entry.date === new URL(path, 'http://cap.test').searchParams.get('date'));
+    if (failSave) throw new Error('Test connection failure');
+    if (method === 'POST') { serverEntries.set(input.id, { ...input }); return { ...input }; }
+    if (method === 'DELETE') { serverEntries.delete(path.split('/').at(-1)); return null; }
+} };
+selected = { id: 'real-owner', name: 'Real athlete' };
+vm.runInContext(await fs.readFile(new URL('../frontend/js/food-diary.js', import.meta.url), 'utf8'), context);
+listeners.get('DOMContentLoaded')();
+const settled = () => new Promise(resolve => setImmediate(resolve));
+await settled();
+assert.match(get('athlete-food-status').textContent, /^0 producten /);
+get('food-meal').value = 'breakfast'; get('food-product').value = food.id; get('food-amount').value = '150';
+failSave = true;
+await fire('food-entry-form', 'submit'); await settled();
+assert.match(get('food-entry-feedback').textContent, /Test connection failure/);
+assert.equal(get('food-amount').value, '150');
+assert.equal(serverEntries.size, 0);
+failSave = false;
+await fire('food-entry-form', 'submit'); await settled();
+assert.equal(serverEntries.size, 1);
+assert.match(get('food-entry-feedback').textContent, /bewaard in je account/);
+assert.match(get('athlete-food-status').textContent, /^1 product /);
+const realMeal = get('athlete-food-entries').children[0];
+failSave = true;
+await realMeal.children[1].children[1].events.click(); await settled();
+assert.equal(serverEntries.size, 1);
+assert.match(get('athlete-food-status').textContent, /^1 product /);
+failSave = false;
+await get('athlete-food-entries').children[0].children[1].children[1].events.click(); await settled();
+assert.equal(serverEntries.size, 0);
+await fire('food-undo', 'click'); await settled();
+assert.equal(serverEntries.size, 1);
+context.previewRole = 'coach';
+listeners.get('cap:nutrition-athlete-changed')(); await settled();
+assert.match(get('coach-food-status').textContent, /^1 product /);
+assert.equal(get('coach-food-entries').children[0].children[1].children.length, 1); // No delete control.
+console.log('Real diary: separate storage, confirmed saves, failed-save input retention, failed-delete retention, undo and coach read-only rendering passed.');

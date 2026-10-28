@@ -201,6 +201,43 @@ class AccountApiTests {
             assertEquals(401,request(first,"GET",path,null,null,false).statusCode(),path);
     }
 
+    @Test void foodDiaryIsSharedReadOnlyWithCoachAndOwnedByAthlete() throws Exception {
+        var coach=client(); var owner=client(); var other=client(); var guest=client();
+        String day=java.time.LocalDate.now(java.time.ZoneId.of("Europe/Brussels")).toString();
+        assertEquals(401,request(guest,"GET","/api/food-diary?date="+day,null,null,false).statusCode());
+        login(coach,"coach@example.test","Coach-test-password-123");
+        String ownerId=acceptTestAthlete(coach,owner,"diary-owner@example.test");
+        acceptTestAthlete(coach,other,"diary-other@example.test");
+        String id=java.util.UUID.randomUUID().toString();
+        var input=new java.util.HashMap<String,Object>(java.util.Map.of("id",id,"date",day,"meal","breakfast","name","Test oats","amount",80,"unit","g","calories",300,"proteinG",12,"carbsG",45,"fatG",7));
+        String body=json.writeValueAsString(input);
+        assertEquals(403,request(coach,"POST","/api/food-diary",body,csrf(coach),false).statusCode());
+        assertEquals(403,request(owner,"POST","/api/food-diary",body,null,false).statusCode());
+        assertEquals(201,request(owner,"POST","/api/food-diary",body,csrf(owner),false).statusCode());
+        assertEquals(200,request(owner,"POST","/api/food-diary",body,csrf(owner),false).statusCode());
+        assertEquals(409,request(other,"POST","/api/food-diary",body,csrf(other),false).statusCode());
+        var own=request(owner,"GET","/api/food-diary?date="+day,null,null,false);
+        assertEquals(200,own.statusCode()); assertTrue(own.headers().firstValue("cache-control").orElse("").contains("no-store"));
+        assertEquals(1,json.readTree(own.body()).size());
+        assertEquals(own.body(),request(coach,"GET","/api/food-diary?date="+day+"&athleteId="+ownerId,null,null,false).body());
+        assertEquals("[]",request(other,"GET","/api/food-diary?date="+day,null,null,false).body());
+        assertEquals(404,request(other,"GET","/api/food-diary?date="+day+"&athleteId="+ownerId,null,null,false).statusCode());
+        assertEquals(400,request(owner,"GET","/api/food-diary?date=invalid",null,null,false).statusCode());
+        assertEquals(400,request(coach,"GET","/api/food-diary?date="+day,null,null,false).statusCode());
+        assertEquals(403,request(coach,"DELETE","/api/food-diary/"+id,null,csrf(coach),false).statusCode());
+        assertEquals(404,request(other,"DELETE","/api/food-diary/"+id,null,csrf(other),false).statusCode());
+        input.put("id",java.util.UUID.randomUUID()); input.put("calories",-1);
+        assertEquals(400,request(owner,"POST","/api/food-diary",json.writeValueAsString(input),csrf(owner),false).statusCode());
+        input.put("calories",300); input.put("date",java.time.LocalDate.now(java.time.ZoneId.of("Europe/Brussels")).plusDays(1).toString());
+        assertEquals(400,request(owner,"POST","/api/food-diary",json.writeValueAsString(input),csrf(owner),false).statusCode());
+        assertEquals(204,request(owner,"DELETE","/api/food-diary/"+id,null,csrf(owner),false).statusCode());
+        assertEquals("[]",request(coach,"GET","/api/food-diary?date="+day+"&athleteId="+ownerId,null,null,false).body());
+        // Undo is an explicit new save of the same immutable snapshot.
+        assertEquals(201,request(owner,"POST","/api/food-diary",body,csrf(owner),false).statusCode());
+        assertEquals(204,request(owner,"POST","/api/accounts/logout","",csrf(owner),false).statusCode());
+        assertEquals(401,request(owner,"GET","/api/food-diary?date="+day,null,null,false).statusCode());
+    }
+
     @Test void nutritionTargetsAreSharedWithOnlyTheAssignedAthlete() throws Exception {
         var coach=client();var owner=client();var other=client();var guest=client();
         assertEquals(401,request(guest,"GET","/api/nutrition-targets",null,null,false).statusCode());

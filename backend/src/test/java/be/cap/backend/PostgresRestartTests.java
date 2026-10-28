@@ -46,11 +46,15 @@ class PostgresRestartTests {
         settings.put("server.port",0);
         var client=HttpClient.newBuilder().cookieHandler(new CookieManager(null,CookiePolicy.ACCEPT_ALL)).build();
         UUID athleteId; String workoutId;
+        UUID foodId=UUID.randomUUID();
+        var foodDay=java.time.LocalDate.now(java.time.ZoneId.of("Europe/Brussels"));
         try(var first=start(settings)) {
             var accounts=first.getBean(AccountService.class); var workouts=first.getBean(AccountWorkoutService.class);
             var coach=accounts.account("restart-coach@example.test");
             var athlete=accounts.accept(accounts.invite("restart-athlete@example.test",coach.email()).token(),"Restart athlete","Athlete-test-password-25");
             athleteId=athlete.id();
+            first.getBean(FoodDiaryController.class).add(()->athlete.email(),
+                new FoodDiaryController.Entry(foodId,foodDay,"breakfast","Restart oats",null,80.0,"g",300.0,12.0,45.0,7.0,null));
             var workout=workouts.save(null,new Workout(null,"Persistent restart workout","",List.of(new Workout.Exercise("Squat",1,5)),"",""),null,coach);
             workoutId=workout.id();
             first.getBean(NutritionController.class).save(()->coach.email(),athleteId,
@@ -65,6 +69,9 @@ class PostgresRestartTests {
             var coach=accounts.account("restart-coach@example.test");
             var athlete=accounts.account("restart-athlete@example.test");
             assertEquals(athleteId,athlete.id());
+            var diary=second.getBean(FoodDiaryController.class).get(()->coach.email(),foodDay,athleteId).getBody();
+            assertNotNull(diary);assertEquals(foodId,diary.getFirst().id());
+            assertEquals("Restart oats",diary.getFirst().name());
             var nutrition=second.getBean(NutritionController.class).get(()->athlete.email(),null).getBody();
             assertNotNull(nutrition);assertEquals(2300.0,nutrition.targets().calories());
             assertTrue(workouts.list(coach).stream().anyMatch(workout->workout.id().equals(workoutId)));
