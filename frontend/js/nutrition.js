@@ -169,7 +169,7 @@ document.addEventListener('DOMContentLoaded', () => {
         $('athlete-nutrition-energy-note').textContent = plan ? energyNote(plan.targets) : '';
         if (!plan) return;
         targetLabels.forEach(([key, label, unit]) => {
-            const group = node('div'); group.append(node('dt', label), node('dd', `${format(plan.targets[key])} ${unit}`)); container.append(group);
+            const group = node('div'); group.dataset.nutrient = key; group.append(node('dt', label), node('dd', `${format(plan.targets[key])} ${unit}`)); container.append(group);
         });
     }
     function markInputsChanged(event) {

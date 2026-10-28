@@ -113,7 +113,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const targets = window.capNutritionTargets.get(id)?.targets;
         $(prefix + '-status').textContent = `${dayEntries.length} ${dayEntries.length === 1 ? 'product' : 'producten'} gelogd${targets ? ' · vergelijking met huidige dagdoelen' : ' · nog geen dagdoelen van de coach'}.`;
         metrics.forEach(([key, label, unit]) => {
-            const group = node('div'); group.append(node('dt', label), node('dd', `${format(dayTotals[key])} ${unit}`));
+            const group = node('div'); group.dataset.nutrient = key; group.append(node('dt', label), node('dd', `${format(dayTotals[key])} ${unit}`));
             if (targets) {
                 const difference = targets[key] - dayTotals[key];
                 group.append(node('small', `Doel ${format(targets[key])} ${unit} · ${format(Math.abs(difference))} ${unit} ${difference >= 0 ? 'over' : 'boven doel'}`));

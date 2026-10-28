@@ -893,3 +893,28 @@ main { padding: 1rem; }
 #session-athlete-options .session-athlete-option { display: flex; flex-direction: row; align-items: center; gap: .75rem; min-height: 44px; cursor: pointer; }
 #session-athlete-options input { width: 1.25rem; height: 1.25rem; flex: 0 0 auto; margin: 0; }
 #session-athlete-options [hidden] { display: none; }
+
+/* Nutrient colors stay consistent between saved targets and diary totals. */
+.nutrition-metrics {
+    --nutrient-calories-bg: #33281c; --nutrient-calories-ink: #ffd091;
+    --nutrient-protein-bg: #2b2337; --nutrient-protein-ink: #e1c6ff;
+    --nutrient-carbs-bg: #203027; --nutrient-carbs-ink: #b7dfc0;
+    --nutrient-fat-bg: #33252b; --nutrient-fat-ink: #f1bfcc;
+    --nutrient-water-bg: #1f2c38; --nutrient-water-ink: #b9dcff;
+}
+:root[data-theme="light"] .nutrition-metrics {
+    --nutrient-calories-bg: #faecd6; --nutrient-calories-ink: #854900;
+    --nutrient-protein-bg: #efe7f8; --nutrient-protein-ink: #653c87;
+    --nutrient-carbs-bg: #e5f1e6; --nutrient-carbs-ink: #285e39;
+    --nutrient-fat-bg: #fae6ec; --nutrient-fat-ink: #873a50;
+    --nutrient-water-bg: #e1eef9; --nutrient-water-ink: #235d88;
+}
+.nutrition-metrics > [data-nutrient="calories"] { --nutrient-bg: var(--nutrient-calories-bg); --nutrient-ink: var(--nutrient-calories-ink); }
+.nutrition-metrics > [data-nutrient="proteinG"] { --nutrient-bg: var(--nutrient-protein-bg); --nutrient-ink: var(--nutrient-protein-ink); }
+.nutrition-metrics > [data-nutrient="carbsG"] { --nutrient-bg: var(--nutrient-carbs-bg); --nutrient-ink: var(--nutrient-carbs-ink); }
+.nutrition-metrics > [data-nutrient="fatG"] { --nutrient-bg: var(--nutrient-fat-bg); --nutrient-ink: var(--nutrient-fat-ink); }
+.nutrition-metrics > [data-nutrient="waterMl"] { --nutrient-bg: var(--nutrient-water-bg); --nutrient-ink: var(--nutrient-water-ink); }
+.nutrition-metrics > [data-nutrient] { background: var(--nutrient-bg); }
+.nutrition-metrics > [data-nutrient] :is(dt, dd, small) { color: var(--nutrient-ink); }
+.nutrition-metrics > [data-nutrient] .macro-bar span { background: var(--nutrient-ink); }
+#nutrition, #coach-nutrition { --macro-protein: #9a65c9; --macro-carbs: #4f9165; --macro-fat: #c26984; }
