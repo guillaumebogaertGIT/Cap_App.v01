@@ -4,6 +4,12 @@ Reviewed: September 29, 2026.
 
 ## Browser application
 
+Local accounts launcher enables `accounts,local-frontend`: `/app/**` reads directly
+from the checkout frontend directory with caching disabled. RealAppController reads
+the same live index template and retains authentication/account injection. Plain
+accounts mode and packaged deployments retain classpath resources. `/accounts/`
+login assets still require a restart; Java/configuration changes do too.
+
 `frontend/index.html` is the static shell; scripts also create screens/dialogs. There is no frontend framework or build pipeline.
 
 - CSS loads as `style.css` (base components/themes/responsive rules), `polish.css` (refinements/overrides), then `auth.css` (preview entry).

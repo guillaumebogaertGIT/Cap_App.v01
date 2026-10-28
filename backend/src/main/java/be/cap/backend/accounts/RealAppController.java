@@ -6,7 +6,8 @@ import java.security.Principal;
 import java.util.LinkedHashMap;
 import java.util.List;
 import org.springframework.context.annotation.Profile;
-import org.springframework.core.io.ClassPathResource;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.Resource;
 import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
 import tools.jackson.databind.json.JsonMapper;
@@ -18,6 +19,8 @@ class RealAppController {
     private final AccountService accounts;
     private final PlanningService planning;
     private final AccountWorkoutService workouts;
+    @Value("${cap.frontend-location:classpath:/static/app/}index.html")
+    private Resource appTemplate;
 
     RealAppController(AccountService accounts, PlanningService planning, AccountWorkoutService workouts) {
         this.accounts = accounts; this.planning = planning; this.workouts = workouts;
@@ -37,7 +40,7 @@ class RealAppController {
         String json = JsonMapper.builder().build().writeValueAsString(data)
             .replace("&", "\\u0026").replace("<", "\\u003c")
             .replace("\u2028", "\\u2028").replace("\u2029", "\\u2029");
-        String html = new ClassPathResource("static/app/index.html").getContentAsString(StandardCharsets.UTF_8);
+        String html = appTemplate.getContentAsString(StandardCharsets.UTF_8);
         html = html.replace("<head>", "<head><script id=\"cap-account-data\" type=\"application/json\">" + json
             + "</script><script src=\"/app/js/real-app.js\"></script><script defer src=\"/app/js/real-init.js\"></script>")
             .replace("js/auth-preview.js", "js/real-auth.js");

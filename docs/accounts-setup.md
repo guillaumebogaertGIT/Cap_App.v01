@@ -217,6 +217,20 @@ Framework references: [Spring password storage](https://docs.spring.io/spring-se
 [Spring CSRF protection](https://docs.spring.io/spring-security/reference/servlet/exploits/csrf.html),
 [Flyway initialization](https://docs.spring.io/spring-boot/how-to/data-initialization.html).
 
+## Frontend changes during local development
+
+The accounts launcher enables `accounts,local-frontend` and serves `/app/`
+directly from this checkout's `frontend/` directory. After saving HTML, CSS,
+JavaScript or images, refresh the browser at http://127.0.0.1:8081/app/index.html.
+No backend restart is needed for those files. The server still injects the
+signed-in account into the original HTML; demo mode remains separate.
+
+Restart once after updating the launcher/backend to enable this setup. Java,
+backend configuration and migrations still require a restart. The separate
+`/accounts/` login/invitation assets still use packaged copies and require a
+restart after editing. Packaged deployments without `local-frontend` continue
+to serve bundled assets. No extra dependency or database setting is required.
+
 ## Profile editing
 
 Open the account menu ? Profiel to edit name, birth date, sex, height, weight,
