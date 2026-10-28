@@ -28,6 +28,15 @@ trialing, paused, canceled, missing or expired-period records do not. Scheduled
 cancellation retains access until the paid period ends. Unsupported prices or
 paused collection fail closed. These rules are placeholders, not actual CAP offers.
 
+## Current PC setup (October 28, 2026)
+
+Stripe CLI 1.55.3 is installed and `stripe.cmd version` works. PostgreSQL 18
+is running; the existing launcher can select JDK 25. No Stripe login/configuration
+was found in the inspected locations and no CAP Stripe variables were set in
+the current process or user environment. CAP was not running on 8081 during the
+check. Dashboard sign-in/test environment and private credentials are still needed.
+No test checkout has been performed yet.
+
 ## Set up Stripe once
 
 1. Create/sign in to a Stripe account and select a **sandbox/test environment**.
@@ -47,7 +56,7 @@ paused collection fail closed. These rules are placeholders, not actual CAP offe
    setup you can inspect existing configurations with:
 
    ```powershell
-   stripe billing_portal configurations list --active=true --limit=100
+   stripe.cmd billing_portal configurations list --active=true --limit=100
    ```
 
    See [Stripe portal configuration](https://docs.stripe.com/api/customer_portal/configurations/create).
@@ -57,10 +66,12 @@ paused collection fail closed. These rules are placeholders, not actual CAP offe
 
    ```powershell
    npm install --global @stripe/cli
-   stripe version
-   stripe login
+   stripe.cmd version
+   stripe.cmd login
    ```
 
+   On Windows use `stripe.cmd`: the npm `stripe.ps1` wrapper is blocked when
+   PowerShell execution policy is Restricted. No policy change is needed.
    Complete login yourself in the browser. Use the same test environment as your
    API key, price and portal. Never add `--live` to CAP test commands.
 
@@ -72,7 +83,7 @@ running. Use fake CAP accounts and development data.
 **Terminal 1:** start local forwarding and leave it running:
 
 ```powershell
-stripe listen --events checkout.session.completed,checkout.session.expired,checkout.session.async_payment_succeeded,checkout.session.async_payment_failed,invoice.paid,invoice.payment_succeeded,invoice.payment_failed,invoice.payment_action_required,invoice.finalization_failed,customer.subscription.created,customer.subscription.updated,customer.subscription.deleted,customer.subscription.paused,customer.subscription.resumed --forward-to http://127.0.0.1:8081/api/billing/webhook
+stripe.cmd listen --events checkout.session.completed,checkout.session.expired,checkout.session.async_payment_succeeded,checkout.session.async_payment_failed,invoice.paid,invoice.payment_succeeded,invoice.payment_failed,invoice.payment_action_required,invoice.finalization_failed,customer.subscription.created,customer.subscription.updated,customer.subscription.deleted,customer.subscription.paused,customer.subscription.resumed --forward-to http://127.0.0.1:8081/api/billing/webhook
 ```
 
 The CLI prints a `whsec_...` signing secret. This is **not** your API key, and is
