@@ -31,6 +31,8 @@ class AccountSecurity {
                 .requestMatchers("/api/accounts/me", "/api/accounts/profile/**").authenticated()
                 .requestMatchers("/api/club/**").authenticated()
                 .requestMatchers("/api/workouts/**", "/api/workout-assignments/**", "/api/training/**", "/api/records", "/api/session-workouts").authenticated()
+                .requestMatchers(HttpMethod.GET, "/api/nutrition-targets").authenticated()
+                .requestMatchers("/api/nutrition-targets/**").hasRole("COACH")
                 .requestMatchers(HttpMethod.GET, "/api/exercises").authenticated()
                 .requestMatchers("/api/exercises/**").hasRole("COACH")
                 // Legacy endpoints still use the example athlete. Deny them until migrated.

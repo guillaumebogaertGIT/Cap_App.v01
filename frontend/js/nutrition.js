@@ -13,7 +13,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const targetLabels = [['calories', 'Calorieën', 'kcal'], ['proteinG', 'Eiwitten', 'g'], ['carbsG', 'Koolhydraten', 'g'], ['fatG', 'Vetten', 'g'], ['waterMl', 'Water', 'ml']];
     const defaults = { sex: '', age: '', weightKg: '', heightCm: '', activity: '', calorieGoal: 'maintenance', strategy: 'standard', goalKg: '', scaling: 'standard', bodyFatBand: '', muscularity: 'average' };
     const drafts = window.capStorage.map('nutrition-drafts');
-    const plans = window.capStorage.map('nutrition-plans');
+    const real = window.capReal;
+    const plans = real ? new Map() : window.capStorage.map('nutrition-plans');
+    // Preserve older browser drafts for review; never publish them automatically.
+    if (real) for (const [id, draft] of drafts) {
+        if (draft && !Object.prototype.hasOwnProperty.call(draft, 'unsaved')) drafts.set(id, { ...draft, unsaved: true });
+    }
+    const loadedPlans = new Set();
+    const planVersions = new Map();
+    const draftVersions = new Map();
+    let saving = false;
     const roster = [];
     document.querySelectorAll('#athletes .membership-group').forEach(group => {
         const membership = group.querySelector('summary').firstChild.textContent.trim();
@@ -67,9 +76,10 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         return values;
     }
-    function remember() {
+    function remember(saved = false) {
         if (!selectedId) return;
-        drafts.set(selectedId, { inputs: raw(form), targets: raw(targetsForm), result: result ? { ...result } : null, calculatedInput, stale });
+        draftVersions.set(selectedId, (draftVersions.get(selectedId) || 0) + 1);
+        drafts.set(selectedId, { unsaved: !saved, inputs: raw(form), targets: raw(targetsForm), result: result ? { ...result } : null, calculatedInput, stale });
     }
     function renderPicker() {
         const query = $('nutrition-athlete-search').value.trim().toLocaleLowerCase('nl-BE');
@@ -97,7 +107,7 @@ document.addEventListener('DOMContentLoaded', () => {
         let values;
         try { values = calculator.validateTargets(raw(targetsForm)); } catch { /* Incomplete fields stay unavailable, not zero. */ }
         $('nutrition-energy-note').textContent = values ? energyNote(values) : 'Vul alle vijf dagdoelen in of gebruik de calculator.';
-        $('nutrition-save').disabled = !values || stale || !canEdit();
+        $('nutrition-save').disabled = !values || stale || !canEdit() || !selected() || saving || (real && !loadedPlans.has(selectedId));
         $('nutrition-save').textContent = selected() ? `Dagdoelen voor ${selected().name} bewaren` : 'Dagdoelen bewaren';
     }
     function refreshInputs() {
@@ -108,23 +118,53 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     function renderSaved() {
         const plan = plans.get(selectedId);
+        if (real && selectedId && !loadedPlans.has(selectedId)) { $('nutrition-saved-state').textContent = 'Dagdoelen nog niet geladen.'; return; }
         $('nutrition-saved-state').textContent = plan ? `Bewaard voor ${plan.name} · ${stamp(plan.savedAt)} · ${plan.origin}` : 'Nog geen dagdoelen bewaard voor deze sporter.';
     }
     function loadAthlete() {
         const draft = drafts.get(selectedId);
         const values = draft?.inputs || { ...defaults, ...profileInputs() };
         bodyFatOptions(values.sex, values.bodyFatBand);
-        setFormValues(form, values); setFormValues(targetsForm, draft?.targets || {});
+        setFormValues(form, values); setFormValues(targetsForm, real && !draft?.unsaved && plans.has(selectedId) ? plans.get(selectedId).targets : draft?.targets || {});
         result = draft?.result || null; calculatedInput = draft?.calculatedInput || null; stale = draft?.stale || false;
         $('nutrition-athlete-name').textContent = selected() ? `${selected().name} · Dagdoelen` : 'Kies een sporter';
         $('nutrition-calculation-status').textContent = stale ? 'Invoer gewijzigd. Bereken opnieuw of kies Handmatig.' : '';
         $('nutrition-save-status').textContent = '';
         refreshInputs(); refreshTargets(); renderCalculation(); renderSaved();
         document.dispatchEvent(new CustomEvent('cap:nutrition-athlete-changed'));
+        if (real && canEdit() && selectedId) refreshPlan(selectedId, true);
+    }
+    async function refreshPlan(id, fillTargets = false) {
+        if (!real || !id || saving) return;
+        const version = (planVersions.get(id) || 0) + 1;
+        planVersions.set(id, version);
+        const draftVersion = draftVersions.get(id) || 0;
+        try {
+            const path = '/api/nutrition-targets' + (real.account.role === 'COACH' ? '?athleteId=' + encodeURIComponent(id) : '');
+            const plan = await real.request(path);
+            if (planVersions.get(id) !== version) return;
+            if (plan) plans.set(id, plan); else plans.delete(id);
+            loadedPlans.add(id);
+            if (id === selectedId) {
+                if (fillTargets && !drafts.get(id)?.unsaved && draftVersion === (draftVersions.get(id) || 0)) setFormValues(targetsForm, plan?.targets || {});
+                renderSaved(); refreshTargets();
+            }
+            renderAthlete(); document.dispatchEvent(new CustomEvent('cap:nutrition-targets-changed'));
+        } catch (error) {
+            if (planVersions.get(id) !== version) return;
+            if (canEdit() && id === selectedId) $('nutrition-save-status').textContent = error.message;
+            else if (!canEdit()) $('athlete-nutrition-status').textContent = error.message;
+        }
+    }
+    function refreshVisiblePlan() {
+        if (!real || !window.capAccess.signedIn) return;
+        if (location.hash === '#coach-nutrition' && canEdit() && selectedId) refreshPlan(selectedId, true);
+        if (location.hash === '#nutrition' && previewRole === 'athlete') refreshPlan(real.account.id);
     }
     function renderAthlete() {
         const container = $('athlete-nutrition-targets'); container.replaceChildren();
         const plan = plans.get(window.capReal?.account.id || 'preview-guillaume');
+        if (real && previewRole === 'athlete' && !loadedPlans.has(real.account.id)) { $('athlete-nutrition-status').textContent = 'Dagdoelen laden...'; return; }
         $('athlete-nutrition-status').textContent = plan ? `Van je coach · bijgewerkt ${stamp(plan.savedAt)}` : 'Je coach heeft nog geen dagdoelen voor je bewaard.';
         $('athlete-nutrition-energy-note').textContent = plan ? energyNote(plan.targets) : '';
         if (!plan) return;
@@ -158,13 +198,27 @@ document.addEventListener('DOMContentLoaded', () => {
         $('nutrition-calculation-status').textContent = 'Handmatige dagdoelen. De calculator wordt niet gebruikt voor deze waarden.';
         renderCalculation(); refreshTargets(); remember(); targetsForm.elements.namedItem('calories').focus();
     });
-    targetsForm.addEventListener('submit', event => {
-        event.preventDefault(); if (!canEdit() || !selected() || stale || !targetsForm.reportValidity()) return;
+    targetsForm.addEventListener('submit', async event => {
+        event.preventDefault(); if (saving || !canEdit() || !selected() || stale || !targetsForm.reportValidity() || (real && !loadedPlans.has(selectedId))) return;
         try {
             const targets = calculator.validateTargets(raw(targetsForm));
             const reference = result ? roundedTargets(result) : null;
             const adjusted = reference && targetLabels.some(([key]) => reference[key] !== targets[key]);
             const origin = reference ? adjusted ? 'berekend en aangepast' : 'berekend' : 'handmatig';
+            if (real) {
+                const athleteId = selectedId;
+                const version = (planVersions.get(athleteId) || 0) + 1; planVersions.set(athleteId, version);
+                const controls = [...form.querySelectorAll('input,select,button'), ...targetsForm.querySelectorAll('input,button'), $('nutrition-athlete-select'), $('nutrition-athlete-search')].map(control => [control, control.disabled]);
+                saving = true; controls.forEach(([control]) => { control.disabled = true; });
+                $('nutrition-save-status').textContent = 'Dagdoelen bewaren...';
+                try {
+                    const saved = await real.request('/api/nutrition-targets/' + encodeURIComponent(athleteId), 'PUT', { targets, origin });
+                    plans.set(athleteId, saved); loadedPlans.add(athleteId);
+                    if (selectedId === athleteId) { controls.forEach(([control, disabled]) => { control.disabled = disabled; }); remember(true); renderSaved(); $('nutrition-save-status').textContent = 'Dagdoelen bewaard in het account van ' + saved.name + '.'; }
+                    document.dispatchEvent(new CustomEvent('cap:nutrition-targets-changed'));
+                } finally { saving = false; controls.forEach(([control, disabled]) => { control.disabled = disabled; }); refreshTargets(); }
+                return;
+            }
             plans.set(selectedId, { athleteId: selectedId, name: selected().name, targets: { ...targets }, origin, savedAt: new Date().toISOString() });
             remember(); renderSaved(); renderAthlete();
             $('nutrition-save-status').textContent = `Dagdoelen bewaard voor ${selected().name} in deze preview.`;
@@ -174,7 +228,7 @@ document.addEventListener('DOMContentLoaded', () => {
     $('nutrition-athlete-search').addEventListener('input', renderPicker);
     $('nutrition-athlete-select').addEventListener('change', event => {
         if (!roster.some(athlete => athlete.id === event.target.value)) return;
-        remember(); selectedId = event.target.value; loadAthlete();
+        remember(!drafts.get(selectedId)?.unsaved); selectedId = event.target.value; loadAthlete();
     });
     $('nutrition-use-profile').addEventListener('click', () => {
         if (!canEdit()) return;
@@ -190,6 +244,20 @@ document.addEventListener('DOMContentLoaded', () => {
             $('nutrition-athlete-search').value = ''; renderPicker(); loadAthlete(); renderAthlete();
         } else if (location.hash === '#coach-nutrition' && canEdit()) { renderPicker(); refreshInputs(); refreshTargets(); }
         else if (location.hash === '#nutrition') renderAthlete();
+        refreshVisiblePlan();
     });
+    if (real) {
+        document.querySelector('#athlete-nutrition-energy-note + .sample-notice').textContent = 'Deze dagdoelen zijn gekoppeld aan jouw account. Maaltijdplanning volgt later.';
+        document.querySelector('#coach-nutrition > .sample-notice').textContent = 'Bewaarde dagdoelen worden gedeeld met deze sporter. Calculatorinvoer en het voedingsdagboek blijven in deze browser.';
+        document.addEventListener('cap:athletes-changed', () => {
+            const previous = selectedId;
+            roster.splice(0, roster.length, ...real.athletes.map(person => ({ ...person, membership: 'CAP' })));
+            if (!roster.some(person => person.id === selectedId)) selectedId = roster[0]?.id;
+            renderPicker();
+            if (selectedId !== previous) loadAthlete();
+        });
+        window.addEventListener('focus', refreshVisiblePlan);
+    }
     renderPicker(); loadAthlete(); renderAthlete();
+    if (real && previewRole === 'athlete') refreshPlan(real.account.id);
 });

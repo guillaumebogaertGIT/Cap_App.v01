@@ -33,3 +33,7 @@ ORDER BY s.session_date, s.start_time;
 
 SELECT u.display_name, p.photo IS NOT NULL AS has_photo
 FROM public.account_profile p JOIN public.cap_user u ON u.id = p.user_id;
+
+-- Available after restarting with V6. Saved targets only; no food diary data.
+SELECT u.display_name, n.calories, n.protein_g, n.carbs_g, n.fat_g, n.water_ml, n.saved_at
+FROM public.nutrition_target n JOIN public.cap_user u ON u.id=n.athlete_id;

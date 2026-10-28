@@ -142,7 +142,11 @@ account/workout records are persistent rows in PostgreSQL.
 Your local database connection/migration is confirmed by your supplied startup
 log; the newly built app still needs its final restart on 8081 after this audit.
 Automated and browser data writes used isolated PostgreSQL, not your real account.
-Health measurement history, shared nutrition, payments, messaging, recovery/email
+Health measurement history, shared food diaries, payments, messaging, recovery/email
 delivery and hosting remain incomplete. The restored login/layout does not claim
 these features are connected. Extra browser testing used Chromium; physical iPhone
 and Safari behavior is unverified. No production deployment was performed.
+
+Subsequent nutrition update: migration V6 now stores shared coach targets.
+The expanded suite has 36 passing PostgreSQL tests, including nutrition ownership
+and restart persistence; the coach/athlete nutrition browser flow also passed.

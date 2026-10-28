@@ -41,7 +41,7 @@
         if (['#athletes', '#create-workout', '#saved-workouts'].includes(location.hash)) refresh();
     });
     group.append(heading, list); groups.replaceChildren(group);
-    for (const id of ['nutrition', 'coach-nutrition', 'coach-health']) {
+    for (const id of ['coach-health']) {
         const section = document.getElementById(id);
         const note = document.createElement('p'); note.className = 'sample-notice';
         note.textContent = 'Dit onderdeel gebruikt nog browseropslag en wordt niet gedeeld tussen accounts of apparaten.';

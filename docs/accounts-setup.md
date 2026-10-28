@@ -7,7 +7,7 @@ The existing design preview still runs separately on port 8080 with its old data
 The original app is served at `http://127.0.0.1:8081/app/index.html`.
 Guests go to `/accounts/index.html` to log in, then return to the original app.
 It supports real login/logout, coach invitations, Planning, bookings, workouts,
-exercise management, training entry, history and PRs. Existing browser/JSON
+exercise management, training entry, history, PRs and saved nutrition targets. Existing browser/JSON
 preview data is not imported automatically or assigned to real people.
 
 ## Use the account page
@@ -66,7 +66,7 @@ Each booking locks its lesson while checking capacity. Roles, private visibility
 and athlete ownership are enforced on the server, not by the browser selector.
 Membership billing/paid-package entitlement rules are not implemented; invited
 athletes can book public lessons and their explicitly assigned private lessons.
-Nutrition, health measurements/history, shop/payments and messaging remain outside
+Food diaries, health measurements/history, shop/payments and messaging remain outside
 this connected core. Their original screens remain visible; browser-only tools
 do not become shared storage. Only the core features listed above use PostgreSQL.
 
@@ -225,3 +225,19 @@ PostgreSQL through migration V5. Choose a photo up to 8 MB; the browser crops
 and compresses it to 256px JPEG, and the server validates/re-encodes it. Choose
 Profiel bewaren to save a photo selection or removal. Profiles/photos are
 available only to their signed-in owner. Measurement history remains separate.
+
+## Shared nutrition targets
+
+Restart the accounts backend to apply migration V6 automatically. Existing data
+is preserved. Coach: Voeding -> select the real athlete -> calculate or enter
+all five targets -> Dagdoelen bewaren. Athlete: open Voeding in a private browser
+window with their own login; the saved calorie/protein/carbohydrate/fat/water
+targets load from PostgreSQL. Reopening Voeding or returning to that window
+refreshes them. Athletes cannot change targets or query another athlete.
+
+The table is public.nutrition_target in the cap database. Each athlete has one
+current row, with the last coach and server save time. Calculator drafts and
+food diaries remain browser-local; old browser drafts are not auto-published.
+Tests cover permissions, validation, update-in-place and PostgreSQL restart
+persistence. Manual and calculated targets were verified through both original
+coach/athlete screens in separate browser sessions. All 36 tests passed.

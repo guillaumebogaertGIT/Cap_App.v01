@@ -90,3 +90,5 @@ October 27: User requested connecting the whole core after successful real login
 October 27: User explicitly requires the exact existing CAP app after real login. Preserve original HTML/CSS, sidebar, Home, month calendar, exercise picker and workout editor; connect data inside those components. Retire the separate account task workspace. Invitations belong in Sporters. Real roster has no inferred demo subscriptions/ownership.
 
 October 27: User flagged add-exercise text regression and missing profile editing/photo. Restore accessible + button in shared original HTML. Preserve original profile fields; store self-service profile and a small sanitized JPEG in PostgreSQL rather than add an image-hosting service. Email stays read-only because login-email change requires a separate verification flow.
+
+October 27: User approved connecting saved nutrition targets using existing coach/athlete screens. Persist only the five published targets plus origin/save metadata; leave calculator inputs and food diary local. No new service/dependency or layout changes. Do not auto-import/publish existing browser targets. Athletes read own values; coaches publish updates.

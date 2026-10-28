@@ -200,4 +200,29 @@ class AccountApiTests {
         for(String path:java.util.List.of("/api/accounts/me","/api/training","/api/workouts","/api/accounts/profile"))
             assertEquals(401,request(first,"GET",path,null,null,false).statusCode(),path);
     }
+
+    @Test void nutritionTargetsAreSharedWithOnlyTheAssignedAthlete() throws Exception {
+        var coach=client();var owner=client();var other=client();var guest=client();
+        assertEquals(401,request(guest,"GET","/api/nutrition-targets",null,null,false).statusCode());
+        login(coach,"coach@example.test","Coach-test-password-123");
+        String ownerId=acceptTestAthlete(coach,owner,"nutrition-owner@example.test");
+        String otherId=acceptTestAthlete(coach,other,"nutrition-other@example.test");
+        assertEquals(204,request(owner,"GET","/api/nutrition-targets",null,null,false).statusCode());
+        String body="{\"targets\":{\"calories\":2300,\"proteinG\":150,\"carbsG\":250,\"fatG\":70,\"waterMl\":2500},\"origin\":\"handmatig\"}";
+        assertEquals(403,request(coach,"PUT","/api/nutrition-targets/"+ownerId,body,null,false).statusCode());
+        assertEquals(403,request(owner,"PUT","/api/nutrition-targets/"+ownerId,body,csrf(owner),false).statusCode());
+        var saved=request(coach,"PUT","/api/nutrition-targets/"+ownerId,body,csrf(coach),false);
+        assertEquals(200,saved.statusCode());
+        assertEquals(ownerId,json.readTree(saved.body()).get("athleteId").asText());
+        assertEquals(2300,json.readTree(request(owner,"GET","/api/nutrition-targets",null,null,false).body()).get("targets").get("calories").asInt());
+        assertEquals(2300,json.readTree(request(coach,"GET","/api/nutrition-targets?athleteId="+ownerId,null,null,false).body()).get("targets").get("calories").asInt());
+        assertEquals(404,request(other,"GET","/api/nutrition-targets?athleteId="+ownerId,null,null,false).statusCode());
+        assertEquals(204,request(other,"GET","/api/nutrition-targets",null,null,false).statusCode());
+        assertEquals(404,request(owner,"GET","/api/nutrition-targets?athleteId="+otherId,null,null,false).statusCode());
+        assertEquals(400,request(coach,"PUT","/api/nutrition-targets/"+ownerId,body.replace("2300","-1"),csrf(coach),false).statusCode());
+        assertEquals(400,request(coach,"PUT","/api/nutrition-targets/"+ownerId,"{\"targets\":{\"calories\":2300},\"origin\":\"handmatig\"}",csrf(coach),false).statusCode());
+        assertEquals(200,request(coach,"PUT","/api/nutrition-targets/"+ownerId,body.replace("2300","2400"),csrf(coach),false).statusCode());
+        assertEquals(2400,json.readTree(request(owner,"GET","/api/nutrition-targets",null,null,false).body()).get("targets").get("calories").asInt());
+        assertEquals(1,jdbc.queryForObject("SELECT COUNT(*) FROM nutrition_target WHERE athlete_id=?",Integer.class,java.util.UUID.fromString(ownerId)));
+    }
 }

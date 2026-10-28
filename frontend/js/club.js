@@ -424,7 +424,7 @@
         $('product-dialog').showModal();
     }
     // Trim text inputs as well as using native required/date/number validation.
-    document.querySelectorAll('.club-form').forEach((form) => {
+    document.querySelectorAll('#session-form, #product-form').forEach((form) => {
         form.addEventListener('input', (event) => event.target.setCustomValidity(''));
         form.addEventListener('submit', async (event) => {
             event.preventDefault();

@@ -17,8 +17,8 @@ keeps the same sidebar, Home, calendar, popups and workout editor, and connects 
 athlete training/history/records to PostgreSQL. It uses coach invitations,
 cookie sessions and server-side roles/ownership. The preview remains separate;
 its data is not imported automatically. See [account setup](docs/accounts-setup.md)
-for the `accounts` profile and full review flow. Payments, nutrition and health
-data are not connected to real accounts yet.
+for the `accounts` profile and full review flow. Saved nutrition targets now also use PostgreSQL. Food diaries, payments and health
+measurement history are not shared yet.
 
 Read the [development overview](docs/SESSION-2026-09-27.md) for the architecture,
 test results, limitations and next steps. Open [the printable overview](docs/CAP-overview.html)

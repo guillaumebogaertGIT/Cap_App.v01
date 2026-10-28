@@ -53,6 +53,8 @@ class PostgresRestartTests {
             athleteId=athlete.id();
             var workout=workouts.save(null,new Workout(null,"Persistent restart workout","",List.of(new Workout.Exercise("Squat",1,5)),"",""),null,coach);
             workoutId=workout.id();
+            first.getBean(NutritionController.class).save(()->coach.email(),athleteId,
+                new NutritionController.Input(new NutritionController.Targets(2300.0,150.0,250.0,70.0,2500.0),"handmatig"));
             workouts.assign(workoutId,athleteId.toString(),java.time.LocalDate.now(java.time.ZoneId.of("Europe/Brussels")).plusDays(1).toString(),null,coach);
             int port=first.getEnvironment().getProperty("local.server.port",Integer.class);
             login(client,port);
@@ -63,6 +65,8 @@ class PostgresRestartTests {
             var coach=accounts.account("restart-coach@example.test");
             var athlete=accounts.account("restart-athlete@example.test");
             assertEquals(athleteId,athlete.id());
+            var nutrition=second.getBean(NutritionController.class).get(()->athlete.email(),null).getBody();
+            assertNotNull(nutrition);assertEquals(2300.0,nutrition.targets().calories());
             assertTrue(workouts.list(coach).stream().anyMatch(workout->workout.id().equals(workoutId)));
             assertEquals(workoutId,workouts.assignments(athlete).getFirst().planned().id());
             int port=second.getEnvironment().getProperty("local.server.port",Integer.class);
