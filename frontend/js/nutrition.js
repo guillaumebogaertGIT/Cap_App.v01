@@ -221,7 +221,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             plans.set(selectedId, { athleteId: selectedId, name: selected().name, targets: { ...targets }, origin, savedAt: new Date().toISOString() });
             remember(); renderSaved(); renderAthlete();
-            $('nutrition-save-status').textContent = `Dagdoelen bewaard voor ${selected().name} in deze preview.`;
+            $('nutrition-save-status').textContent = `Alleen in deze browser bewaard voor ${selected().name}. Deze doelen worden niet met het echte sporteraccount gedeeld.`;
             document.dispatchEvent(new CustomEvent('cap:nutrition-targets-changed'));
         } catch (error) { $('nutrition-save-status').textContent = error.message; }
     });
@@ -246,6 +246,13 @@ document.addEventListener('DOMContentLoaded', () => {
         else if (location.hash === '#nutrition') renderAthlete();
         refreshVisiblePlan();
     });
+    if (!real) {
+        const notice = document.querySelector('#coach-nutrition > .sample-notice');
+        notice.textContent = 'Ontwerpvoorbeeld: dagdoelen blijven alleen in deze browser. Sporters met een echt account zien deze doelen niet.';
+        const link = node('a', 'Open Voeding voor echte accounts');
+        link.href = 'http://127.0.0.1:8081/app/index.html#coach-nutrition';
+        link.className = 'secondary-button'; notice.after(link);
+    }
     if (real) {
         document.querySelector('#athlete-nutrition-energy-note + .sample-notice').textContent = 'Deze dagdoelen zijn gekoppeld aan jouw account. Maaltijdplanning volgt later.';
         document.querySelector('#coach-nutrition > .sample-notice').textContent = 'Bewaarde dagdoelen worden gedeeld met deze sporter. Calculatorinvoer en het voedingsdagboek blijven in deze browser.';
