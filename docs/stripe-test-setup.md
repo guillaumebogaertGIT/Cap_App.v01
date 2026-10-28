@@ -12,6 +12,11 @@ Open the account menu -> **Betalingen**. The original app design, sidebar and
 authentication remain. Both coach and athlete accounts can test their own
 subscription. Role and membership are independent: paying never makes an athlete
 a coach, and no existing CAP feature is restricted by this new membership flag.
+The same test membership also appears in **Shop**, under Alles/Abonnement, with
+its server-provided price and the signed-in account's status. The card opens the
+existing billing panel; it is not a separate product or payment flow. Shop status
+refreshes on opening the page and returning to its tab. Other category filters
+exclude the membership. Demo Shop remains separate.
 
 Stripe-hosted Checkout collects card details outside CAP. Your signed-in session
 determines the CAP account and server configuration determines the only allowed

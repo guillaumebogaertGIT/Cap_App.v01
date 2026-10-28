@@ -337,6 +337,7 @@
             }));
             list.append(card);
         });
+        if (real) window.capBilling?.renderShop();
         if (!list.children.length) list.append(element('p', 'Geen producten in deze categorie.', 'club-empty'));
     }
     function renderDashboard() {

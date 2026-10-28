@@ -28,7 +28,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const statuses = { none: 'Geen testabonnement', active: 'Actief', incomplete: 'Betaling nog niet voltooid',
         incomplete_expired: 'Onvoltooide betaling verlopen', past_due: 'Betaling achterstallig', unpaid: 'Onbetaald',
         canceled: 'Beëindigd', paused: 'Gepauzeerd', trialing: 'Proefperiode: geen toegang in deze test', missing: 'Status moet worden gecontroleerd' };
-    let current, busy = false, timer, focusTimer, generation = 0;
+    let current, busy = false, timer, focusTimer, generation = 0, loadError = '';
     const date = value => value ? new Intl.DateTimeFormat('nl-BE', { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'Europe/Brussels' }).format(new Date(value)) : '—';
     function controls() {
         subscribe.disabled = busy || !current?.configured || !['none', 'canceled', 'incomplete_expired'].includes(current.status);
@@ -54,12 +54,36 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         feedback.textContent = value.configured ? 'De bevestigde status komt van de server. Bijwerken controleert deze opnieuw bij Stripe.' : 'Stripe TEST MODE is nog niet ingesteld. Je account en bestaande functies blijven beschikbaar.';
         controls();
+        renderShop();
     }
+    function renderShop() {
+        const list = document.getElementById('product-list');
+        if (!list) return;
+        document.getElementById('shop-membership')?.remove();
+        const filter = document.getElementById('product-filter').value;
+        if (filter && filter !== 'Abonnement') return;
+        list.querySelector('.club-empty')?.remove();
+        const card = document.createElement('article'); card.id = 'shop-membership'; card.className = 'club-card';
+        const heading = document.createElement('h3'); heading.textContent = current?.plan || 'CAP Test Membership';
+        const description = document.createElement('p'); description.textContent = 'TEST MODE · Tijdelijk testabonnement, geen echt CAP-aanbod. Geen proefperiode; opzeggen op het einde van de betaalde periode.';
+        const price = document.createElement('strong'); price.className = 'club-price';
+        price.textContent = new Intl.NumberFormat('nl-BE', { style: 'currency', currency: current?.currency || 'EUR' }).format((current?.monthlyCents ?? 1000) / 100) + ' per maand';
+        const status = document.createElement('p'); status.setAttribute('role', 'status');
+        status.textContent = loadError || (!current ? 'Lidmaatschapsstatus laden…' : !current.configured ? 'Testbetalingen zijn nog niet ingesteld.'
+            : current.membershipAccess ? `Jouw testabonnement is actief${current.periodEnd ? ' tot ' + date(current.periodEnd) : ''}.${current.cancelAtPeriodEnd ? ' Opzegging gepland op periode-einde.' : ''}`
+                : statuses[current.status] || 'Nog niet bevestigd');
+        const action = document.createElement('button'); action.type = 'button'; action.className = 'primary-button';
+        action.textContent = current?.membershipAccess ? 'Mijn abonnement bekijken' : 'Testabonnement bekijken';
+        action.addEventListener('click', () => window.capOpenBilling());
+        card.append(heading, description, price, status, action); list.prepend(card);
+    }
+    window.capBilling = { renderShop };
     async function load() {
         const version = ++generation;
+        loadError = '';
         feedback.textContent = 'Abonnementsstatus laden…';
-        try { const value = await real.request('/api/billing'); if (version === generation && dialog.open) render(value); }
-        catch (error) { if (version === generation) feedback.textContent = error.message; }
+        try { const value = await real.request('/api/billing'); if (version === generation && (dialog.open || location.hash === '#shop')) render(value); }
+        catch (error) { if (version === generation) { loadError = error.message; feedback.textContent = error.message; renderShop(); } }
     }
     async function act(action) {
         if (busy) return;
@@ -106,13 +130,16 @@ document.addEventListener('DOMContentLoaded', () => {
     dialog.querySelector('[data-billing-close]').addEventListener('click', () => dialog.close());
     dialog.addEventListener('close', () => { ++generation; clearTimeout(timer); clearTimeout(focusTimer); document.getElementById('account-toggle').focus(); });
     function refreshOnReturn() {
-        if (!dialog.open || busy || document.visibilityState === 'hidden') return;
+        if ((!dialog.open && location.hash !== '#shop') || busy || document.visibilityState === 'hidden') return;
         clearTimeout(focusTimer);
-        focusTimer = setTimeout(() => { if (dialog.open && !busy) load(); }, 100);
+        focusTimer = setTimeout(() => { if ((dialog.open || location.hash === '#shop') && !busy) load(); }, 100);
     }
     window.addEventListener('focus', refreshOnReturn);
     document.addEventListener('visibilitychange', refreshOnReturn);
     window.capOpenBilling = () => { if (!dialog.open) dialog.showModal(); load(); };
+    document.addEventListener('cap:viewchange', () => { if (location.hash === '#shop') { renderShop(); load(); } });
+    renderShop();
+    if (location.hash === '#shop') load();
     if (['success', 'cancel', 'return'].includes(returned)) {
         parameters.delete('billing');
         history.replaceState(null, '', location.pathname + (parameters.size ? '?' + parameters : '') + location.hash);
