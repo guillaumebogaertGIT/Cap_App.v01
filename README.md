@@ -8,6 +8,12 @@ saved backend Java compiles in VS Code and DevTools restarts automatically.
 See [local development: start, refresh and restart rules](docs/development.md).
 See [verified behavior, pgAdmin and manual checks](docs/accounts-verification.md).
 
+Stripe billing is **TEST MODE only** and disabled until configured. Open the
+account menu -> Betalingen. See [Stripe test setup and verification limits](docs/stripe-test-setup.md)
+for the private-prompt launcher, test price/portal, webhook forwarding and checks.
+No existing feature requires a paid membership. Actual Stripe payments remain
+unverified until test credentials and CLI forwarding are set up.
+
 ## Current status
 
 Local web prototype with a responsive frontend and a Java 25 / Spring Boot backend.

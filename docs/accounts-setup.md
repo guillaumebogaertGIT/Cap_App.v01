@@ -254,6 +254,10 @@ coach/athlete screens in separate browser sessions. All 36 tests passed.
 
 ## Shared food diary
 
+For the separate, opt-in **Stripe TEST MODE** billing flow, see
+[Stripe test setup](stripe-test-setup.md). Ordinary account startup still works
+without Stripe. Membership does not restrict the existing features.
+
 Restart the accounts backend once to apply V7. New entries in athlete Voeding are saved in PostgreSQL; the coach selects that athlete in Voeding and the same date to read them. Returning to the coach window or reopening Voeding refreshes the diary. There is no background polling. Only the athlete can add/delete; Verwijderen and undo both save on the server. Failed saves keep the entered form.
 
 Existing browser-only entries are not imported or deleted. Saved meal templates remain local to that account/browser; logging a saved meal saves the resulting portion to PostgreSQL. The existing layout and demo remain separate.

@@ -918,3 +918,13 @@ main { padding: 1rem; }
 .nutrition-metrics > [data-nutrient] :is(dt, dd, small) { color: var(--nutrient-ink); }
 .nutrition-metrics > [data-nutrient] .macro-bar span { background: var(--nutrient-ink); }
 #nutrition, #coach-nutrition { --macro-protein: #9a65c9; --macro-carbs: #4f9165; --macro-fat: #c26984; }
+
+.billing-details { display: grid; grid-template-columns: minmax(0, 1fr); gap: .25rem; }
+.billing-details dt { margin-top: .75rem; color: var(--muted); }
+.billing-details dd { margin: 0; overflow-wrap: anywhere; }
+.billing-actions { display: flex; flex-wrap: wrap; gap: .75rem; margin-top: 1.25rem; }
+.billing-actions button { min-height: 3rem; flex: 1 1 12rem; }
+@media (min-width: 48rem) {
+    .billing-details { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: .75rem 1rem; }
+    .billing-details dt { margin-top: 0; }
+}

@@ -27,6 +27,8 @@ class AccountSecurity {
                 .dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
                 .requestMatchers(HttpMethod.GET, "/accounts/**", "/app/**").permitAll()
                 .requestMatchers("/api/health", "/api/accounts/csrf", "/api/accounts/accept", "/api/accounts/login").permitAll()
+                .requestMatchers(HttpMethod.POST, "/api/billing/webhook").permitAll()
+                .requestMatchers("/api/billing", "/api/billing/**").authenticated()
                 .requestMatchers("/api/accounts/invitations").hasRole("COACH")
                 .requestMatchers("/api/accounts/me", "/api/accounts/profile/**").authenticated()
                 .requestMatchers("/api/club/**").authenticated()
@@ -39,6 +41,8 @@ class AccountSecurity {
                 .requestMatchers("/api/exercises/**").hasRole("COACH")
                 // Legacy endpoints still use the example athlete. Deny them until migrated.
                 .anyRequest().denyAll())
+            // Only Stripe's signature-verified endpoint bypasses browser CSRF protection.
+            .csrf(csrf -> csrf.ignoringRequestMatchers("/api/billing/webhook"))
             .requestCache(cache -> cache.disable())
             .exceptionHandling(errors -> errors
                 .authenticationEntryPoint((request, response, exception) -> error(response, 401, "Log in om verder te gaan."))

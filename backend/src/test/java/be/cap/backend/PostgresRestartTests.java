@@ -53,6 +53,12 @@ class PostgresRestartTests {
             var coach=accounts.account("restart-coach@example.test");
             var athlete=accounts.accept(accounts.invite("restart-athlete@example.test",coach.email()).token(),"Restart athlete","Athlete-test-password-25");
             athleteId=athlete.id();
+            var billingJdbc=first.getBean(org.springframework.jdbc.core.JdbcTemplate.class);
+            billingJdbc.update("INSERT INTO billing_account(user_id,customer_id,customer_key,customer_started_at) VALUES(?,?,?,CURRENT_TIMESTAMP)",athleteId,"cus_RestartFixture",UUID.randomUUID());
+            billingJdbc.update("""
+                INSERT INTO billing_subscription(subscription_id,user_id,customer_id,price_id,status,payment_status,
+                period_start,period_end,cancel_at_period_end,synced_at) VALUES(?,?,?,?,'active','paid',CURRENT_TIMESTAMP,?,true,CURRENT_TIMESTAMP)
+                ""","sub_RestartFixture",athleteId,"cus_RestartFixture","price_CAPtest",java.sql.Timestamp.from(java.time.Instant.now().plusSeconds(86400)));
             first.getBean(FoodDiaryController.class).add(()->athlete.email(),
                 new FoodDiaryController.Entry(foodId,foodDay,"breakfast","Restart oats",null,80.0,"g",300.0,12.0,45.0,7.0,null));
             var workout=workouts.save(null,new Workout(null,"Persistent restart workout","",List.of(new Workout.Exercise("Squat",1,5)),"",""),null,coach);
@@ -69,6 +75,9 @@ class PostgresRestartTests {
             var coach=accounts.account("restart-coach@example.test");
             var athlete=accounts.account("restart-athlete@example.test");
             assertEquals(athleteId,athlete.id());
+            var billing=second.getBean(be.cap.backend.accounts.billing.BillingService.class).summary(athlete);
+            assertEquals("active",billing.status());assertTrue(billing.cancelAtPeriodEnd());assertTrue(billing.hasCustomer());
+            assertNotNull(billing.periodEnd());
             var diary=second.getBean(FoodDiaryController.class).get(()->coach.email(),foodDay,athleteId).getBody();
             assertNotNull(diary);assertEquals(foodId,diary.getFirst().id());
             assertEquals("Restart oats",diary.getFirst().name());

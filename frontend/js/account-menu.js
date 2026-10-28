@@ -44,6 +44,9 @@
     });
     links.querySelectorAll('[data-account]').forEach((button) => {
         button.addEventListener('click', () => {
+            if (button.dataset.account === 'payment' && window.capOpenBilling) {
+                closeMenu(); window.capOpenBilling(); return;
+            }
             if (button.dataset.account === 'profile' && window.capOpenProfile) {
                 closeMenu();
                 window.capOpenProfile();
