@@ -44,5 +44,15 @@ class LocalFrontendTests extends AccountApiTests {
         Files.writeString(frontend.resolve("live-check.css"), "body { color: blue; }");
         assertTrue(request(coach, "GET", "/app/live-check.css", null, null, false).body().contains("blue"));
         assertEquals(302, request(client(), "GET", "/app/index.html", null, null, false).statusCode());
+        var login = frontend.resolve("accounts/index.html");
+        Files.writeString(login, Files.readString(login).replace("<head>", "<head><!-- live-login -->"));
+        var loginPage = request(client(), "GET", "/accounts/index.html", null, null, false);
+        assertEquals(200, loginPage.statusCode());
+        assertTrue(loginPage.body().contains("<!-- live-login -->"));
+        assertTrue(loginPage.headers().firstValue("cache-control").orElse("").contains("no-store"));
+        Files.writeString(frontend.resolve("css/live-shared.css"), "/* shared stylesheet edit */");
+        assertTrue(request(client(), "GET", "/accounts/shared/live-shared.css", null, null, false).body().contains("shared stylesheet edit"));
+        Files.writeString(frontend.resolve("accounts/live-check.js"), "/* login script edit */");
+        assertTrue(request(client(), "GET", "/accounts/live-check.js", null, null, false).body().contains("login script edit"));
     }
 }

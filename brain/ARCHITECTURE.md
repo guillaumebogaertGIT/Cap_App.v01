@@ -8,7 +8,7 @@ Local accounts launcher enables `accounts,local-frontend`: `/app/**` reads direc
 from the checkout frontend directory with caching disabled. RealAppController reads
 the same live index template and retains authentication/account injection. Plain
 accounts mode and packaged deployments retain classpath resources. `/accounts/`
-login assets still require a restart; Java/configuration changes do too.
+login assets also read live files now. Maven -Pdev includes DevTools; VS Code Java auto-build writes backend/target/classes and triggers automatic restarts. Configuration/dependency/launcher changes still require a manual restart.
 
 `frontend/index.html` is the static shell; scripts also create screens/dialogs. There is no frontend framework or build pipeline.
 

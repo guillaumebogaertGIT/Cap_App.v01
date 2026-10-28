@@ -68,6 +68,21 @@
 		</dependency>
 	</dependencies>
 
+	<!-- Opt in only for local development; ordinary builds have no DevTools dependency. -->
+	<profiles>
+		<profile>
+			<id>dev</id>
+			<dependencies>
+				<dependency>
+					<groupId>org.springframework.boot</groupId>
+					<artifactId>spring-boot-devtools</artifactId>
+					<scope>runtime</scope>
+					<optional>true</optional>
+				</dependency>
+			</dependencies>
+		</profile>
+	</profiles>
+
 	<build>
 		<resources>
             <resource><directory>../frontend</directory><targetPath>static/app</targetPath><excludes><exclude>accounts/**</exclude></excludes></resource>

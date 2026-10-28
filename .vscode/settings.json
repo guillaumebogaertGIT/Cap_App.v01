@@ -9,7 +9,10 @@
         "lib/**/*.jar"
     ],
     "java.compile.nullAnalysis.mode": "automatic",
-    "java.configuration.updateBuildConfiguration": "interactive",
+    "java.configuration.updateBuildConfiguration": "automatic",
+    "java.autobuild.enabled": true,
+    "java.import.maven.enabled": true,
+    "java.server.launchMode": "Standard",
     "liveServer.settings.ignoreFiles": [
         "**/backend/**",
         "**/brain/**",

@@ -1,0 +1,17 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "CAP: Start development",
+            "type": "shell",
+            "command": "& '${workspaceFolder}/scripts/start-accounts.cmd'",
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "shell": { "executable": "powershell.exe", "args": ["-NoProfile", "-Command"] }
+            },
+            "problemMatcher": [],
+            "presentation": { "reveal": "always", "panel": "dedicated" },
+            "runOptions": { "instanceLimit": 1 }
+        }
+    ]
+}

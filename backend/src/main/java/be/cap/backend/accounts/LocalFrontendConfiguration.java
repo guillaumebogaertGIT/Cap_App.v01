@@ -22,5 +22,13 @@ class LocalFrontendConfiguration implements WebMvcConfigurer {
             .addResourceLocations(location)
             .setCachePeriod(0)
             .resourceChain(false);
+        registry.addResourceHandler("/accounts/shared/**")
+            .addResourceLocations(location + "css/", location + "js/", location + "img/")
+            .setCachePeriod(0)
+            .resourceChain(false);
+        registry.addResourceHandler("/accounts/**")
+            .addResourceLocations(location + "accounts/")
+            .setCachePeriod(0)
+            .resourceChain(false);
     }
 }

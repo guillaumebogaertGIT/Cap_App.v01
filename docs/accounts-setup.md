@@ -219,17 +219,13 @@ Framework references: [Spring password storage](https://docs.spring.io/spring-se
 
 ## Frontend changes during local development
 
-The accounts launcher enables `accounts,local-frontend` and serves `/app/`
-directly from this checkout's `frontend/` directory. After saving HTML, CSS,
-JavaScript or images, refresh the browser at http://127.0.0.1:8081/app/index.html.
-No backend restart is needed for those files. The server still injects the
-signed-in account into the original HTML; demo mode remains separate.
-
-Restart once after updating the launcher/backend to enable this setup. Java,
-backend configuration and migrations still require a restart. The separate
-`/accounts/` login/invitation assets still use packaged copies and require a
-restart after editing. Packaged deployments without `local-frontend` continue
-to serve bundled assets. No extra dependency or database setting is required.
+Start with .\scripts\start-accounts.cmd from the project root, or use VS Code
+Terminal -> Run Task -> CAP: Start development. The launcher enables development-only
+DevTools plus direct uncached frontend serving for both /app/ and /accounts/.
+Save frontend changes and refresh. Saved Java is compiled by VS Code, then
+DevTools restarts the backend automatically; login may be required afterward.
+See [the full development guide](development.md) for startup, troubleshooting,
+production separation and changes requiring a manual restart.
 
 ## Profile editing
 

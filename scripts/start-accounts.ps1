@@ -52,11 +52,12 @@ try {
     $env:CAP_DATABASE_PASSWORD = $env:PGPASSWORD
     $env:PGPASSWORD = $null
     $env:CAP_FRONTEND_LOCATION = ([System.Uri]::new((Join-Path $capRoot 'frontend') + [System.IO.Path]::DirectorySeparatorChar)).AbsoluteUri
-    Write-Host 'Local frontend edits are live: save HTML/CSS/JavaScript, then refresh the browser. Java/configuration changes still require a restart.'
+    Write-Host 'Development: save frontend files, then refresh. VS Code Java auto-build compiles saved Java; DevTools then restarts the backend automatically.'
+    Write-Host 'Wait for the Java language server to finish importing backend/pom.xml. After an automatic restart, log in again if prompted.'
     Write-Host 'Starting accounts mode on http://127.0.0.1:8081/app/index.html. Flyway applies pending migrations without resetting data.'
     Push-Location (Join-Path $capRoot 'backend')
     try {
-        & '.\mvnw.cmd' spring-boot:run '-Dspring-boot.run.profiles=accounts,local-frontend'
+        & '.\mvnw.cmd' '-Pdev' spring-boot:run '-Dspring-boot.run.profiles=accounts,local-frontend'
         if ($LASTEXITCODE -ne 0) { throw 'Backend startup failed. Check the preceding migration/connection message. No temporary database was substituted.' }
     } finally { Pop-Location }
 } finally {

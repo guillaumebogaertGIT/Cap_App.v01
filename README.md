@@ -3,6 +3,9 @@
 A Java learning project building toward a coaching platform for CAP in Gistel, Belgium.
 
 Local real-account launch: `.\scripts\start-accounts.cmd` from the project root.
+Open **http://127.0.0.1:8081/app/index.html**. Save frontend files and refresh;
+saved backend Java compiles in VS Code and DevTools restarts automatically.
+See [local development: start, refresh and restart rules](docs/development.md).
 See [verified behavior, pgAdmin and manual checks](docs/accounts-verification.md).
 
 ## Current status
