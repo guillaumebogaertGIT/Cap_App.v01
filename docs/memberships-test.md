@@ -143,9 +143,13 @@ Browser checks use the real app and CSS with mocked billing responses. They cove
 Shop filters (five memberships/four credit packs), offer selection, detached
 Checkout tabs, flexible cancellation display, 390/768/1440px layouts and both
 light/dark themes. JavaScript syntax and PowerShell parsing checks also passed.
-Sandbox catalog configuration is real; payments for these **new nine offers**,
-renewals and actual expiry still need provider testing. The previously verified
-EUR10 sandbox checkout remains documented in `stripe-test-setup.md`.
+User verified the new **5-credit sandbox purchase** on 29/10/2026: CAP showed
+5 credits, a future group booking reduced the balance to 4, and cancellation
+before the start restored 5. The coach-created shared lesson appeared for the
+athlete. These are user-confirmed manual results, separate from mocked tests.
+Paid membership checkouts, other credit packs, renewals and actual expiry still
+need provider testing. The previously verified EUR10 sandbox checkout remains
+documented in `stripe-test-setup.md`.
 
 This is test development. Refunds/disputes and automatic entitlement reversal,
 production webhook delivery/reconciliation, VAT, failed-payment collection rules,
