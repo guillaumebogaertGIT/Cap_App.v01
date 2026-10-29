@@ -31,9 +31,10 @@ public class BillingService {
     private final BillingSettings settings;
     private final BillingCatalog catalog;
     private final CatalogOrders orders;
+    private final be.cap.backend.accounts.MembershipReviewAccess membershipReview;
     private final TransactionTemplate tx;
-    public BillingService(JdbcTemplate jdbc,StripeGateway stripe,BillingSettings settings,BillingCatalog catalog,CatalogOrders orders,PlatformTransactionManager manager) {
-        this.jdbc=jdbc; this.stripe=stripe; this.settings=settings; this.catalog=catalog; this.orders=orders; this.tx=new TransactionTemplate(manager);
+    public BillingService(JdbcTemplate jdbc,StripeGateway stripe,BillingSettings settings,BillingCatalog catalog,CatalogOrders orders,PlatformTransactionManager manager,be.cap.backend.accounts.MembershipReviewAccess membershipReview) {
+        this.jdbc=jdbc; this.stripe=stripe; this.settings=settings; this.catalog=catalog; this.orders=orders; this.tx=new TransactionTemplate(manager); this.membershipReview=membershipReview;
     }
     private ResponseStatusException conflict(String message) { return new ResponseStatusException(HttpStatus.CONFLICT,message); }
     private void testObject(JsonNode object) {
@@ -254,7 +255,7 @@ public class BillingService {
     }
     /** Coaches inspect local records only; this never creates a Stripe customer or payment link. */
     public AthleteSummary athleteSummary(Account coach, UUID athleteId) {
-        if (!"COACH".equals(coach.role())) throw new ResponseStatusException(HttpStatus.FORBIDDEN,"Alleen coaches kunnen deze gegevens bekijken.");
+        if (!membershipReview.allows(coach)) throw new ResponseStatusException(HttpStatus.FORBIDDEN,"Je hebt geen toestemming om lidmaatschappen van sporters te bekijken.");
         var athlete=jdbc.query("SELECT id,email,display_name,role FROM cap_user WHERE id=? AND role='ATHLETE'",
             (r,i)->new Account(r.getObject("id",UUID.class),r.getString("email"),r.getString("display_name"),r.getString("role")),athleteId)
             .stream().findFirst().orElseThrow(()->new ResponseStatusException(HttpStatus.NOT_FOUND,"Sporter niet gevonden."));

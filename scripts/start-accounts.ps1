@@ -9,10 +9,17 @@ param(
 $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot 'local-dev-secrets.ps1')
 $capRoot = Split-Path $PSScriptRoot -Parent
-$capNames = 'CAP_DATABASE_URL','CAP_DATABASE_USER','CAP_DATABASE_PASSWORD','CAP_COACH_EMAIL','CAP_COACH_PASSWORD','CAP_FRONTEND_LOCATION','PGPASSWORD','PGCONNECT_TIMEOUT','JAVA_HOME'
+$capNames = 'CAP_DATABASE_URL','CAP_DATABASE_USER','CAP_DATABASE_PASSWORD','CAP_COACH_EMAIL','CAP_COACH_PASSWORD','CAP_FRONTEND_LOCATION','CAP_MEMBERSHIP_REVIEWER_EMAILS','PGPASSWORD','PGCONNECT_TIMEOUT','JAVA_HOME'
 $capPrevious = @{}
 foreach ($capName in $capNames) { $capPrevious[$capName] = [Environment]::GetEnvironmentVariable($capName, 'Process') }
 try {
+    $capReviewerPath = Join-Path $capRoot '.local/membership-reviewers.json'
+    if (Test-Path -LiteralPath $capReviewerPath) {
+        $capReviewerConfig = Get-Content -Raw -LiteralPath $capReviewerPath | ConvertFrom-Json
+        $capReviewers = @($capReviewerConfig.emails)
+        if ($capReviewers.Count -gt 2 -or @($capReviewers | Where-Object { $_ -isnot [string] -or $_ -notmatch '^[^\s@]+@[^\s@]+\.[^\s@]+$' }).Count) { throw 'membership-reviewers.json must contain at most two coach login emails in its emails array.' }
+        $env:CAP_MEMBERSHIP_REVIEWER_EMAILS = $capReviewers -join ','
+    }
     $capListener = [System.Net.Sockets.TcpClient]::new()
     try {
         $capConnect = $capListener.ConnectAsync('127.0.0.1', 8081)

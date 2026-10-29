@@ -14,6 +14,7 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 @TestPropertySource(properties={"cap.billing.enforce-bookings=true",
+    "cap.accounts.membership-reviewers=coach@example.test,second-reviewer@example.test",
     "cap.billing.prices={\"full_1m\":\"price_One\",\"full_3m\":\"price_Three\",\"full_12m\":\"price_Year\",\"monthly_flexible\":\"price_Flex\",\"monthly_fixed\":\"price_Fixed\",\"credits_1\":\"price_C1\",\"credits_5\":\"price_C5\",\"credits_10\":\"price_C10\",\"credits_20\":\"price_C20\"}"})
 class CatalogBillingApiTests extends BillingApiTests {
     CatalogFake catalogFake;
@@ -234,5 +235,27 @@ class CatalogBillingApiTests extends BillingApiTests {
         assertEquals(405,request(coach,"PUT",path,"{\"credits\":100}",csrf(coach),false).statusCode());
         assertEquals(405,request(coach,"POST",path,"{}",csrf(coach),false).statusCode());
         assertEquals(204,request(coach,"POST","/api/accounts/logout","",csrf(coach),false).statusCode());assertEquals(401,request(coach,"GET",path,null,null,false).statusCode());
+    }
+    @Test void membershipReviewIsLimitedToTheTwoDesignatedCoachLogins() throws Exception {
+        var allowed=coach();var owner=client();String ownerId=athlete(owner);
+        for (String email:List.of("second-reviewer@example.test","ordinary-coach@example.test")) {
+            jdbc.update("""
+                INSERT INTO cap_user(id,email,display_name,password_hash,role,created_at)
+                SELECT ?,?,'Glenn Vlamynck',password_hash,'COACH',CURRENT_TIMESTAMP FROM cap_user WHERE email='coach@example.test'
+                """,UUID.randomUUID(),email);
+        }
+        var second=client();login(second,"second-reviewer@example.test","Coach-test-password-123");
+        var ordinary=client();login(ordinary,"ordinary-coach@example.test","Coach-test-password-123");
+        String path="/api/billing/athletes/"+ownerId;
+        assertEquals(200,request(allowed,"GET",path,null,null,false).statusCode());
+        assertEquals(200,request(second,"GET",path,null,null,false).statusCode());
+        assertEquals(403,request(ordinary,"GET",path,null,null,false).statusCode());
+        assertEquals(403,request(ordinary,"GET","/api/billing/athletes/"+UUID.randomUUID(),null,null,false).statusCode());
+        assertEquals(200,request(ordinary,"GET","/api/club/people",null,null,false).statusCode());
+        assertEquals(200,request(ordinary,"GET","/api/workouts",null,null,false).statusCode());
+        var allowedPage=request(second,"GET","/app/index.html",null,null,false).body();
+        var deniedPage=request(ordinary,"GET","/app/index.html",null,null,false).body();
+        assertTrue(allowedPage.contains("\"reviewMemberships\":true"));
+        assertTrue(deniedPage.contains("\"reviewMemberships\":false"));
     }
 }

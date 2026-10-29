@@ -5,6 +5,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const page = document.getElementById('athletes');
     page.querySelector(':scope > .sample-notice')?.remove();
     page.querySelector('header .dashboard-intro').textContent = 'Bekijk en begeleid sporters met een CAP-account.';
+    if (!real.permissions?.reviewMemberships) return;
     const panel = document.createElement('section');
     panel.className = 'coach-membership'; panel.setAttribute('aria-labelledby', 'coach-membership-title');
     panel.innerHTML = `<h3 id="coach-membership-title">Lidmaatschap & credits</h3>

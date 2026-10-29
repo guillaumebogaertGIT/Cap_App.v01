@@ -66,3 +66,5 @@ October 29: Catalog implemented and nine Stripe sandbox prices/restricted portal
 October 29 refinement completed: athlete Planning balance and group/Open gym credit bookings implemented and tested (23 PostgreSQL checks, real browser balance updates). User reported EUR75 purchase/cancellation success; user-side Open gym check after backend reload remains next. Private-session pricing, other plans, renewals/expiry and refund/dispute handling remain pending.
 
 Next priority explicitly requested October 29: Docker setup, after the now-completed coach membership/credits overview. Discuss a backend/PostgreSQL development setup and persistent data before implementing. Docker CLI not found in current PATH; installation/status needs checking. Coach emails still unavailable.
+
+Membership review now restricted to Glenn/Dieter only. Activate later with their actual COACH login emails; default denial is intentional until then. Two-account policy and UI/API checks complete (24 checks). Docker remains the next requested task.

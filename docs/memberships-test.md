@@ -144,16 +144,17 @@ or alter existing subscriptions. Re-running it was verified to keep the same IDs
 
 ## PostgreSQL inspection
 
-Coaches can also use **Sporters → Lidmaatschap & credits** and choose an athlete.
+Only the two designated membership reviewers can use
+**Sporters → Lidmaatschap & credits** and choose an athlete.
 The panel shows plan, status, paid-until date, available credits, maximum term
 and scheduled cancellation. It refreshes on returning to the page/tab, or with
 Opnieuw laden. Switching athletes clears old details immediately. This is a
 read-only view of saved PostgreSQL records; it makes no Stripe requests and
 cannot cancel subscriptions or change credit balances.
 
-The coach-only `GET /api/billing/athletes/{athleteId}` returns a small summary
+The permission-protected `GET /api/billing/athletes/{athleteId}` returns a small summary
 without Stripe customer IDs, prices, portal URLs or payment controls. Direct
-guest requests return 401; athletes return 403, including for themselves.
+guest requests return 401; athletes and non-designated coaches return 403.
 Unknown athletes/coach targets return 404. All responses disable caching.
 
 Verification: 21 focused PostgreSQL billing/account tests passed after this
@@ -161,6 +162,37 @@ addition. Browser checks covered real fake-account records, empty accounts,
 late-response isolation, loading failures/retry and 390/768/1440px in both themes.
 To review manually, log in as coach, choose two different athletes and compare
 their paid-until date/credits against each athlete's own Shop/Planning.
+
+### Designated reviewers: Glenn and Dieter
+
+The user selected **Glenn Vlamynck and Dieter Vlamynck**. Their actual coach login
+emails have not been supplied yet, so this permission defaults to **no access**.
+No display-name matching or automatic permission for the first/test coach is used.
+Other coaches keep their roster, planning and workout tools. Everyone can still
+view their own payments through their own account.
+
+Once the correct login emails/accounts are known, the local administrator sets
+`CAP_MEMBERSHIP_REVIEWER_EMAILS` to those two comma-separated emails. The launcher
+can alternatively read ignored `.local/membership-reviewers.json`, with an
+`emails` array of at most two addresses. An empty example is:
+
+```json
+{"emails": []}
+```
+
+Do not guess addresses. This configuration does not create coach accounts. Email
+must match the authenticated account and its COACH role; changing a profile name
+does not grant permission. Restart after changing the configuration. More than
+two unique reviewers or invalid emails cause startup to fail instead of widening
+access. This setting also applies directly to the backend, including future
+Docker environments. The browser receives only its own permission boolean.
+
+Permission refinement verified with 24 focused checks: two allowed test coaches,
+a third denied coach (even with Glenn's display name), default denial, maximum
+two/invalid configuration rejection, guest/athlete denials and retained ordinary
+coaching access. Browser verified the allowed panel, hidden denied panel with
+zero automatic membership requests, and direct API denial. No real coach was
+granted access during these tests.
 
 In pgAdmin open **cap → Schemas → public → Tables**. V9 adds `billing_order` and
 `lesson_credit`, and extends `billing_subscription` with `offer_code`/`term_end`.
