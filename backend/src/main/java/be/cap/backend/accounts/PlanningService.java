@@ -25,8 +25,9 @@ public class PlanningService {
                           String category, String program, List<UUID> athleteIds, int bookedCount, boolean booked, Workout workoutSnapshot) {}
     public record Booking(UUID sessionId, UUID athleteId, String athlete, boolean cancelled, String attendance) {}
     private final JdbcTemplate jdbc;
+    private final be.cap.backend.accounts.billing.LessonAccess lessonAccess;
     private static final ZoneId CLUB_ZONE = ZoneId.of("Europe/Brussels");
-    public PlanningService(JdbcTemplate jdbc) { this.jdbc = jdbc; }
+    public PlanningService(JdbcTemplate jdbc, be.cap.backend.accounts.billing.LessonAccess lessonAccess) { this.jdbc = jdbc; this.lessonAccess = lessonAccess; }
     private ResponseStatusException invalid(String message) { return new ResponseStatusException(HttpStatus.BAD_REQUEST, message); }
     private void coach(AccountService.Account user) {
         if (!user.role().equals("COACH")) throw new ResponseStatusException(HttpStatus.FORBIDDEN);
@@ -109,6 +110,7 @@ public class PlanningService {
                 input.type().equals("Open gym") ? "" : Objects.requireNonNullElse(input.program(), "").trim(), sessionId };
             if (id == null) jdbc.update("INSERT INTO club_session (title, session_date, start_time, end_time, coach_id, location, capacity, session_type, category, program, id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", fields);
             else jdbc.update("UPDATE club_session SET title=?, session_date=?, start_time=?, end_time=?, coach_id=?, location=?, capacity=?, session_type=?, category=?, program=? WHERE id=?", fields);
+            if (old != null && !input.type().equals("Groep")) lessonAccess.releaseSession(sessionId);
             if (input.type().equals("Open gym") || old != null && !Objects.equals(old.program(),Objects.requireNonNullElse(input.program(),"").trim()))
                 jdbc.update("UPDATE club_session SET workout_snapshot=NULL WHERE id=?",sessionId);
             jdbc.update("DELETE FROM session_recipient WHERE session_id = ?", sessionId);
@@ -128,6 +130,7 @@ public class PlanningService {
     @Transactional
     public void delete(UUID id, AccountService.Account user) {
         coach(user); upcoming(require(id, user, true));
+        lessonAccess.releaseSession(id);
         jdbc.update("DELETE FROM club_session WHERE id = ?", id);
     }
     @Transactional
@@ -136,6 +139,9 @@ public class PlanningService {
         Session session = require(id, user, true);
         upcoming(session);
         if (!cancel && !session.booked() && session.bookedCount() >= session.capacity()) throw new ResponseStatusException(HttpStatus.CONFLICT, "Deze les is volzet.");
+        if (cancel) lessonAccess.release(user.id(),id);
+        else if (!session.booked() && session.type().equals("Groep"))
+            lessonAccess.reserve(user.id(),id,LocalDateTime.of(session.date(),session.start()).atZone(CLUB_ZONE).toInstant());
         int updated = jdbc.update("UPDATE session_booking SET cancelled = ? WHERE session_id = ? AND athlete_id = ?", cancel, id, user.id());
         if (updated == 0 && !cancel) jdbc.update("INSERT INTO session_booking (session_id, athlete_id) VALUES (?, ?)", id, user.id());
     }
@@ -160,6 +166,7 @@ public class PlanningService {
     @Transactional
     public void cancelBooking(UUID sessionId,UUID athleteId,AccountService.Account user) {
         coach(user);upcoming(require(sessionId,user,true));
+        lessonAccess.release(athleteId,sessionId);
         if(jdbc.update("UPDATE session_booking SET cancelled=TRUE WHERE session_id=? AND athlete_id=?",sessionId,athleteId)!=1)
             throw new ResponseStatusException(HttpStatus.NOT_FOUND,"Boeking niet gevonden.");
     }

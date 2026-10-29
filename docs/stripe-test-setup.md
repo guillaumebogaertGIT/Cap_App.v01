@@ -1,5 +1,11 @@
 # CAP Stripe TEST MODE
 
+**October 29 update:** the confirmed five memberships and four credit packs now
+have their own implementation and sandbox catalog. Follow
+[the memberships and credits test guide](memberships-test.md) for current startup,
+rules and checks. The EUR10 setup and results below describe the earlier test
+membership, which remains compatible but is no longer the Shop offer.
+
 **One actual Stripe sandbox checkout is now verified (October 28, 2026).**
 The EUR10 test payment completed and the same CAP athlete account showed active
 membership after a verified subscription-update webhook. No live payment was used.

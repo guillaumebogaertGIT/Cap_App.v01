@@ -21,7 +21,7 @@ public class BillingSettings {
         this.enabled=enabled; this.secret=secret; this.webhookSecret=webhookSecret;
         this.price=price; this.portal=portal; this.baseUrl=baseUrl;
         if (enabled) {
-            if (!secret.startsWith("sk_test_") || !webhookSecret.startsWith("whsec_") || !price.matches("price_[A-Za-z0-9]+") || !portal.matches("bpc_[A-Za-z0-9]+"))
+            if (!secret.startsWith("sk_test_") || !webhookSecret.startsWith("whsec_") || (!price.isBlank() && !price.matches("price_[A-Za-z0-9]+")) || !portal.matches("bpc_[A-Za-z0-9]+"))
                 throw new IllegalStateException("Configure Stripe TEST secret, webhook secret, price and portal IDs. Live keys are not supported.");
             URI uri=URI.create(baseUrl);
             if (!"http".equals(uri.getScheme()) || !("127.0.0.1".equals(uri.getHost()) || "localhost".equals(uri.getHost()))

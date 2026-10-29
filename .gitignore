@@ -30,5 +30,6 @@
 
 # Account/database credentials belong in the environment, never Git.
 .env
+/.local/
 .env.*
 !.env.example

@@ -55,6 +55,9 @@ class PostgresRestartTests {
             athleteId=athlete.id();
             var billingJdbc=first.getBean(org.springframework.jdbc.core.JdbcTemplate.class);
             billingJdbc.update("INSERT INTO billing_account(user_id,customer_id,customer_key,customer_started_at) VALUES(?,?,?,CURRENT_TIMESTAMP)",athleteId,"cus_RestartFixture",UUID.randomUUID());
+            UUID creditOrder=UUID.randomUUID();
+            billingJdbc.update("INSERT INTO billing_order(id,user_id,offer_code,price_id,status,created_at,paid_at) VALUES(?,?,'credits_1','price_RestartCredit','paid',CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)",creditOrder,athleteId);
+            billingJdbc.update("INSERT INTO lesson_credit(id,user_id,order_id,credit_number) VALUES(?,?,?,1)",UUID.randomUUID(),athleteId,creditOrder);
             billingJdbc.update("""
                 INSERT INTO billing_subscription(subscription_id,user_id,customer_id,price_id,status,payment_status,
                 period_start,period_end,cancel_at_period_end,synced_at) VALUES(?,?,?,?,'active','paid',CURRENT_TIMESTAMP,?,true,CURRENT_TIMESTAMP)
@@ -78,6 +81,7 @@ class PostgresRestartTests {
             var billing=second.getBean(be.cap.backend.accounts.billing.BillingService.class).summary(athlete);
             assertEquals("active",billing.status());assertTrue(billing.cancelAtPeriodEnd());assertTrue(billing.hasCustomer());
             assertNotNull(billing.periodEnd());
+            assertEquals(1,billing.credits());
             var diary=second.getBean(FoodDiaryController.class).get(()->coach.email(),foodDay,athleteId).getBody();
             assertNotNull(diary);assertEquals(foodId,diary.getFirst().id());
             assertEquals("Restart oats",diary.getFirst().name());

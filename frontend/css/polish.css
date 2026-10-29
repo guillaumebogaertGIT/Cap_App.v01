@@ -920,6 +920,15 @@ main { padding: 1rem; }
 #nutrition, #coach-nutrition { --macro-protein: #9a65c9; --macro-carbs: #4f9165; --macro-fat: #c26984; }
 
 .billing-details { display: grid; grid-template-columns: minmax(0, 1fr); gap: .25rem; }
+.billing-shop-status { grid-column: 1 / -1; padding-block: .5rem 1rem; }
+.billing-shop-status h3 { margin-block: 0 .5rem; }
+#billing-offer {
+    width: 100%; min-width: 0; min-height: 3rem; margin-top: .5rem;
+    padding: .65rem .75rem; font: inherit; color: var(--text);
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--control-radius);
+}
+[data-billing-shop].club-card { display: flex; flex-direction: column; }
+[data-billing-shop].club-card button { margin-top: auto; min-height: 3rem; }
 .billing-details dt { margin-top: .75rem; color: var(--muted); }
 .billing-details dd { margin: 0; overflow-wrap: anywhere; }
 .billing-actions { display: flex; flex-wrap: wrap; gap: .75rem; margin-top: 1.25rem; }

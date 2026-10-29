@@ -10,14 +10,17 @@ document.addEventListener('DOMContentLoaded', () => {
     dialog.innerHTML = `<div class="session-dialog-header"><h2 id="billing-title">Lidmaatschap & betalingen</h2>
         <button type="button" class="secondary-button session-dialog-close" data-billing-close aria-label="Sluiten" title="Sluiten"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button></div>
         <p class="sample-notice"><strong>TEST MODE</strong> · Geen echte betalingen. Gebruik uitsluitend Stripe-testkaarten.</p>
-        <h3 id="billing-plan">CAP Test Membership</h3><p><strong id="billing-price">€ 10 per maand</strong> · tijdelijke testprijs, geen echt CAP-aanbod.</p>
-        <p>Geen proefperiode. Opzeggen gaat in aan het einde van de betaalde periode. Je kunt altijd blijven inloggen; de bestaande functies blijven beschikbaar.</p>
+        <label for="billing-offer">Kies je lidmaatschap of credits</label><select id="billing-offer"><option value="">Aanbod laden…</option></select>
+        <h3 id="billing-plan">CAP aanbod</h3><p><strong id="billing-price"></strong></p>
+        <p id="billing-terms"></p>
+        <p class="sample-notice">Lidmaatschappen starten na bevestigde betaling en stoppen automatisch. Credits worden bij een groepsboeking gebruikt als je lidmaatschap de lesdatum niet dekt. Annuleer vóór de start om je credit terug te krijgen.</p>
         <p id="billing-return-note" role="status"></p>
         <dl id="billing-details" class="billing-details"></dl>
         <p id="billing-feedback" role="status" aria-live="polite"></p>
         <p class="sample-notice">Stripe opent in een nieuw tabblad. CAP blijft hier open.</p>
-        <div class="billing-actions"><button type="button" class="primary-button" data-billing-subscribe>Testabonnement starten</button>
+        <div class="billing-actions"><button type="button" class="primary-button" data-billing-subscribe>Verder naar testbetaling</button>
         <button type="button" class="secondary-button" data-billing-portal>Abonnement beheren</button>
+        <button type="button" class="secondary-button" data-billing-cancel hidden>Opzeggen na betaalde maand</button>
         <button type="button" class="secondary-button" data-billing-refresh>Status bijwerken</button></div>`;
     document.body.append(dialog);
     const feedback = dialog.querySelector('#billing-feedback');
@@ -25,27 +28,45 @@ document.addEventListener('DOMContentLoaded', () => {
     const subscribe = dialog.querySelector('[data-billing-subscribe]');
     const portal = dialog.querySelector('[data-billing-portal]');
     const refresh = dialog.querySelector('[data-billing-refresh]');
+    const cancel = dialog.querySelector('[data-billing-cancel]');
+    const picker = dialog.querySelector('#billing-offer');
+    let selectedCode = '';
+    const money = offer => new Intl.NumberFormat('nl-BE', { style: 'currency', currency: offer.currency }).format(offer.cents / 100) + (offer.recurring ? ' per maand' : ' eenmalig');
+    function selected() { return current?.offers?.find(offer => offer.code === selectedCode); }
+    function selection() {
+        const offer = selected();
+        dialog.querySelector('#billing-plan').textContent = offer?.name || 'Kies een aanbod';
+        dialog.querySelector('#billing-price').textContent = offer ? money(offer) : '';
+        dialog.querySelector('#billing-terms').textContent = offer?.terms || 'Je huidige lidmaatschap en credits staan hieronder.';
+        controls();
+    }
+    picker.addEventListener('change', () => { selectedCode = picker.value; selection(); });
     const statuses = { none: 'Geen testabonnement', active: 'Actief', incomplete: 'Betaling nog niet voltooid',
         incomplete_expired: 'Onvoltooide betaling verlopen', past_due: 'Betaling achterstallig', unpaid: 'Onbetaald',
         canceled: 'Beëindigd', paused: 'Gepauzeerd', trialing: 'Proefperiode: geen toegang in deze test', missing: 'Status moet worden gecontroleerd' };
     let current, busy = false, timer, focusTimer, generation = 0, loadError = '';
     const date = value => value ? new Intl.DateTimeFormat('nl-BE', { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'Europe/Brussels' }).format(new Date(value)) : '—';
     function controls() {
-        subscribe.disabled = busy || !current?.configured || !['none', 'canceled', 'incomplete_expired'].includes(current.status);
+        subscribe.disabled = busy || !selected()?.available || (current?.membershipAccess && !selected()?.credits);
+        picker.disabled = busy;
+        cancel.hidden = !current?.canCancel;
+        cancel.disabled = busy || !current?.canCancel;
         portal.disabled = busy || !current?.configured || !current.hasCustomer;
         refresh.disabled = busy;
         refresh.textContent = current?.configured ? 'Status bijwerken' : 'Opnieuw laden';
     }
     function render(value) {
         current = value; details.replaceChildren();
-        if (returned === 'success' && value.membershipAccess)
-            dialog.querySelector('#billing-return-note').textContent = 'Je testabonnement is bevestigd door de server.';
-        dialog.querySelector('#billing-plan').textContent = value.plan;
-        dialog.querySelector('#billing-price').textContent = new Intl.NumberFormat('nl-BE', { style: 'currency', currency: value.currency }).format(value.monthlyCents / 100) + ' per maand';
+        picker.replaceChildren(new Option('Kies een aanbod', ''));
+        for (const offer of value.offers || []) picker.add(new Option(offer.name + ' · ' + money(offer) + (offer.available ? '' : ' · nog niet ingesteld'), offer.code));
+        picker.value = selectedCode;
+        selection();
         for (const [label, text] of [
+            ['Huidig lidmaatschap', value.membershipAccess ? value.plan : 'Geen actief lidmaatschap'],
             ['Status', statuses[value.status] || 'Nog niet bevestigd'],
-            ['Testlidmaatschap', value.membershipAccess ? 'Actief' : 'Niet actief'],
-            [value.cancelAtPeriodEnd ? 'Toegang tot' : 'Periode-einde / verlenging', date(value.periodEnd)],
+            ['Beschikbare lescredits', String(value.credits ?? 0)],
+            ['Uiterste einddatum', date(value.termEnd)],
+            ['Betaalde toegang tot', date(value.periodEnd)],
             ['Opzegging', value.cancelAtPeriodEnd ? 'Gepland op periode-einde' : value.status === 'canceled' ? 'Beëindigd' : 'Niet gepland']
         ]) {
             const term = document.createElement('dt'); term.textContent = label;
@@ -59,23 +80,29 @@ document.addEventListener('DOMContentLoaded', () => {
     function renderShop() {
         const list = document.getElementById('product-list');
         if (!list) return;
-        document.getElementById('shop-membership')?.remove();
+        list.querySelectorAll('[data-billing-shop], #shop-membership').forEach(node => node.remove());
         const filter = document.getElementById('product-filter').value;
-        if (filter && filter !== 'Abonnement') return;
+        if (filter && !['Abonnement', 'Beurtenkaart'].includes(filter)) return;
         list.querySelector('.club-empty')?.remove();
-        const card = document.createElement('article'); card.id = 'shop-membership'; card.className = 'club-card';
-        const heading = document.createElement('h3'); heading.textContent = current?.plan || 'CAP Test Membership';
-        const description = document.createElement('p'); description.textContent = 'TEST MODE · Tijdelijk testabonnement, geen echt CAP-aanbod. Geen proefperiode; opzeggen op het einde van de betaalde periode.';
-        const price = document.createElement('strong'); price.className = 'club-price';
-        price.textContent = new Intl.NumberFormat('nl-BE', { style: 'currency', currency: current?.currency || 'EUR' }).format((current?.monthlyCents ?? 1000) / 100) + ' per maand';
+        const overview = document.createElement('div'); overview.dataset.billingShop = ''; overview.className = 'billing-shop-status';
+        const heading = document.createElement('h3'); heading.textContent = 'Jouw lidmaatschap & credits';
         const status = document.createElement('p'); status.setAttribute('role', 'status');
-        status.textContent = loadError || (!current ? 'Lidmaatschapsstatus laden…' : !current.configured ? 'Testbetalingen zijn nog niet ingesteld.'
-            : current.membershipAccess ? `Jouw testabonnement is actief${current.periodEnd ? ' tot ' + date(current.periodEnd) : ''}.${current.cancelAtPeriodEnd ? ' Opzegging gepland op periode-einde.' : ''}`
-                : statuses[current.status] || 'Nog niet bevestigd');
-        const action = document.createElement('button'); action.type = 'button'; action.className = 'primary-button';
-        action.textContent = current?.membershipAccess ? 'Mijn abonnement bekijken' : 'Testabonnement bekijken';
-        action.addEventListener('click', () => window.capOpenBilling());
-        card.append(heading, description, price, status, action); list.prepend(card);
+        status.textContent = loadError || (!current ? 'Status laden…' : (current.membershipAccess ? current.plan + ' · betaald tot ' + date(current.periodEnd) : 'Geen actief lidmaatschap') + ' · ' + (current.credits ?? 0) + ' beschikbare lescredits');
+        const manage = document.createElement('button'); manage.type = 'button'; manage.className = 'secondary-button'; manage.textContent = 'Betalingen bekijken';
+        manage.addEventListener('click', () => window.capOpenBilling());
+        const notice = document.createElement('p'); notice.className = 'sample-notice'; notice.textContent = 'TEST MODE · Geen echte betalingen. Ongebruikte credits vervallen niet.';
+        overview.append(heading, status, manage, notice); list.prepend(overview);
+        for (const offer of current?.offers || []) {
+            if (filter && filter !== (offer.credits ? 'Beurtenkaart' : 'Abonnement')) continue;
+            const card = document.createElement('article'); card.dataset.billingShop = ''; card.className = 'club-card';
+            const title = document.createElement('h3'); title.textContent = offer.name;
+            const price = document.createElement('strong'); price.className = 'club-price'; price.textContent = money(offer);
+            const description = document.createElement('p'); description.textContent = offer.terms;
+            const action = document.createElement('button'); action.type = 'button'; action.className = 'primary-button';
+            action.textContent = offer.available ? 'Bekijk aanbod' : 'Bekijk testaanbod';
+            action.addEventListener('click', () => window.capOpenBilling(offer.code));
+            card.append(title, price, description, action); list.append(card);
+        }
     }
     window.capBilling = { renderShop };
     async function load() {
@@ -92,7 +119,7 @@ document.addEventListener('DOMContentLoaded', () => {
         catch (error) { feedback.textContent = error.message; }
         finally { busy = false; controls(); }
     }
-    function openStripe(path, host) {
+    function openStripe(path, host, body = {}) {
         if (busy) return;
         // Open during the click, before awaiting the server, so mobile browsers allow it.
         const tab = window.open('about:blank', '_blank');
@@ -105,7 +132,7 @@ document.addEventListener('DOMContentLoaded', () => {
         tab.document.body.textContent = 'Stripe wordt geopend. CAP blijft in het oorspronkelijke tabblad beschikbaar.';
         act(async () => {
             try {
-                const value = await real.request(path, 'POST', {});
+                const value = await real.request(path, 'POST', body);
                 const url = new URL(value.url);
                 if (url.protocol !== 'https:' || url.hostname !== host || url.username || url.password)
                     throw new Error('Geen geldige Stripe TEST-link ontvangen.');
@@ -121,7 +148,11 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
-    subscribe.addEventListener('click', () => openStripe('/api/billing/checkout', 'checkout.stripe.com'));
+    subscribe.addEventListener('click', () => { if (selected()) openStripe('/api/billing/checkout', 'checkout.stripe.com', { offer: selectedCode }); });
+    cancel.addEventListener('click', () => {
+        if (busy || !current?.canCancel || !window.confirm('Abonnement opzeggen? Je houdt toegang tot ' + date(current.periodEnd) + '. Daarna stoppen de maandbetalingen.')) return;
+        act(async () => render(await real.request('/api/billing/cancel', 'POST', {})));
+    });
     portal.addEventListener('click', () => openStripe('/api/billing/portal', 'billing.stripe.com'));
     refresh.addEventListener('click', () => act(async () => {
         if (!current?.configured) await load();
@@ -136,7 +167,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     window.addEventListener('focus', refreshOnReturn);
     document.addEventListener('visibilitychange', refreshOnReturn);
-    window.capOpenBilling = () => { if (!dialog.open) dialog.showModal(); load(); };
+    window.capOpenBilling = code => { selectedCode = typeof code === 'string' ? code : ''; if (!dialog.open) dialog.showModal(); selection(); load(); };
     document.addEventListener('cap:viewchange', () => { if (location.hash === '#shop') { renderShop(); load(); } });
     renderShop();
     if (location.hash === '#shop') load();
@@ -144,8 +175,8 @@ document.addEventListener('DOMContentLoaded', () => {
         parameters.delete('billing');
         history.replaceState(null, '', location.pathname + (parameters.size ? '?' + parameters : '') + location.hash);
         dialog.querySelector('#billing-return-note').textContent = returned === 'success'
-            ? 'Je bent terug van Stripe. We wachten op de bevestigde abonnementsstatus; deze pagina activeert zelf niets.'
-            : returned === 'cancel' ? 'Je hebt Checkout verlaten. Er is via deze pagina geen lidmaatschap geactiveerd. Je kunt later verdergaan.'
+            ? 'Je bent terug van Stripe. Je actuele lidmaatschap en credits staan hieronder. De betaalbevestiging kan enkele seconden duren.'
+            : returned === 'cancel' ? 'Je hebt Checkout verlaten. Je kunt later verdergaan met je betaling.'
                 : 'Je bent terug van het testportaal. Klik op Status bijwerken om je huidige status op te halen.';
         window.capOpenBilling();
         // Bounded local reads only. A success URL never triggers reconciliation or activation.
@@ -154,7 +185,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const poll = async () => {
                 if (!dialog.open || busy) return;
                 await load();
-                if (!current?.membershipAccess && current?.configured && ++attempts < 5) timer = setTimeout(poll, 2000);
+                if (current?.configured && ++attempts < 5) timer = setTimeout(poll, 2000);
             };
             timer = setTimeout(poll, 2000);
         }

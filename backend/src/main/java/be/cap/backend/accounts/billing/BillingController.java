@@ -37,7 +37,10 @@ public class BillingController {
     }
     @PostMapping("/checkout")
     public BillingService.Link checkout(Principal principal,@RequestBody(required=false) Map<String,Object> input) {
-        noInput(input); return billing.checkout(accounts.account(principal.getName()));
+        if (input == null || input.isEmpty()) return billing.checkout(accounts.account(principal.getName()));
+        if (input.size()!=1 || !(input.get("offer") instanceof String offer))
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"Kies alleen een aanbod; account en prijs worden door de server bepaald.");
+        return billing.checkout(accounts.account(principal.getName()),offer);
     }
     @PostMapping("/portal")
     public BillingService.Link portal(Principal principal,@RequestBody(required=false) Map<String,Object> input) {
@@ -46,6 +49,10 @@ public class BillingController {
     @PostMapping("/reconcile")
     public BillingService.Summary reconcile(Principal principal,@RequestBody(required=false) Map<String,Object> input) {
         noInput(input); return billing.reconcile(accounts.account(principal.getName()));
+    }
+    @PostMapping("/cancel")
+    public BillingService.Summary cancel(Principal principal,@RequestBody(required=false) Map<String,Object> input) {
+        noInput(input); return billing.cancel(accounts.account(principal.getName()));
     }
     @PostMapping(value="/webhook",consumes=MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Void> webhook(@RequestBody byte[] raw,@RequestHeader(value="Stripe-Signature",required=false) String signature) {
@@ -62,7 +69,8 @@ public class BillingController {
             var customer=event.path("data").path("object").path("customer");
             String id=customer.isTextual()?customer.asText():customer.path("id").asText();
             if (!id.matches("cus_[A-Za-z0-9]+")) throw invalid();
-            billing.event(eventId,type,id);
+            String sessionId=type.startsWith("checkout.session.") ? event.path("data").path("object").path("id").asText("") : "";
+            billing.event(eventId,type,id,sessionId);
         }
         return ResponseEntity.noContent().cacheControl(CacheControl.noStore()).build();
     }

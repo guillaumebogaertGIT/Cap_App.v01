@@ -10,6 +10,8 @@ Basketball belongs to the separate RAW Hoops scope and is explicitly excluded fr
 
 ## Current state
 
+- October 29: Shop has the five confirmed memberships and four non-expiring credit packs in Stripe TEST mode. V9 stores orders/credits and finite monthly terms. The catalog launcher enables membership-or-credit checks for group bookings, with credit return before the lesson starts; open gym/private payment rules remain undefined. Sandbox prices/portal configured, new paid provider flows still need testing. See docs/memberships-test.md. Individual coach emails remain needed.
+
 - One responsive HTML/CSS/JavaScript application with Dutch interface text, CAP images, light/dark/system themes and athlete/coach previews.
 - Java 25 / Spring Boot 4.1.1 API: real-account workout creation, assignment, timed completion, saved history and exact-rep personal records; the separate preview retains its example athlete. Prescriptions support no target, fixed kg or a percentage of a matching record.
 - The accounts profile now uses PostgreSQL and real cookie login for Planning/bookings, private recipients, attendance, workout creation/assignment, shared exercises and athlete training/history/PRs. Real login opens the original app design at /app/index.html; the Live Server design preview remains separately browser-local. Stripe TEST-only billing has one verified paid sandbox Checkout and webhook-driven activation in the matching CAP athlete account; no existing features are payment-gated. Provider portal/decline/3DS/renewal testing remains.

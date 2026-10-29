@@ -8,11 +8,12 @@ saved backend Java compiles in VS Code and DevTools restarts automatically.
 See [local development: start, refresh and restart rules](docs/development.md).
 See [verified behavior, pgAdmin and manual checks](docs/accounts-verification.md).
 
-Stripe billing is **TEST MODE only** and disabled until configured. Open the
-account menu -> Betalingen. See [Stripe test setup and verification limits](docs/stripe-test-setup.md)
-for the private-prompt launcher, test price/portal, webhook forwarding and checks.
-No existing feature requires a paid membership. One paid sandbox Checkout and webhook recovery are verified;
-provider portal, decline/3DS and renewal checks remain.
+Stripe billing is **TEST MODE only** and disabled until configured. Shop now has
+five memberships and four credit packs. Follow [memberships and credits: start and test](docs/memberships-test.md).
+The catalog test launcher enables membership/credit checks for group bookings;
+ordinary accounts mode leaves them disabled. Existing login/workout features remain available.
+The [earlier EUR10 test results](docs/stripe-test-setup.md) remain separate from
+the new catalog, whose prices/portal are configured but paid provider flows still need testing.
 
 ## Current status
 
