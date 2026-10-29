@@ -1,11 +1,13 @@
 # Run from the repository root: .\scripts\start-accounts.ps1
-# Passwords are prompted locally, passed only through process environment, then restored.
+# Local development credentials are encrypted for this Windows user/PC.
 param(
     [ValidatePattern('^[a-zA-Z_][a-zA-Z0-9_]*$')][string]$Database = 'cap',
     [ValidatePattern('^[a-zA-Z_][a-zA-Z0-9_]*$')][string]$DatabaseUser = 'cap',
-    [ValidateRange(1024,65535)][int]$Port = 5432
+    [ValidateRange(1024,65535)][int]$Port = 5432,
+    [switch]$RefreshCredentials
 )
 $ErrorActionPreference = 'Stop'
+. (Join-Path $PSScriptRoot 'local-dev-secrets.ps1')
 $capRoot = Split-Path $PSScriptRoot -Parent
 $capNames = 'CAP_DATABASE_URL','CAP_DATABASE_USER','CAP_DATABASE_PASSWORD','CAP_COACH_EMAIL','CAP_COACH_PASSWORD','CAP_FRONTEND_LOCATION','PGPASSWORD','PGCONNECT_TIMEOUT','JAVA_HOME'
 $capPrevious = @{}
@@ -25,12 +27,14 @@ try {
             Sort-Object FullName -Descending | Select-Object -First 1 -ExpandProperty FullName
     }
     if (!$capPsql) { throw 'PostgreSQL client not found. Install PostgreSQL, then follow docs/accounts-setup.md.' }
-    $capSecret = Read-Host "Password for PostgreSQL role $DatabaseUser (not your CAP login)" -AsSecureString
+    $capDatabaseCredential = "database-127.0.0.1-$Port-$Database-$DatabaseUser"
+    $capSecret = Get-CapLocalSecret -Name $capDatabaseCredential -Prompt "Password for PostgreSQL role $DatabaseUser (not your CAP login)" -Refresh:$RefreshCredentials
     $env:PGPASSWORD = [System.Net.NetworkCredential]::new('', $capSecret).Password
     $env:PGCONNECT_TIMEOUT = '5'
     $capConnection = @('-X','-w','-h','127.0.0.1','-p',"$Port",'-U',$DatabaseUser,'-d',$Database,'-v','ON_ERROR_STOP=1')
     $capResult = & $capPsql @capConnection -At -c 'SELECT current_database();' 2>&1
-    if ($LASTEXITCODE -ne 0) { throw "Cannot connect to PostgreSQL at 127.0.0.1:$Port/$Database as $DatabaseUser. Check the service, database, role and password in pgAdmin. No fallback database was started." }
+    if ($LASTEXITCODE -ne 0) { throw "Cannot connect to PostgreSQL at 127.0.0.1:$Port/$Database as $DatabaseUser. Check PostgreSQL. If the saved password changed, use -RefreshCredentials. No fallback database was started." }
+    Save-CapLocalSecret -Name $capDatabaseCredential -Value $capSecret
     Write-Host "Connected to persistent local database: 127.0.0.1:$Port/$Database (role $DatabaseUser)."
     $capTable = & $capPsql @capConnection -At -c "SELECT to_regclass('public.cap_user');"
     if ($LASTEXITCODE -ne 0) { throw 'Database inspection failed; backend was not started.' }

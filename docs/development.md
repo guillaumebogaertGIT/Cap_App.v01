@@ -15,15 +15,32 @@ From the project root in the VS Code terminal:
 ```
 
 If the terminal is inside `backend`, use `..\scripts\start-accounts.cmd` instead.
-Enter the **PostgreSQL cap-role password**, not your CAP login password. Wait
+On the first start, enter the **PostgreSQL cap-role password**, not your CAP login password. It is
+remembered using Windows encryption for this user/PC; later starts reuse it. Wait
 for `Started BackendApplication`. Open and bookmark:
 
 **http://127.0.0.1:8081/app/index.html**
 
 Alternatively use **Terminal -> Run Task -> CAP: Start development**. It opens
-the same launcher and private password prompt. No password goes into VS Code
-settings, tasks or Git. Stop with **Ctrl+C**, then **Y** if Windows asks to
+the same launcher. No password goes into VS Code settings, tasks or Git.
+Encrypted local credentials live in ignored `.local/dev-secrets.xml`, with file
+access restricted to your Windows user. Use `start-accounts.cmd -RefreshCredentials`
+to replace the database password. Stop with **Ctrl+C**, then **Y** if Windows asks to
 terminate the batch job. Start only one backend on port 8081.
+
+For payments use `start-stripe-test.cmd`; it remembers the sandbox API key,
+webhook secret and database password after the first entry. Start forwarding
+with `stripe-listen.cmd` in the other terminal. See [payment startup and credential
+update/forget commands](memberships-test.md). VS Code's Run Task menu also has
+**CAP: Start payments development** and **CAP: Stripe forwarding**.
+
+The helper uses [PowerShell's Windows DPAPI encryption](https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.utility/export-clixml?view=powershell-5.1).
+Verification with fake credentials checked encryption (no plaintext in XML),
+user-only file permissions, reuse across PowerShell processes, a prompt-free
+Stripe launcher restart, environment restoration, invalid/live-key rejection,
+refresh and forgetting. Run `scripts/test-local-dev-secrets.ps1` through
+PowerShell with process-only execution-policy bypass to repeat those checks;
+it uses its own files under `backend/target`, never real stored credentials.
 
 ## Edit and refresh
 

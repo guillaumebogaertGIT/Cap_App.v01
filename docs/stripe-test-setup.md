@@ -129,10 +129,15 @@ secret too; the running backend cannot read a secret changed in another terminal
 ```
 
 If already inside `backend`, use `..\scripts\start-stripe-test.cmd`.
-The launcher privately prompts for the `sk_test_...` key and CLI `whsec_...`,
-then the existing `price_...` and `bpc_...` IDs, then your PostgreSQL cap-role
-password. It restores environment variables when stopped. Keys are never saved
-to a file, printed by the launcher or sent to frontend code.
+The launcher privately prompts once for the `sk_test_...` key, CLI `whsec_...`
+and PostgreSQL cap-role password, then remembers them in Windows-encrypted
+`.local/dev-secrets.xml` (ignored by Git, restricted to your Windows user).
+The new catalog's IDs load automatically. It restores process environment
+variables when stopped; keys are never printed or sent to frontend code.
+Use `-RefreshCredentials` to replace all, `-UpdateWebhook` for a changed listener
+secret, or `-ForgetCredentials` to remove saved credentials. Details are in
+[the current startup guide](memberships-test.md). The old manual price/portal
+prompts apply only when no new catalog file is configured.
 
 Open **http://127.0.0.1:8081/app/index.html**, sign in as a fake account, then open
 the account menu -> Betalingen -> Testabonnement starten. Use Stripe test cards

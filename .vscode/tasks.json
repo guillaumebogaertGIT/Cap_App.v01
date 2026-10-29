@@ -2,6 +2,30 @@
     "version": "2.0.0",
     "tasks": [
         {
+            "label": "CAP: Start payments development",
+            "type": "shell",
+            "command": "& '${workspaceFolder}/scripts/start-stripe-test.cmd'",
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "shell": { "executable": "powershell.exe", "args": ["-NoProfile", "-Command"] }
+            },
+            "problemMatcher": [],
+            "presentation": { "reveal": "always", "panel": "dedicated" },
+            "runOptions": { "instanceLimit": 1 }
+        },
+        {
+            "label": "CAP: Stripe forwarding",
+            "type": "shell",
+            "command": "& '${workspaceFolder}/scripts/stripe-listen.cmd'",
+            "options": {
+                "cwd": "${workspaceFolder}",
+                "shell": { "executable": "powershell.exe", "args": ["-NoProfile", "-Command"] }
+            },
+            "problemMatcher": [],
+            "presentation": { "reveal": "always", "panel": "dedicated" },
+            "runOptions": { "instanceLimit": 1 }
+        },
+        {
             "label": "CAP: Start development",
             "type": "shell",
             "command": "& '${workspaceFolder}/scripts/start-accounts.cmd'",

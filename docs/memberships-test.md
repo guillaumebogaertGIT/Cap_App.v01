@@ -12,7 +12,7 @@ the existing CAP sandbox on this PC. Their IDs are saved in the ignored file
    in the project folder and run:
 
    ```powershell
-   stripe.cmd listen --events checkout.session.completed,checkout.session.expired,checkout.session.async_payment_succeeded,checkout.session.async_payment_failed,invoice.paid,invoice.payment_failed,customer.subscription.created,customer.subscription.updated,customer.subscription.deleted,customer.subscription.paused,customer.subscription.resumed --forward-to http://127.0.0.1:8081/api/billing/webhook
+   .\scripts\stripe-listen.cmd
    ```
 
 3. In a second terminal, from the project folder, run:
@@ -21,11 +21,12 @@ the existing CAP sandbox on this PC. Their IDs are saved in the ignored file
    .\scripts\start-stripe-test.cmd
    ```
 
-   Enter the **test** secret key and the forwarding terminal's signing secret
-   privately. The launcher now loads the nine price IDs and portal automatically.
-   The optional old EUR10 price prompt is only for retaining the old test
-   subscription in the status display; press Enter to skip it. Enter the
-   PostgreSQL `cap` role password when prompted. Never paste secrets into chat.
+   On the first start, enter the **test** secret key, the forwarding terminal's
+   signing secret and the PostgreSQL `cap` password privately. Windows encrypts
+   them in ignored `.local/dev-secrets.xml`, restricted to your Windows user.
+   Later starts reuse them automatically. The nine price IDs/portal load from
+   the catalog file. The old EUR10 prompt has been removed; optionally pass
+   `-LegacyPriceId price_...` if you still need it. Never paste secrets into chat.
 
 4. Wait for **Started BackendApplication**, then open
    **http://127.0.0.1:8081/app/index.html#shop** and sign in with a fake test athlete.
@@ -34,6 +35,35 @@ the existing CAP sandbox on this PC. Their IDs are saved in the ignored file
 The first restart applies migration V9 without resetting existing records.
 Later HTML/CSS/JavaScript edits need a browser refresh only. Changes to the
 catalog mapping or environment require a backend restart.
+
+For normal restarts, keep forwarding open, stop CAP with Ctrl+C, then run the
+same `start-stripe-test.cmd` again. No repeated credential entry is needed.
+VS Code also has **Terminal → Run Task → CAP: Start payments development** and
+**CAP: Stripe forwarding**.
+
+To replace all saved credentials:
+
+```powershell
+.\scripts\start-stripe-test.cmd -RefreshCredentials
+```
+
+If a new forwarding listener prints a different `whsec_...`, replace only that:
+
+```powershell
+.\scripts\start-stripe-test.cmd -UpdateWebhook
+```
+
+To forget the encrypted local credentials (without starting/stopping CAP or
+changing any account/database records):
+
+```powershell
+.\scripts\start-stripe-test.cmd -ForgetCredentials
+```
+
+The file uses Windows DPAPI and only decrypts for the same Windows user on the
+same computer. It has no plaintext fallback. On another PC, enter credentials
+again; copying the encrypted file will not work. Java DevTools restarts reuse
+the existing process environment and never ask for keys.
 
 ## Offers and rules
 
