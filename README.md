@@ -10,7 +10,7 @@ See [verified behavior, pgAdmin and manual checks](docs/accounts-verification.md
 
 Stripe billing is **TEST MODE only** and disabled until configured. Shop now has
 five memberships and four credit packs. Follow [memberships and credits: start and test](docs/memberships-test.md).
-The catalog test launcher enables membership/credit checks for group bookings;
+The catalog test launcher enables membership/credit checks for group and Open gym bookings;
 ordinary accounts mode leaves them disabled. Existing login/workout features remain available.
 The [earlier EUR10 test results](docs/stripe-test-setup.md) remain separate from
 the new catalog, whose prices/portal are configured but paid provider flows still need testing.

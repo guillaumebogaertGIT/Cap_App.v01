@@ -110,7 +110,7 @@ public class PlanningService {
                 input.type().equals("Open gym") ? "" : Objects.requireNonNullElse(input.program(), "").trim(), sessionId };
             if (id == null) jdbc.update("INSERT INTO club_session (title, session_date, start_time, end_time, coach_id, location, capacity, session_type, category, program, id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", fields);
             else jdbc.update("UPDATE club_session SET title=?, session_date=?, start_time=?, end_time=?, coach_id=?, location=?, capacity=?, session_type=?, category=?, program=? WHERE id=?", fields);
-            if (old != null && !input.type().equals("Groep")) lessonAccess.releaseSession(sessionId);
+            if (old != null && input.type().equals("Privé")) lessonAccess.releaseSession(sessionId);
             if (input.type().equals("Open gym") || old != null && !Objects.equals(old.program(),Objects.requireNonNullElse(input.program(),"").trim()))
                 jdbc.update("UPDATE club_session SET workout_snapshot=NULL WHERE id=?",sessionId);
             jdbc.update("DELETE FROM session_recipient WHERE session_id = ?", sessionId);
@@ -140,7 +140,7 @@ public class PlanningService {
         upcoming(session);
         if (!cancel && !session.booked() && session.bookedCount() >= session.capacity()) throw new ResponseStatusException(HttpStatus.CONFLICT, "Deze les is volzet.");
         if (cancel) lessonAccess.release(user.id(),id);
-        else if (!session.booked() && session.type().equals("Groep"))
+        else if (!session.booked() && List.of("Groep", "Open gym").contains(session.type()))
             lessonAccess.reserve(user.id(),id,LocalDateTime.of(session.date(),session.start()).atZone(CLUB_ZONE).toInstant());
         int updated = jdbc.update("UPDATE session_booking SET cancelled = ? WHERE session_id = ? AND athlete_id = ?", cancel, id, user.id());
         if (updated == 0 && !cancel) jdbc.update("INSERT INTO session_booking (session_id, athlete_id) VALUES (?, ?)", id, user.id());

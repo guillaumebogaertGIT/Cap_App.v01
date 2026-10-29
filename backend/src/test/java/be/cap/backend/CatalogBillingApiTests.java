@@ -90,9 +90,14 @@ class CatalogBillingApiTests extends BillingApiTests {
     String athlete(HttpClient owner) throws Exception { return acceptTestAthlete(coach(),owner,"catalog-"+UUID.randomUUID()+"@example.test"); }
     int buy(HttpClient owner,String offer) throws Exception { return request(owner,"POST","/api/billing/checkout",json.writeValueAsString(Map.of("offer",offer)),csrf(owner),false).statusCode(); }
     String session(HttpClient coach) throws Exception {
+        return session(coach,"Groep");
+    }
+    String sessionBody(HttpClient coach,String type) throws Exception {
         String coachId=json.readTree(request(coach,"GET","/api/accounts/me",null,null,false).body()).path("id").asText();
-        var body=json.writeValueAsString(Map.of("title","Test credit lesson","date",LocalDate.now(ZoneId.of("Europe/Brussels")).plusDays(1).toString(),"start","12:00","end","13:00","coachId",coachId,"location","Test","capacity",5,"type","Groep","category","CAP HYROX","repeat",1));
-        var result=request(coach,"POST","/api/club/sessions",body,csrf(coach),false);assertEquals(201,result.statusCode(),result.body());
+        return json.writeValueAsString(Map.of("title","Test credit lesson","date",LocalDate.now(ZoneId.of("Europe/Brussels")).plusDays(1).toString(),"start","12:00","end","13:00","coachId",coachId,"location","Test","capacity",5,"type",type,"category",type.equals("Groep")?"CAP HYROX":"","repeat",1));
+    }
+    String session(HttpClient coach,String type) throws Exception {
+        var result=request(coach,"POST","/api/club/sessions",sessionBody(coach,type),csrf(coach),false);assertEquals(201,result.statusCode(),result.body());
         return json.readTree(result.body()).path(0).path("id").asText();
     }
     int book(HttpClient user,String lesson,String method) throws Exception { return request(user,method,"/api/club/sessions/"+lesson+"/booking",null,csrf(user),false).statusCode(); }
@@ -118,7 +123,7 @@ class CatalogBillingApiTests extends BillingApiTests {
     }
     @Test void lastCreditCannotBeSpentTwiceAndPastLessonCannotBeRefunded() throws Exception {
         var owner=client();String ownerId=athlete(owner);var coach=coach();assertEquals(200,buy(owner,"credits_1"));catalogFake.finish(ownerId,Instant.now());deliver("checkout.session.completed",customer(ownerId));
-        String one=session(coach),two=session(coach),token=csrf(owner);
+        String one=session(coach),two=session(coach,"Open gym"),token=csrf(owner);
         try(var pool=Executors.newVirtualThreadPerTaskExecutor()) {
             var a=pool.submit(()->request(owner,"POST","/api/club/sessions/"+one+"/booking",null,token,false).statusCode());
             var b=pool.submit(()->request(owner,"POST","/api/club/sessions/"+two+"/booking",null,token,false).statusCode());
@@ -136,6 +141,7 @@ class CatalogBillingApiTests extends BillingApiTests {
             assertTrue(status(owner).path("membershipAccess").asBoolean());
             assertEquals(paid.truncatedTo(java.time.temporal.ChronoUnit.SECONDS).atZone(ZoneId.of("Europe/Brussels")).plusMonths(entry.getValue()).toInstant(),Instant.parse(status(owner).path("periodEnd").asText()));
             assertEquals(204,book(owner,session(coach()),"POST"));assertEquals(0,status(owner).path("credits").asInt());
+            assertEquals(204,book(owner,session(coach(),"Open gym"),"POST"));assertEquals(0,status(owner).path("credits").asInt());
             assertEquals(409,buy(owner,"full_1m"));
             jdbc.update("UPDATE billing_order SET period_end=? WHERE user_id=?",Timestamp.from(Instant.now().minusSeconds(1)),UUID.fromString(ownerId));
             assertFalse(status(owner).path("membershipAccess").asBoolean());
@@ -184,5 +190,21 @@ class CatalogBillingApiTests extends BillingApiTests {
         assertEquals(403,request(owner,"POST","/api/billing/cancel","{}",null,false).statusCode());
         assertEquals(400,request(owner,"POST","/api/billing/cancel","{\"userId\":\"other\"}",csrf(owner),false).statusCode());
         var guest=client();assertEquals(401,request(guest,"POST","/api/billing/cancel","{}",csrf(guest),false).statusCode());
+    }
+    @Test void openGymSpendsOneCreditAndKeepsItAcrossGroupTypeChanges() throws Exception {
+        var owner=client();String ownerId=athlete(owner);var other=client();athlete(other);var coach=coach();
+        assertEquals(200,buy(owner,"credits_5"));catalogFake.finish(ownerId,Instant.now());deliver("checkout.session.completed",customer(ownerId));
+        String gym=session(coach,"Open gym");
+        assertEquals(409,book(other,gym,"POST"));
+        assertEquals(204,book(owner,gym,"POST"));assertEquals(204,book(owner,gym,"POST"));assertEquals(4,status(owner).path("credits").asInt());
+        assertEquals(204,book(owner,gym,"DELETE"));assertEquals(204,book(owner,gym,"DELETE"));assertEquals(5,status(owner).path("credits").asInt());
+        assertEquals(204,book(owner,gym,"POST"));
+        assertEquals(200,request(coach,"PUT","/api/club/sessions/"+gym,sessionBody(coach,"Open gym"),csrf(coach),false).statusCode());assertEquals(4,status(owner).path("credits").asInt());
+        assertEquals(200,request(coach,"PUT","/api/club/sessions/"+gym,sessionBody(coach,"Groep"),csrf(coach),false).statusCode());assertEquals(4,status(owner).path("credits").asInt());
+        assertEquals(200,request(coach,"PUT","/api/club/sessions/"+gym,sessionBody(coach,"Open gym"),csrf(coach),false).statusCode());assertEquals(4,status(owner).path("credits").asInt());
+        assertEquals(204,request(coach,"DELETE","/api/club/sessions/"+gym+"/bookings/"+ownerId,null,csrf(coach),false).statusCode());assertEquals(5,status(owner).path("credits").asInt());
+        assertEquals(204,book(owner,gym,"POST"));
+        var privateInput=(ObjectNode)json.readTree(sessionBody(coach,"Privé"));privateInput.set("athleteIds",json.readTree("[\""+ownerId+"\"]"));
+        assertEquals(200,request(coach,"PUT","/api/club/sessions/"+gym,json.writeValueAsString(privateInput),csrf(coach),false).statusCode());assertEquals(5,status(owner).path("credits").asInt());
     }
 }

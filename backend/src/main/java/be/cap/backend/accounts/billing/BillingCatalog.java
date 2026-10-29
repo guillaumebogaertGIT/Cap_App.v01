@@ -33,10 +33,10 @@ public class BillingCatalog {
             offer("full_12m", "Full access · 1 jaar", 75000, 12, 0, false, false, "Eenmalig betalen. Stopt na 12 maanden."),
             offer("monthly_flexible", "Full access · maandelijks opzegbaar", 7500, 12, 0, true, true, "Maximaal 12 maanden. Altijd opzegbaar; toegang tot het einde van de betaalde maand."),
             offer("monthly_fixed", "Full access · 12 maanden vast", 6500, 12, 0, true, false, "12 maandbetalingen van €65 (€780 totaal). Niet tussentijds opzegbaar. Stopt automatisch."),
-            offer("credits_1", "1 lescredit", 1800, 0, 1, false, false, "1 credit = 1 groepsles. Ongebruikte credits vervallen niet."),
-            offer("credits_5", "5 lescredits", 8000, 0, 5, false, false, "1 credit = 1 groepsles. Ongebruikte credits vervallen niet."),
-            offer("credits_10", "10 lescredits", 14000, 0, 10, false, false, "1 credit = 1 groepsles. Ongebruikte credits vervallen niet."),
-            offer("credits_20", "20 lescredits", 24000, 0, 20, false, false, "1 credit = 1 groepsles. Ongebruikte credits vervallen niet.")
+            offer("credits_1", "1 lescredit", 1800, 0, 1, false, false, "1 credit = 1 groepsles of Open gym-sessie. Ongebruikte credits vervallen niet."),
+            offer("credits_5", "5 lescredits", 8000, 0, 5, false, false, "1 credit = 1 groepsles of Open gym-sessie. Ongebruikte credits vervallen niet."),
+            offer("credits_10", "10 lescredits", 14000, 0, 10, false, false, "1 credit = 1 groepsles of Open gym-sessie. Ongebruikte credits vervallen niet."),
+            offer("credits_20", "20 lescredits", 24000, 0, 20, false, false, "1 credit = 1 groepsles of Open gym-sessie. Ongebruikte credits vervallen niet.")
         );
         if (!offers.stream().map(Offer::code).toList().containsAll(prices.keySet())) throw new IllegalStateException("Unknown Stripe test offer code.");
     }

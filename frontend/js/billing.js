@@ -13,7 +13,7 @@ document.addEventListener('DOMContentLoaded', () => {
         <label for="billing-offer">Kies je lidmaatschap of credits</label><select id="billing-offer"><option value="">Aanbod laden…</option></select>
         <h3 id="billing-plan">CAP aanbod</h3><p><strong id="billing-price"></strong></p>
         <p id="billing-terms"></p>
-        <p class="sample-notice">Lidmaatschappen starten na bevestigde betaling en stoppen automatisch. Credits worden bij een groepsboeking gebruikt als je lidmaatschap de lesdatum niet dekt. Annuleer vóór de start om je credit terug te krijgen.</p>
+        <p class="sample-notice">Lidmaatschappen starten na bevestigde betaling en stoppen automatisch. Een groepsles of Open gym-sessie gebruikt 1 credit als je lidmaatschap de sessiedatum niet dekt. Annuleer vóór de start om je credit terug te krijgen.</p>
         <p id="billing-return-note" role="status"></p>
         <dl id="billing-details" class="billing-details"></dl>
         <p id="billing-feedback" role="status" aria-live="polite"></p>
@@ -44,7 +44,22 @@ document.addEventListener('DOMContentLoaded', () => {
     const statuses = { none: 'Geen testabonnement', active: 'Actief', incomplete: 'Betaling nog niet voltooid',
         incomplete_expired: 'Onvoltooide betaling verlopen', past_due: 'Betaling achterstallig', unpaid: 'Onbetaald',
         canceled: 'Beëindigd', paused: 'Gepauzeerd', trialing: 'Proefperiode: geen toegang in deze test', missing: 'Status moet worden gecontroleerd' };
-    let current, busy = false, timer, focusTimer, generation = 0, loadError = '';
+    let current, busy = false, timer, focusTimer, generation = 0, loadError = '', planningPending = false;
+    const planning = document.getElementById('planning-credits');
+    const planningActive = () => real.account.role === 'ATHLETE' && location.hash === '#planning';
+    const visible = () => dialog.open || location.hash === '#shop' || planningActive();
+    function renderPlanning() {
+        if (!planning || real.account.role !== 'ATHLETE') return;
+        planning.hidden = false;
+        const balance = document.getElementById('planning-credit-balance');
+        balance.textContent = loadError ? 'Je credits konden niet worden geladen. Probeer opnieuw.'
+            : planningPending || !current ? 'Lescredits laden…'
+                : `${current.credits ?? 0} ${current.credits === 1 ? 'lescredit beschikbaar' : 'lescredits beschikbaar'}`;
+        document.getElementById('planning-credit-retry').hidden = !loadError;
+        document.getElementById('planning-credit-help').textContent = current?.membershipAccess
+            ? 'Binnen je betaalde lidmaatschap gebruik je geen credits. Anders kost een groepsles of Open gym-sessie 1 credit. Annuleer vóór de start om die terug te krijgen.'
+            : '1 credit = 1 groepsles of Open gym-sessie. Annuleer vóór de start om je credit terug te krijgen.';
+    }
     const date = value => value ? new Intl.DateTimeFormat('nl-BE', { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'Europe/Brussels' }).format(new Date(value)) : '—';
     function controls() {
         subscribe.disabled = busy || !selected()?.available || (current?.membershipAccess && !selected()?.credits);
@@ -56,7 +71,7 @@ document.addEventListener('DOMContentLoaded', () => {
         refresh.textContent = current?.configured ? 'Status bijwerken' : 'Opnieuw laden';
     }
     function render(value) {
-        current = value; details.replaceChildren();
+        current = value; planningPending = false; details.replaceChildren();
         picker.replaceChildren(new Option('Kies een aanbod', ''));
         for (const offer of value.offers || []) picker.add(new Option(offer.name + ' · ' + money(offer) + (offer.available ? '' : ' · nog niet ingesteld'), offer.code));
         picker.value = selectedCode;
@@ -76,6 +91,7 @@ document.addEventListener('DOMContentLoaded', () => {
         feedback.textContent = value.configured ? 'De bevestigde status komt van de server. Bijwerken controleert deze opnieuw bij Stripe.' : 'Stripe TEST MODE is nog niet ingesteld. Je account en bestaande functies blijven beschikbaar.';
         controls();
         renderShop();
+        renderPlanning();
     }
     function renderShop() {
         const list = document.getElementById('product-list');
@@ -108,9 +124,10 @@ document.addEventListener('DOMContentLoaded', () => {
     async function load() {
         const version = ++generation;
         loadError = '';
+        planningPending = true; renderPlanning();
         feedback.textContent = 'Abonnementsstatus laden…';
-        try { const value = await real.request('/api/billing'); if (version === generation && (dialog.open || location.hash === '#shop')) render(value); }
-        catch (error) { if (version === generation) { loadError = error.message; feedback.textContent = error.message; renderShop(); } }
+        try { const value = await real.request('/api/billing'); if (version === generation && visible()) render(value); }
+        catch (error) { if (version === generation) { planningPending = false; loadError = error.message; feedback.textContent = error.message; renderShop(); renderPlanning(); } }
     }
     async function act(action) {
         if (busy) return;
@@ -161,16 +178,19 @@ document.addEventListener('DOMContentLoaded', () => {
     dialog.querySelector('[data-billing-close]').addEventListener('click', () => dialog.close());
     dialog.addEventListener('close', () => { ++generation; clearTimeout(timer); clearTimeout(focusTimer); document.getElementById('account-toggle').focus(); });
     function refreshOnReturn() {
-        if ((!dialog.open && location.hash !== '#shop') || busy || document.visibilityState === 'hidden') return;
+        if (!visible() || busy || document.visibilityState === 'hidden') return;
         clearTimeout(focusTimer);
-        focusTimer = setTimeout(() => { if ((dialog.open || location.hash === '#shop') && !busy) load(); }, 100);
+        focusTimer = setTimeout(() => { if (visible() && !busy) load(); }, 100);
     }
     window.addEventListener('focus', refreshOnReturn);
     document.addEventListener('visibilitychange', refreshOnReturn);
     window.capOpenBilling = code => { selectedCode = typeof code === 'string' ? code : ''; if (!dialog.open) dialog.showModal(); selection(); load(); };
-    document.addEventListener('cap:viewchange', () => { if (location.hash === '#shop') { renderShop(); load(); } });
+    document.addEventListener('cap:viewchange', () => { if (location.hash === '#shop' || planningActive()) { renderShop(); load(); } });
+    document.addEventListener('cap:booking-changed', () => { if (visible()) load(); });
+    document.getElementById('planning-credit-retry')?.addEventListener('click', load);
     renderShop();
-    if (location.hash === '#shop') load();
+    renderPlanning();
+    if (location.hash === '#shop' || planningActive()) load();
     if (['success', 'cancel', 'return'].includes(returned)) {
         parameters.delete('billing');
         history.replaceState(null, '', location.pathname + (parameters.size ? '?' + parameters : '') + location.hash);

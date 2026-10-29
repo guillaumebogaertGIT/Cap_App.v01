@@ -99,6 +99,10 @@
         <p class="club-feedback" id="club-feedback" role="status"></p>
         <section id="planning" data-view hidden aria-labelledby="planning-title">
             <header class="dashboard-header"><div><h2 id="planning-title" tabindex="-1">Planning</h2><p class="dashboard-intro">Groepslessen en persoonlijke begeleiding op één plek.</p></div><button type="button" class="primary-button" id="new-session">+ Les toevoegen</button></header>
+            <aside id="planning-credits" class="planning-credit-summary" hidden aria-label="Jouw lescredits">
+                <div><p id="planning-credit-balance" role="status" aria-live="polite">Lescredits laden…</p><p id="planning-credit-help" class="sample-notice">1 credit = 1 groepsles of Open gym-sessie. Annuleer vóór de start om je credit terug te krijgen.</p></div>
+                <div class="planning-credit-actions"><a href="#shop" class="secondary-button">Credits kopen</a><button type="button" class="secondary-button" id="planning-credit-retry" hidden>Opnieuw laden</button></div>
+            </aside>
             <p class="sample-notice">Clubtijd (Belgi&euml;) &middot; Kies een dag om de lessen te bekijken.</p>
         </section>
         <section id="bookings" data-view hidden aria-labelledby="bookings-title">
@@ -147,7 +151,11 @@
     let realBusy = false;
     async function mutateReal(path, method, body, message) {
         if (realBusy) return; realBusy = true;
-        try { await real.request(path, method, body); await refreshReal(message); }
+        try {
+            await real.request(path, method, body);
+            if (method !== 'PUT' && /\/bookings?(\/|$)/.test(path)) document.dispatchEvent(new CustomEvent('cap:booking-changed'));
+            await refreshReal(message);
+        }
         catch (error) { announce(error.message); } finally { realBusy = false; }
     }
     function cancelReal(booking) {

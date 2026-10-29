@@ -27,4 +27,5 @@ Confirmed rules (29/10/2026):
 - One credit covers one lesson. Unused credits do not expire.
 - Memberships stop after their stated duration; no automatic renewal.
 - Cancel a lesson booking before its start to return its credit.
+- Credits cover both group lessons and Open gym sessions; show the remaining balance in athlete Planning.
 - Coach email addresses still needed for individual accounts.

@@ -18,7 +18,7 @@ try {
         $env:CAP_STRIPE_TEST_PORTAL_CONFIGURATION_ID = $capCatalog.portal
         $env:CAP_STRIPE_TEST_PRICE_ID = Read-Host 'Old EUR10 TEST price ID, only if you want to keep testing that old subscription (Enter to skip)'
         $env:CAP_TEST_PAID_BOOKINGS = 'true'
-        Write-Host 'CAP catalogue loaded. Group bookings now use a valid membership or one credit. Cancel before the start to return the credit.'
+        Write-Host 'CAP catalogue loaded. Group and Open gym bookings use a valid membership or one credit. Cancel before the start to return the credit.'
     } else {
         $env:CAP_STRIPE_TEST_PRICE_ID = Read-Host 'Existing TEST price ID for CAP Test Membership, 10 EUR/month (price_...)'
         $env:CAP_STRIPE_TEST_PORTAL_CONFIGURATION_ID = Read-Host 'Existing TEST portal configuration ID (bpc_...)'

@@ -35,7 +35,7 @@ public class LessonAccess {
         if (membership) return;
         if (jdbc.queryForObject("SELECT COUNT(*) FROM lesson_credit WHERE user_id=? AND session_id=?",Integer.class,owner,session)>0) return;
         var credits=jdbc.query("SELECT id FROM lesson_credit WHERE user_id=? AND session_id IS NULL ORDER BY id LIMIT 1 FOR UPDATE",(r,i)->r.getObject(1,UUID.class),owner);
-        if (credits.isEmpty()) throw new ResponseStatusException(HttpStatus.CONFLICT,"Voor deze groepsles heb je een geldig lidmaatschap op de lesdatum of een lescredit nodig. Bekijk de Shop.");
+        if (credits.isEmpty()) throw new ResponseStatusException(HttpStatus.CONFLICT,"Voor deze groepsles of Open gym-sessie heb je een geldig lidmaatschap op de sessiedatum of een lescredit nodig. Bekijk de Shop.");
         jdbc.update("UPDATE lesson_credit SET session_id=? WHERE id=?",session,credits.getFirst());
     }
     public void release(UUID owner,UUID session) {

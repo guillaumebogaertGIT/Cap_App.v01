@@ -63,18 +63,22 @@ active legacy subscription. CAP refuses overlapping membership purchases.
 
 The catalog launcher enables `CAP_TEST_PAID_BOOKINGS=true`:
 
-- A **group lesson** uses membership if its date is within the paid access period;
+- A **group lesson or Open gym session** uses membership if its date is within the paid access period;
   otherwise it consumes one credit. Future unpaid renewal months are not assumed.
 - Retrying the same booking does not spend another credit. The last credit cannot
   be spent on two simultaneous bookings.
 - Cancelling **before the lesson starts** returns the credit. A coach cancelling
   the booking or deleting the upcoming lesson also returns it.
 - Cancellation after the start is refused. Unused credits never expire.
-- Open gym and coach-assigned private appointments keep their existing behavior;
+- Coach-assigned private appointments keep their existing behavior;
   their payment/access rules still need definition. Login, workouts and other
   existing features are not blocked by a membership.
 
-Ordinary accounts mode leaves this group-booking gate disabled by default. The
+Planning shows the signed-in athlete's available credits, a Credits kopen link,
+and refreshes the balance after booking/cancellation, page navigation or returning
+to the tab. Loading failures offer Opnieuw laden instead of showing an incorrect zero.
+
+Ordinary accounts mode leaves these paid-booking checks disabled by default. The
 design preview remains separate from real account storage.
 
 ## Short manual test
@@ -82,8 +86,9 @@ design preview remains separate from real account storage.
 1. Sign in as a fresh fake athlete, open Shop, choose **5 lescredits**, and complete
    test Checkout using `4242 4242 4242 4242`, a future expiry and any three-digit
    CVC. Verify the forwarding terminal reports a successful HTTP response.
-2. Return to CAP. The Shop should show **5 available credits**. Book a future group
-   lesson: 4 remain. Cancel it before the start: 5 remain.
+2. Return to CAP. Shop and Planning should show **5 available credits**. Book a
+   future group lesson or Open gym session: 4 remain. Cancel it before the start:
+   5 remain. Planning updates the number without a page refresh.
 3. In a different fake athlete account, buy the **EUR75/month** plan. Check the
    paid access date and maximum end date. Cancel in CAP: access stays active until
    the paid month ends. Another athlete must not see this membership or credits.
@@ -147,13 +152,20 @@ User verified the new **5-credit sandbox purchase** on 29/10/2026: CAP showed
 5 credits, a future group booking reduced the balance to 4, and cancellation
 before the start restored 5. The coach-created shared lesson appeared for the
 athlete. These are user-confirmed manual results, separate from mocked tests.
-Paid membership checkouts, other credit packs, renewals and actual expiry still
+The user also confirmed the EUR75 membership purchase/cancellation flow.
+The Open gym extension passed 23 focused billing/planning tests on isolated
+PostgreSQL, including no-credit rejection, duplicate bookings, credit return,
+membership coverage, concurrent group/Open gym spending and session-type edits.
+An actual browser booking on the isolated database showed Planning 5 -> 4 -> 5;
+no Stripe calls were made for that fake credit fixture. Both themes at
+390/768/1440px and balance-load failure/retry were checked.
+Other paid membership checkouts, other credit packs, renewals and actual expiry still
 need provider testing. The previously verified EUR10 sandbox checkout remains
 documented in `stripe-test-setup.md`.
 
 This is test development. Refunds/disputes and automatic entitlement reversal,
 production webhook delivery/reconciliation, VAT, failed-payment collection rules,
-open-gym/private pricing and deployment remain separate work. The €65 restriction
+private-session pricing and deployment remain separate work. The €65 restriction
 prevents early cancellation in CAP; it cannot guarantee collection of 12 payments.
 Coach accounts also still need individual email addresses; no shared password or
 automatic accounts were created from names alone.

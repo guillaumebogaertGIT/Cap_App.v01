@@ -920,6 +920,17 @@ main { padding: 1rem; }
 #nutrition, #coach-nutrition { --macro-protein: #9a65c9; --macro-carbs: #4f9165; --macro-fat: #c26984; }
 
 .billing-details { display: grid; grid-template-columns: minmax(0, 1fr); gap: .25rem; }
+.planning-credit-summary { padding-block: .75rem; margin-block: 1rem; border-bottom: 1px solid var(--border); gap: .75rem; }
+.planning-credit-summary:not([hidden]) { display: flex; flex-direction: column; }
+.planning-credit-summary p { margin: 0; }
+#planning-credit-balance { font-weight: 700; color: var(--accent-text); font-variant-numeric: tabular-nums; }
+.planning-credit-summary .sample-notice { margin-top: .35rem; max-width: 65ch; }
+.planning-credit-actions { display: flex; flex-wrap: wrap; gap: .5rem; }
+.planning-credit-actions .secondary-button { min-height: 3rem; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; }
+@media (min-width: 48rem) {
+    .planning-credit-summary:not([hidden]) { flex-direction: row; align-items: center; justify-content: space-between; }
+    .planning-credit-actions { flex-shrink: 0; }
+}
 .billing-shop-status { grid-column: 1 / -1; padding-block: .5rem 1rem; }
 .billing-shop-status h3 { margin-block: 0 .5rem; }
 #billing-offer {
