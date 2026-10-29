@@ -10,6 +10,8 @@ Basketball belongs to the separate RAW Hoops scope and is explicitly excluded fr
 
 ## Current state
 
+- October 29: Coach Sporters has a read-only selected-athlete membership/credits summary with coach-only API authorization. User's next requested work is Docker; coach emails remain pending.
+
 - October 29: Shop has the five confirmed memberships and four non-expiring credit packs in Stripe TEST mode. V9 stores orders/credits and finite monthly terms. The catalog launcher checks membership/credits for group and Open gym bookings, with pre-start credit return; private-session payment rules remain undefined. Athlete Planning displays the balance and refreshes after booking/cancellation. User verified a 5-credit sandbox purchase, shared lesson, balance 5 -> 4 -> 5 and EUR75 membership purchase/cancellation. Other plans/renewals/expiry remain unverified. See docs/memberships-test.md. Individual coach emails remain needed.
 
 - One responsive HTML/CSS/JavaScript application with Dutch interface text, CAP images, light/dark/system themes and athlete/coach previews.

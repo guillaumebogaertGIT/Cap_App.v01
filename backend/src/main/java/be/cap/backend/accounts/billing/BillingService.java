@@ -22,6 +22,8 @@ public class BillingService {
         Instant cancelAt, Instant canceledAt, Instant syncedAt, boolean hasCustomer,
         List<BillingCatalog.Offer> offers, int credits, Instant termEnd, boolean canCancel) {}
     public record Link(String url) {}
+    public record AthleteSummary(UUID athleteId, String plan, String status, boolean membershipAccess,
+        Instant paidUntil, int credits, boolean cancellationPlanned, Instant termEnd) {}
     private record State(UUID owner,String customer,UUID customerKey,Instant customerStarted,
         UUID checkoutKey,String checkoutPrice,Instant checkoutStarted,String checkoutSession) {}
     private final JdbcTemplate jdbc;
@@ -249,6 +251,16 @@ public class BillingService {
         if (!summaries.isEmpty()) return summaries.stream().filter(Summary::membershipAccess).findFirst().orElse(summaries.getFirst());
         boolean customer=jdbc.queryForObject("SELECT COUNT(*) FROM billing_account WHERE user_id=? AND customer_id IS NOT NULL",Integer.class,user.id())>0;
         return new Summary(settings.enabled,true,"CAP lidmaatschap",0,"EUR","none",false,null,null,false,null,null,null,customer,catalog.offers(),balance,null,false);
+    }
+    /** Coaches inspect local records only; this never creates a Stripe customer or payment link. */
+    public AthleteSummary athleteSummary(Account coach, UUID athleteId) {
+        if (!"COACH".equals(coach.role())) throw new ResponseStatusException(HttpStatus.FORBIDDEN,"Alleen coaches kunnen deze gegevens bekijken.");
+        var athlete=jdbc.query("SELECT id,email,display_name,role FROM cap_user WHERE id=? AND role='ATHLETE'",
+            (r,i)->new Account(r.getObject("id",UUID.class),r.getString("email"),r.getString("display_name"),r.getString("role")),athleteId)
+            .stream().findFirst().orElseThrow(()->new ResponseStatusException(HttpStatus.NOT_FOUND,"Sporter niet gevonden."));
+        var value=summary(athlete);
+        return new AthleteSummary(athlete.id(),value.plan(),value.status(),value.membershipAccess(),value.periodEnd(),
+            value.credits(),value.cancelAtPeriodEnd(),value.termEnd());
     }
     public void event(String eventId,String type,String customer,String sessionId) {
         var owners=jdbc.query("SELECT user_id FROM billing_account WHERE customer_id=?",(r,i)->r.getObject(1,UUID.class),customer);

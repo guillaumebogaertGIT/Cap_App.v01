@@ -920,6 +920,12 @@ main { padding: 1rem; }
 #nutrition, #coach-nutrition { --macro-protein: #9a65c9; --macro-carbs: #4f9165; --macro-fat: #c26984; }
 
 .billing-details { display: grid; grid-template-columns: minmax(0, 1fr); gap: .25rem; }
+.coach-membership { margin-block: 1rem 1.5rem; padding-bottom: 1.25rem; border-bottom: 1px solid var(--border); }
+.coach-membership h3 { margin-block: 0 .75rem; }
+.coach-membership .club-toolbar { align-items: end; }
+.coach-membership .club-toolbar label { min-width: 0; max-width: 30rem; }
+.coach-membership .secondary-button { min-height: 3rem; }
+.coach-membership .billing-details[hidden] { display: none; }
 .planning-credit-summary { padding-block: .75rem; margin-block: 1rem; border-bottom: 1px solid var(--border); gap: .75rem; }
 .planning-credit-summary:not([hidden]) { display: flex; flex-direction: column; }
 .planning-credit-summary p { margin: 0; }

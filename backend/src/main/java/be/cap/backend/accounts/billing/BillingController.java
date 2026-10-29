@@ -42,6 +42,11 @@ public class BillingController {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"Kies alleen een aanbod; account en prijs worden door de server bepaald.");
         return billing.checkout(accounts.account(principal.getName()),offer);
     }
+    @GetMapping("/athletes/{athleteId}")
+    public ResponseEntity<BillingService.AthleteSummary> athleteSummary(Principal principal,@PathVariable UUID athleteId) {
+        return ResponseEntity.ok().cacheControl(CacheControl.noStore())
+            .body(billing.athleteSummary(accounts.account(principal.getName()),athleteId));
+    }
     @PostMapping("/portal")
     public BillingService.Link portal(Principal principal,@RequestBody(required=false) Map<String,Object> input) {
         noInput(input); return billing.portal(accounts.account(principal.getName()));

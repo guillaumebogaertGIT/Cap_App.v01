@@ -144,6 +144,24 @@ or alter existing subscriptions. Re-running it was verified to keep the same IDs
 
 ## PostgreSQL inspection
 
+Coaches can also use **Sporters → Lidmaatschap & credits** and choose an athlete.
+The panel shows plan, status, paid-until date, available credits, maximum term
+and scheduled cancellation. It refreshes on returning to the page/tab, or with
+Opnieuw laden. Switching athletes clears old details immediately. This is a
+read-only view of saved PostgreSQL records; it makes no Stripe requests and
+cannot cancel subscriptions or change credit balances.
+
+The coach-only `GET /api/billing/athletes/{athleteId}` returns a small summary
+without Stripe customer IDs, prices, portal URLs or payment controls. Direct
+guest requests return 401; athletes return 403, including for themselves.
+Unknown athletes/coach targets return 404. All responses disable caching.
+
+Verification: 21 focused PostgreSQL billing/account tests passed after this
+addition. Browser checks covered real fake-account records, empty accounts,
+late-response isolation, loading failures/retry and 390/768/1440px in both themes.
+To review manually, log in as coach, choose two different athletes and compare
+their paid-until date/credits against each athlete's own Shop/Planning.
+
 In pgAdmin open **cap → Schemas → public → Tables**. V9 adds `billing_order` and
 `lesson_credit`, and extends `billing_subscription` with `offer_code`/`term_end`.
 Orders record the server-selected purchase. Each credit has one row: a null

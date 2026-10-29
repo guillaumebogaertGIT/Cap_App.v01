@@ -207,4 +207,32 @@ class CatalogBillingApiTests extends BillingApiTests {
         var privateInput=(ObjectNode)json.readTree(sessionBody(coach,"Privé"));privateInput.set("athleteIds",json.readTree("[\""+ownerId+"\"]"));
         assertEquals(200,request(coach,"PUT","/api/club/sessions/"+gym,json.writeValueAsString(privateInput),csrf(coach),false).statusCode());assertEquals(5,status(owner).path("credits").asInt());
     }
+    @Test void coachCanReadSelectedAthleteBillingButCannotExposeItToAthletesOrGuests() throws Exception {
+        var coach=coach();var owner=client();String ownerId=athlete(owner);var other=client();String otherId=athlete(other);
+        assertEquals(200,buy(owner,"credits_5"));catalogFake.finish(ownerId,Instant.now());deliver("checkout.session.completed",customer(ownerId));
+        fake.state(customer(ownerId),"active",true,"paid",Instant.now().plusSeconds(86400));deliver("invoice.paid",customer(ownerId));
+        int rows=jdbc.queryForObject("SELECT COUNT(*) FROM billing_account",Integer.class);
+        clearInvocations(stripe);
+        String path="/api/billing/athletes/"+ownerId;
+        var response=request(coach,"GET",path,null,null,false);
+        assertEquals(200,response.statusCode());assertTrue(response.headers().firstValue("cache-control").orElse("").contains("no-store"));
+        var value=json.readTree(response.body());
+        assertEquals(ownerId,value.path("athleteId").asText());assertEquals(5,value.path("credits").asInt());
+        assertTrue(value.path("membershipAccess").asBoolean());assertTrue(value.path("cancellationPlanned").asBoolean());assertFalse(value.path("paidUntil").isNull());
+        assertFalse(value.has("offers"));assertFalse(value.has("hasCustomer"));assertFalse(value.has("canCancel"));
+        assertFalse(response.body().contains(customer(ownerId)));assertFalse(response.body().contains("price_CAPtest"));assertFalse(response.body().contains("stripe.com"));
+        var empty=request(coach,"GET","/api/billing/athletes/"+otherId,null,null,false);assertEquals(200,empty.statusCode());
+        assertEquals(0,json.readTree(empty.body()).path("credits").asInt());assertFalse(json.readTree(empty.body()).path("membershipAccess").asBoolean());
+        verifyNoInteractions(stripe);assertEquals(rows,jdbc.queryForObject("SELECT COUNT(*) FROM billing_account",Integer.class));
+        assertEquals(401,request(client(),"GET",path,null,null,false).statusCode());
+        assertEquals(403,request(owner,"GET",path,null,null,false).statusCode());assertEquals(403,request(other,"GET",path,null,null,false).statusCode());
+        assertEquals(403,request(other,"GET","/api/billing/athletes/"+otherId,null,null,false).statusCode());
+        assertEquals(404,request(coach,"GET","/api/billing/athletes/"+UUID.randomUUID(),null,null,false).statusCode());
+        String coachId=json.readTree(request(coach,"GET","/api/accounts/me",null,null,false).body()).path("id").asText();
+        assertEquals(404,request(coach,"GET","/api/billing/athletes/"+coachId,null,null,false).statusCode());
+        assertEquals(400,request(coach,"GET","/api/billing/athletes/not-a-uuid",null,null,false).statusCode());
+        assertEquals(405,request(coach,"PUT",path,"{\"credits\":100}",csrf(coach),false).statusCode());
+        assertEquals(405,request(coach,"POST",path,"{}",csrf(coach),false).statusCode());
+        assertEquals(204,request(coach,"POST","/api/accounts/logout","",csrf(coach),false).statusCode());assertEquals(401,request(coach,"GET",path,null,null,false).statusCode());
+    }
 }
