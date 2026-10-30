@@ -4,6 +4,8 @@ Reviewed: September 29, 2026. This is not a new roadmap.
 
 ## Obviously incomplete in the current project
 
+- October 30 Docker update: App-only Docker setup implemented and running healthy against existing native PostgreSQL; Docker start/restart/rebuild/status guide in docs/docker.md. Existing coach login, membership/finance denial, guest/demo/logout boundaries and data persistence across container recreation verified. Native database containerization, production hosting/backups/TLS, and an actual Docker-served Stripe test checkout remain separate/unverified; no new purchase created for Docker QA.
+
 - October 30 update: Six confirmed coach accounts created and actual logins verified locally; remaining staff pending. Restart user backend for password UI/API and reviewer config. Glenn sandbox finance comparison still pending after restart. Staff password recovery, forced first-login change and deployment remain future work; handover described in docs/coach-accounts.md.
 
 - October 30: Glenn-only Financiën implemented; actual Glenn account provisioning and sandbox totals comparison remain. Finance HTTP tests passed on isolated PostgreSQL; mobile/tablet/desktop themes and error/empty/unauthorized UI verified with fake responses. Docker remains next after account/permission work.

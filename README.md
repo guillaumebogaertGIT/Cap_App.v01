@@ -2,6 +2,9 @@
 
 A Java learning project building toward a coaching platform for CAP in Gistel, Belgium.
 
+Docker Desktop option: `.\scripts\start-docker.cmd`, then open **http://127.0.0.1:8081/app/index.html**.
+It uses your existing Windows PostgreSQL database. Stop native CAP first. See [Docker start, stop and rebuild guide](docs/docker.md).
+
 Local real-account launch: `.\scripts\start-accounts.cmd` from the project root.
 Open **http://127.0.0.1:8081/app/index.html**. Save frontend files and refresh;
 saved backend Java compiles in VS Code and DevTools restarts automatically.

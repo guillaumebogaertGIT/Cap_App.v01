@@ -1,5 +1,13 @@
 # Session Log
 
+## October 30, 2026 — Docker app with native PostgreSQL
+
+- User installed WSL/Docker Desktop and authorized implementation. Added source-allowlisted multi-stage Java 25 image, Compose app-only localhost:8081 service, non-root/limited-memory runtime, HTTP health probe and start/stop/restart/status commands. Existing PostgreSQL 18.6 cap DB retained; no database/network authentication settings changed. See docs/docker.md.
+- Reused DPAPI database/Stripe test credentials and reviewer config through environment-backed Compose runtime secret; no plaintext checkout config, container secret env or build args. Fixed fresh-install credential-helper PATH issue. Compose rejected environment-backed secrets with read-only root filesystem; removed read_only while retaining non-root/capability protections and documented limitation. Stop removes app container/runtime secret copy; start forces recreation.
+- Built successfully; Flyway validated existing V1-V9, no migration needed. Actual existing Dieter login 204, membership permission true, finance false/direct403, guest401, legacy demo403, logout401, test billing configured. Removed/recreated container; in-memory account/password/workout fingerprints and counts matched. No new payment or real data mutation for verification.
+- Audited packaged original assets byte-for-byte, absence of login/local/Git/devtools/H2, no secret container env, loopback port and occupied-port guard. Native development launcher preserved; Docker source changes require rebuild. App left healthy/running for user. Actual sandbox checkout through Docker remains manual.
+- Actual scratch context export caught backend/target re-included through parent allow rules; tightened per-directory exclusions and fresh export passed for private/build/test/unrelated paths. Final app rebuild passed (cached). Removed only the temporary audit exports afterward.
+
 ## October 30, 2026 — Coach accounts and password changes
 
 - User approved six confirmed coaches with individual temporary passwords for later handover. Read-only preflight found no email collisions, then explicitly provisioned six COACH rows in existing local cap DB. Actual sign-ins all 204/COACH; logged out verification sessions. No existing records reset or staff emails sent.
