@@ -165,13 +165,16 @@ their paid-until date/credits against each athlete's own Shop/Planning.
 
 ### Designated reviewers: Glenn and Dieter
 
-The user selected **Glenn Vlamynck and Dieter Vlamynck**. Their actual coach login
-emails have not been supplied yet, so this permission defaults to **no access**.
+The user selected **Glenn Vlamynck and Dieter Vlamynck**. On 30/10/2026 the user
+supplied their emails, and the local reviewer file was populated from that source.
+Actual CAP COACH accounts with those login emails are still required. Account
+creation is separate; the configuration alone does not create or promote users.
+On an installation without reviewer configuration, the default remains **no access**.
 No display-name matching or automatic permission for the first/test coach is used.
 Other coaches keep their roster, planning and workout tools. Everyone can still
 view their own payments through their own account.
 
-Once the correct login emails/accounts are known, the local administrator sets
+The local administrator sets
 `CAP_MEMBERSHIP_REVIEWER_EMAILS` to those two comma-separated emails. The launcher
 can alternatively read ignored `.local/membership-reviewers.json`, with an
 `emails` array of at most two addresses. An empty example is:

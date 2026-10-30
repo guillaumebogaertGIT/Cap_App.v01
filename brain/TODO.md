@@ -68,3 +68,5 @@ October 29 refinement completed: athlete Planning balance and group/Open gym cre
 Next priority explicitly requested October 29: Docker setup, after the now-completed coach membership/credits overview. Discuss a backend/PostgreSQL development setup and persistent data before implementing. Docker CLI not found in current PATH; installation/status needs checking. Coach emails still unavailable.
 
 Membership review now restricted to Glenn/Dieter only. Activate later with their actual COACH login emails; default denial is intentional until then. Two-account policy and UI/API checks complete (24 checks). Docker remains the next requested task.
+
+October 30 update: Staff contact emails and source roles are now in notes.txt; Glenn/Dieter local reviewer configuration populated. Actual coach/staff account provisioning still pending, along with mapping non-coach source roles to CAP permissions. Marketing contact name is cropped and unconfirmed. Docker remains next; emails are no longer the blocker for known coaches.

@@ -1,14 +1,30 @@
 ﻿Coaches:
-Glenn Vlamynck
-Dieter Vlamynck
-Mathias Marchand
-Marlies Vermeersch
-Maxim Mortier
-Vince Decramer
-Guillaume Bogaert (Test Account)
+Staff details transcribed from supplied screenshots (30/10/2026):
+Name | Email | Roles shown in the existing staff system
+Glenn Vlamynck | hello@cap-gistel.be | Admin; Trainer
+Dieter Vlamynck | dieter.vlamynck@gmail.com | Manager; Trainer
+Mathias Marchand | mmarchand@hotmail.be | Manager; Trainer
+Marlies Vermeersch | marliesvermeesch@hotmail.com | Assistent; Trainer
+Maxim Mortier | mortiermaxim@hotmail.be | Assistent
+Robin Van geluwe | Robinvgeluwe@gmail.com | Assistent; Trainer
+Vic Vandaele | vic@kantoorbm.be | Accountant
+Vince Decraemer | vince.decraemer@hotmail.com | Standaard; Trainer
+Name not visible in the cropped top row | despierre.arthur@gmail.com | Marketing
+Guillaume Bogaert | Email not supplied | Test Account (not shown in screenshots)
 
-Membership/credit overview: only Glenn Vlamynck and Dieter Vlamynck.
-Their actual coach login emails are still needed to activate this permission.
+Transcription notes:
+- Marlies's email is written as "vermeesch" in the screenshots; her displayed surname is Vermeersch.
+- Vince's surname is Decraemer in the screenshot (earlier notes said Decramer).
+- Maxim has only Assistent shown; do not infer a Trainer role.
+- The marketing contact's name is cropped; confirm it rather than guessing from the email.
+
+CAP access rules:
+- Membership/credit overview: only Glenn Vlamynck and Dieter Vlamynck.
+- Local reviewer configuration now uses hello@cap-gistel.be and dieter.vlamynck@gmail.com.
+- Access still requires an actual CAP account with the COACH role and that login email.
+- Mathias's Manager label does not grant membership-review access.
+- The screenshot role labels are reference information; their full CAP permissions still need defining.
+- No staff accounts, passwords or invitations were created by recording this list.
 
 Subscriptions:
 Full acces:
@@ -31,4 +47,4 @@ Confirmed rules (29/10/2026):
 - Memberships stop after their stated duration; no automatic renewal.
 - Cancel a lesson booking before its start to return its credit.
 - Credits cover both group lessons and Open gym sessions; show the remaining balance in athlete Planning.
-- Coach email addresses still needed for individual accounts.
+- Staff email addresses supplied on 30/10/2026 as recorded above; individual account provisioning is still pending.
