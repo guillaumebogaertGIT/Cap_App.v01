@@ -13,7 +13,17 @@ Created on 30/10/2026 in the existing local PostgreSQL `cap` database:
 
 Maxim, Vic and the marketing contact remain pending. Screenshot Admin/Manager/Assistent labels have not become new backend roles. All six use COACH; the two review permissions are separate. No messages or invitations have been sent.
 
-## Sign in as Glenn on this PC
+## Collega’s
+
+Every signed-in coach can open **Collega’s** in the sidebar (Menu on phones), then click a colleague to view their title, email and optional phone. The directory includes only existing COACH accounts; pending staff are not added automatically. Own entry is marked “jij”. Contact details are not available to athletes or guests.
+
+V10 adds `cap_user.coach_title` and labels the six existing supplied coach emails from the screenshots. Other/new coaches default to “Coach”. These labels are display information, not authorization; profile editing cannot change titles or privileges. Title administration remains future work.
+
+Coaches can add or remove their optional phone through their name → **Profiel** → **Telefoonnummer** → **Profiel bewaren**. The field explains that the number is shared with colleagues. No phone numbers were invented or imported. Colleague responses include only name, title, email and phone, never date of birth, measurements, health details, password hashes or payment data.
+
+Read-only, no-store endpoints: `GET /api/coaches` (IDs/names/titles) and `GET /api/coaches/{id}` (contact details). Guests receive 401, athletes 403, non-coach targets 404. No automatic emails or calls are sent by CAP; contact links open the device's mail/phone app when clicked.
+
+## Sign in locally
 
 All COACH accounts have coaching access without payment or expiry. Their Home shows this explicitly; Shop and personal Betalingen are absent. Self-service checkout/portal/reconcile/cancel APIs reject coaches. This is role-based access, not a Stripe lifetime subscription. Athlete subscriptions are unchanged, and membership/finance review permissions remain restricted as listed above. Existing Stripe records are not deleted or automatically canceled.
 

@@ -925,6 +925,16 @@ main { padding: 1rem; }
 .coach-membership .club-toolbar { align-items: end; }
 .coach-membership .club-toolbar label { min-width: 0; max-width: 30rem; }
 .coach-membership .secondary-button { min-height: 3rem; }
+.colleagues-list { list-style: none; padding: 0; margin-block: 1rem; max-width: 55rem; }
+.colleagues-list li { border-bottom: 1px solid var(--border); }
+.colleague-button { display: flex; flex-direction: column; align-items: flex-start; gap: .35rem; width: 100%; min-height: 4.5rem; padding: 1rem; text-align: left; font: inherit; color: var(--text); background: var(--surface); border: 0; border-radius: 0; cursor: pointer; overflow-wrap: anywhere; }
+.colleague-button span { color: var(--muted); }
+.colleague-button:hover { background: var(--background); }
+.colleague-button:focus-visible { outline: 2px solid var(--accent-text); outline-offset: -2px; }
+.colleague-contact dt { margin-top: 1rem; color: var(--muted); }
+.colleague-contact dd { margin: .35rem 0 1rem; overflow-wrap: anywhere; }
+.colleague-contact a { display: inline-block; padding-block: .5rem; color: var(--text); text-underline-offset: .2em; }
+.colleague-contact[hidden] { display: none; }
 .finance-totals { margin-block: 1.5rem; font-variant-numeric: tabular-nums; }
 .finance-totals > div { padding-block: 1rem; border-bottom: 1px solid var(--border); }
 .finance-totals dt { color: var(--muted); }

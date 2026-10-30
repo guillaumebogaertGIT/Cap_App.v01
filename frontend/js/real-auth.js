@@ -29,6 +29,7 @@ function mountAccountProfile() {
             <div class="profile-fields">
                 <label>Naam<input name="name" required maxlength="100" autocomplete="name"></label>
                 <label>E-mailadres<input name="email" type="email" readonly></label>
+                <label${real.account.role === 'COACH' ? '' : ' hidden'}>Telefoonnummer (optioneel)<input name="phone" type="tel" maxlength="40" autocomplete="tel"><small>Dit nummer is zichtbaar voor je collega-coaches.</small></label>
                 <label>Geboortedatum<input name="birthDate" type="date" min="1900-01-01"></label>
                 <label>Geslacht<select name="sex"><option value="">Zeg ik liever niet</option><option value="female">Vrouw</option><option value="male">Man</option><option value="other">Anders</option></select></label>
                 <label>Lengte (cm)<input name="heightCm" type="number" min="50" max="300" step="0.1" inputmode="decimal"></label>

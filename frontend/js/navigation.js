@@ -4,7 +4,7 @@ const sidebar = document.querySelector('.sidebar');
 const sidebarToggle = document.querySelector('.sidebar-toggle');
 const mobileLayout = window.matchMedia('(max-width: 800px)');
 const originalSidebarLinks = Array.from(sidebarNavigation.children);
-const coachSidebarOrder = ['dashboard', 'planning', 'bookings', 'create-workout', 'exercises', 'saved-workouts', 'athletes', 'coach-nutrition'];
+const coachSidebarOrder = ['dashboard', 'planning', 'bookings', 'create-workout', 'exercises', 'saved-workouts', 'athletes', 'coach-nutrition', 'colleagues'];
 let previewRole = window.capReal?.account.role === 'COACH' ? 'coach' : 'athlete';
 
 document.querySelectorAll('[name="preview-role"]').forEach((input) => {
@@ -71,6 +71,7 @@ function showCurrentView(moveFocus = true) {
     const allowedViews = previewRole === 'coach' ? ['dashboard', 'settings', 'create-workout', 'saved-workouts', 'exercises', 'athletes', 'coach-health', 'coach-nutrition', 'planning', 'bookings', 'training'] : ['dashboard', 'workouts', 'health', 'nutrition', 'settings', 'planning', 'bookings', 'shop', 'training'];
     document.querySelector('[data-account="payment"]').hidden = previewRole === 'coach';
     if (previewRole === 'coach' && window.capReal?.permissions?.reviewFinance) allowedViews.push('finance');
+    if (previewRole === 'coach') allowedViews.push('colleagues');
     const routeId = allowedViews.includes(requestedView)
         ? requestedView : 'dashboard';
     const viewId = previewRole === 'coach' && routeId === 'dashboard' ? 'coach' : routeId;
@@ -81,6 +82,7 @@ function showCurrentView(moveFocus = true) {
             link.hidden = !allowedViews.includes('finance');
             return;
         }
+        if (link.dataset.viewLink === 'colleagues') { link.hidden = previewRole !== 'coach'; return; }
         link.hidden = previewRole === 'coach'
             ? !['dashboard', 'settings', 'create-workout', 'saved-workouts', 'exercises', 'athletes', 'coach-health', 'coach-nutrition', 'planning', 'bookings', 'training'].includes(link.dataset.viewLink)
             : link.hasAttribute('data-coach-only');

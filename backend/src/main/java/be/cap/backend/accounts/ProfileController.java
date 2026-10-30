@@ -21,7 +21,7 @@ import tools.jackson.databind.json.JsonMapper;
 @Transactional(rollbackFor = Exception.class)
 public class ProfileController {
     public record Values(String name, String birthDate, String sex, Double heightCm,
-                         Double weightKg, String goal, String experience) {}
+                         Double weightKg, String goal, String experience, String phone) {}
     public record Photo(String image) {}
     private final AccountService accounts;
     private final JdbcTemplate jdbc;
@@ -47,14 +47,14 @@ public class ProfileController {
         jdbc.query("SELECT id FROM cap_user WHERE id=? FOR UPDATE", (row, index) -> row.getObject(1), user.id());
         if (jdbc.queryForObject("SELECT COUNT(*) FROM account_profile WHERE user_id=?", Long.class, user.id()) == 0)
             jdbc.update("INSERT INTO account_profile(user_id,values_json) VALUES(?,?)", user.id(),
-                mapper.writeValueAsString(new Values(user.name(), "", "", null, null, "", "")));
+                mapper.writeValueAsString(new Values(user.name(), "", "", null, null, "", "", "")));
     }
     @GetMapping
     public Map<String, Object> get(Principal principal) throws IOException {
         var user = accounts.account(principal.getName());
         var rows = jdbc.query("SELECT values_json,photo FROM account_profile WHERE user_id=?",
             (row, index) -> Map.of("json", row.getString(1), "hasPhoto", row.getBytes(2) != null), user.id());
-        Values values = rows.isEmpty() ? new Values(user.name(), "", "", null, null, "", "")
+        Values values = rows.isEmpty() ? new Values(user.name(), "", "", null, null, "", "", "")
             : mapper.readValue((String) rows.getFirst().get("json"), Values.class);
         return Map.of("values", values, "email", user.email(), "hasPhoto", !rows.isEmpty() && rows.getFirst().get("hasPhoto").equals(true));
     }
@@ -64,6 +64,8 @@ public class ProfileController {
         String name = input.name() == null ? "" : input.name().trim();
         if (name.isBlank() || name.length() > 100) throw invalid("Vul een naam van maximaal 100 tekens in.");
         String birthDate = input.birthDate() == null ? "" : input.birthDate();
+        String phone=input.phone()==null ? "" : input.phone().trim();
+        if(!phone.isEmpty() && !phone.matches("\\+?[0-9][0-9(). -]{2,38}")) throw invalid("Vul een geldig telefoonnummer van maximaal 40 tekens in.");
         if (!birthDate.isEmpty()) {
             try {
                 var date = LocalDate.parse(birthDate);
@@ -74,7 +76,7 @@ public class ProfileController {
         var values = new Values(name, birthDate, option(input.sex(), Set.of("", "female", "male", "other")),
             number(input.heightCm(), 50, 300), number(input.weightKg(), 20, 500),
             option(input.goal(), Set.of("", "strength", "fitness", "weight-loss", "health")),
-            option(input.experience(), Set.of("", "beginner", "intermediate", "advanced")));
+            option(input.experience(), Set.of("", "beginner", "intermediate", "advanced")),phone);
         ensure(user);
         jdbc.update("UPDATE cap_user SET display_name=? WHERE id=?", name, user.id());
         jdbc.update("UPDATE account_profile SET values_json=? WHERE user_id=?", mapper.writeValueAsString(values), user.id());

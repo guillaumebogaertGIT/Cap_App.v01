@@ -1,5 +1,12 @@
 # Session Log
 
+## October 30, 2026 — Coach colleague directory
+
+- Added Collega’s sidebar route, full-row name/title buttons, contact dialog with mail/tel links and missing-phone state. Coach profile includes optional phone with sharing notice. V10 additive coach_title column labels six existing staff emails from supplied screenshots; security roles/reviewer rules remain independent.
+- GET list/detail restricted to COACH; DTOs exclude private profile/health/password/payment data. Phone validated; profile edits cannot alter title. Only actual coach accounts listed. No new dependency, accounts or invented phone contacts.
+- CoachDirectoryTests: 7 passed on isolated PostgreSQL (includes inherited account/profile checks), covering guest/athlete denial, non-coach404, no-store, restricted DTOs, own phone update/removal, invalid phone, no title editing and logout. Browser actual fake profile save/contact fetch passed; 390/768/1440 both themes fit, missing-phone/error/retry safe and athlete link/route hidden with zero directory calls. Stale hash-only browser navigation required reload during QA, no app fix needed.
+- Rebuilt/restarted Docker to apply V10; verified account/password/role and workout fingerprints unchanged. No real coach phone/profile values changed during QA. Instructions in docs/coach-accounts.md.
+
 ## October 30, 2026 — Free coach access
 
 - User requested no coach purchasing and permanent free coaching access. Removed coach Shop/Home/payment options, prevented billing dialog/self-status requests, added Home notice. COACH self summary is free/no expiry/no offers with no SQL/Stripe work; Spring Security and service checks deny four personal payment actions. Athlete billing and restricted review permissions retained; no existing Stripe records changed.

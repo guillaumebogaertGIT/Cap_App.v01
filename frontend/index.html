@@ -29,6 +29,7 @@
     <script src="js/coach-membership.js" defer></script>
     <script src="js/finance.js" defer></script>
     <script src="js/password.js" defer></script>
+    <script src="js/colleagues.js" defer></script>
     <script src="js/backend-status.js" defer></script>
     <script src="js/workouts-api.js" defer></script>
     <script src="js/training.js" defer></script>
@@ -78,6 +79,7 @@
             <a href="#saved-workouts" data-view-link="saved-workouts" data-coach-only hidden>Opgeslagen workouts</a>
             <a href="#exercises" data-view-link="exercises" data-coach-only hidden>Oefeningen</a>
             <a href="#athletes" data-view-link="athletes" data-coach-only hidden>Sporters</a>
+            <a href="#colleagues" data-view-link="colleagues" data-coach-only hidden>Collega’s</a>
             <a href="#finance" data-view-link="finance" data-coach-only hidden>Financiën</a>
             <a href="#planning" data-view-link="planning">Planning</a>
             <a href="#bookings" data-view-link="bookings">Boekingen</a>
@@ -598,6 +600,12 @@
                 <div id="athlete-food-entries"></div>
                 <button id="food-undo" class="secondary-button" type="button" hidden>Verwijderen ongedaan maken</button>
             </article>
+        </section>
+        <section id="colleagues" data-view aria-labelledby="colleagues-title" hidden>
+            <header class="dashboard-header"><div><h2 id="colleagues-title" tabindex="-1">Collega’s</h2><p class="dashboard-intro">Het coachteam en de contactgegevens van je collega’s.</p></div>
+                <button type="button" class="secondary-button" id="colleagues-refresh">Opnieuw laden</button></header>
+            <p id="colleagues-status" role="status" aria-live="polite"></p>
+            <ul id="colleagues-list" class="colleagues-list"></ul>
         </section>
         <section id="finance" data-view aria-labelledby="finance-title" hidden>
             <header class="dashboard-header"><h2 id="finance-title" tabindex="-1">Financiën</h2></header>
