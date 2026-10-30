@@ -25,10 +25,11 @@ public class ProfileController {
     public record Photo(String image) {}
     private final AccountService accounts;
     private final JdbcTemplate jdbc;
+    private final MeasurementService measurements;
     private final JsonMapper mapper = JsonMapper.builder().build();
 
-    public ProfileController(AccountService accounts, JdbcTemplate jdbc) {
-        this.accounts = accounts; this.jdbc = jdbc;
+    public ProfileController(AccountService accounts, JdbcTemplate jdbc,MeasurementService measurements) {
+        this.accounts = accounts; this.jdbc = jdbc;this.measurements=measurements;
     }
     private ResponseStatusException invalid(String message) {
         return new ResponseStatusException(HttpStatus.BAD_REQUEST, message);
@@ -56,7 +57,8 @@ public class ProfileController {
             (row, index) -> Map.of("json", row.getString(1), "hasPhoto", row.getBytes(2) != null), user.id());
         Values values = rows.isEmpty() ? new Values(user.name(), "", "", null, null, "", "", "")
             : mapper.readValue((String) rows.getFirst().get("json"), Values.class);
-        return Map.of("values", values, "email", user.email(), "hasPhoto", !rows.isEmpty() && rows.getFirst().get("hasPhoto").equals(true));
+        return Map.of("values", values, "email", user.email(), "hasPhoto", !rows.isEmpty() && rows.getFirst().get("hasPhoto").equals(true),
+            "measurements",measurements.history(user.id(),measurements.profileMetrics(values.heightCm(),values.weightKg())));
     }
     @PutMapping
     public Map<String, Object> save(@RequestBody Values input, Principal principal) throws IOException {
@@ -78,6 +80,9 @@ public class ProfileController {
             option(input.goal(), Set.of("", "strength", "fitness", "weight-loss", "health")),
             option(input.experience(), Set.of("", "beginner", "intermediate", "advanced")),phone);
         ensure(user);
+        var previous=mapper.readValue(jdbc.queryForObject("SELECT values_json FROM account_profile WHERE user_id=?",String.class,user.id()),Values.class);
+        if(!Objects.equals(previous.heightCm(),values.heightCm()) || !Objects.equals(previous.weightKg(),values.weightKg()))
+            measurements.recordProfile(user.id(),measurements.profileMetrics(values.heightCm(),values.weightKg()));
         jdbc.update("UPDATE cap_user SET display_name=? WHERE id=?", name, user.id());
         jdbc.update("UPDATE account_profile SET values_json=? WHERE user_id=?", mapper.writeValueAsString(values), user.id());
         return get(principal);

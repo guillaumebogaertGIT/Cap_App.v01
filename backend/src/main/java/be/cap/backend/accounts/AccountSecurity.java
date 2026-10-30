@@ -42,6 +42,8 @@ class AccountSecurity {
                 .requestMatchers(HttpMethod.GET, "/api/coaches", "/api/coaches/**").hasRole("COACH")
                 .requestMatchers(HttpMethod.POST, "/api/coaches").hasRole("COACH")
                 .requestMatchers(HttpMethod.PUT, "/api/coaches/*/active").hasRole("COACH")
+                .requestMatchers("/api/measurements/athletes/**").hasRole("COACH")
+                .requestMatchers("/api/measurements").authenticated()
                 .requestMatchers("/api/accounts/invitations").hasRole("COACH")
                 .requestMatchers("/api/accounts/me", "/api/accounts/profile/**").authenticated()
                 .requestMatchers(HttpMethod.POST, "/api/accounts/password").authenticated()

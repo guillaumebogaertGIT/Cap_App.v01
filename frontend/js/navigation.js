@@ -72,6 +72,9 @@ function showCurrentView(moveFocus = true) {
     document.querySelector('[data-account="payment"]').hidden = previewRole === 'coach';
     if (previewRole === 'coach' && window.capReal?.permissions?.reviewFinance) allowedViews.push('finance');
     if (previewRole === 'coach') allowedViews.push('colleagues');
+    if (previewRole === 'coach') allowedViews.push('health');
+    sidebarNavigation.querySelector('[data-view-link="health"]').textContent=previewRole==='coach'?'Mijn gezondheid':'Gezondheid & Progress';
+    sidebarNavigation.querySelector('[data-view-link="coach-health"]').textContent='Gezondheid sporters';
     const routeId = allowedViews.includes(requestedView)
         ? requestedView : 'dashboard';
     const viewId = previewRole === 'coach' && routeId === 'dashboard' ? 'coach' : routeId;
@@ -83,6 +86,7 @@ function showCurrentView(moveFocus = true) {
             return;
         }
         if (link.dataset.viewLink === 'colleagues') { link.hidden = previewRole !== 'coach'; return; }
+        if (link.dataset.viewLink === 'health') { link.hidden=false;return; }
         link.hidden = previewRole === 'coach'
             ? !['dashboard', 'settings', 'create-workout', 'saved-workouts', 'exercises', 'athletes', 'coach-health', 'coach-nutrition', 'planning', 'bookings', 'training'].includes(link.dataset.viewLink)
             : link.hasAttribute('data-coach-only');

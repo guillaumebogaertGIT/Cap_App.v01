@@ -1,9 +1,16 @@
 // Real authorization is enforced by Spring Security; this object only drives the UI.
 window.capAccess = { signedIn: true, plan: 'complete', can() { return this.signedIn; } };
 let accountProfileValues = {};
-window.capProfile = { get: () => ({ ...accountProfileValues }), weights: () => [], measurements: () => [],
-    logWeight() { throw new Error('Profielopslag is nog niet aangesloten.'); },
-    logMeasurement() { throw new Error('Profielopslag is nog niet aangesloten.'); } };
+let accountMeasurements=[];
+window.capProfile = { get: () => ({ ...accountProfileValues }),
+    weights: () => accountMeasurements.filter(entry=>entry.weightKg!=null).map(entry=>({kg:entry.weightKg,recordedAt:entry.recordedAt})),
+    measurements: () => accountMeasurements.map(entry=>({...entry})),
+    logWeight(value) { return this.logMeasurement({weightKg:value}); },
+    async logMeasurement(values) {
+        const input=Object.fromEntries(Object.entries(values).filter(([,value])=>String(value??'').trim()!=='').map(([key,value])=>[key,Number(value)]));
+        if(!Object.keys(input).length)throw new Error('Vul minstens één meetwaarde in.');
+        window.capApplyAccountProfile(await window.capReal.request('/api/measurements','POST',input));
+    } };
 window.capSignOut = async () => {
     try { await window.capReal.request('/api/accounts/logout', 'POST'); location.replace('/accounts/index.html'); }
     catch (error) { alert(error.message); }
@@ -56,6 +63,7 @@ function mountAccountProfile() {
     let busy = false;
     let photoVersion = Date.now();
     let photoSelection = 0;
+    let profileGeneration=0;
     function updateIdentity() {
         const name = accountProfileValues.name || real.account.name;
         real.account.name = name;
@@ -69,11 +77,15 @@ function mountAccountProfile() {
         } else spans[0].textContent = name.slice(0, 1);
     }
     function apply(profile) {
+        ++profileGeneration;
         accountProfileValues = profile.values; hasPhoto = profile.hasPhoto;
+        accountMeasurements=(profile.measurements||[]).map(entry=>({...entry.values,recordedAt:entry.recordedAt,source:entry.source}));
         updateIdentity();
         document.dispatchEvent(new CustomEvent('cap:profile-changed'));
     }
-    async function load() { apply(await real.request('/api/accounts/profile')); }
+    window.capApplyAccountProfile=apply;
+    async function load() { const version=++profileGeneration;const profile=await real.request('/api/accounts/profile');if(version===profileGeneration)apply(profile); }
+    window.capReloadProfile=()=>!dialog.open&&!busy?load():Promise.resolve();
     window.capOpenProfile = async () => {
         if (busy || dialog.open) return;
         dialog.showModal(); status.textContent = 'Profiel laden…';

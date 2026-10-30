@@ -76,3 +76,5 @@ Next priority explicitly requested October 29: Docker setup, after the now-compl
 Membership review now restricted to Glenn/Dieter only. Activate later with their actual COACH login emails; default denial is intentional until then. Two-account policy and UI/API checks complete (24 checks). Docker remains the next requested task.
 
 October 30 update: Staff contact emails and source roles are now in notes.txt; Glenn/Dieter local reviewer configuration populated. Actual coach/staff account provisioning still pending, along with mapping non-coach source roles to CAP permissions. Marketing contact name is cropped and unconfirmed. Docker remains next; emails are no longer the blocker for known coaches.
+
+October 30 update: Real profile/weight/body-measurement persistence now implemented and tested; supersedes earlier health-history placeholder notes. Actual iPhone hardware verification remains manual.

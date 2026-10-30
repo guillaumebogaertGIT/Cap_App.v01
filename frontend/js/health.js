@@ -1,5 +1,6 @@
 // Health preview shares browser-local profile data; no Apple Health connection yet.
 window.capBodyMetrics = [
+    ['heightCm', 'Lengte', 'cm', 300],
     ['weightKg', 'Gewicht', 'kg', 500],
     ['bodyFatPercent', 'Vetpercentage', '%', 100],
     ['muscleKg', 'Spiermassa', 'kg', 500],
@@ -24,10 +25,17 @@ document.addEventListener('DOMContentLoaded', () => {
     const format = value => new Intl.NumberFormat('nl-BE', { maximumFractionDigits: 1 }).format(value);
     const metrics = window.capBodyMetrics;
     const measurementForm = $('body-measurement-form');
+    const loadStatus=document.createElement('p');loadStatus.setAttribute('role','status');loadStatus.setAttribute('aria-live','polite');
+    if(window.capReal)$('health').querySelector('header').after(loadStatus);
+    async function refreshProfile(){
+        if(!window.capReloadProfile)return;
+        try{loadStatus.textContent='Gegevens laden…';await window.capReloadProfile();loadStatus.textContent='';}
+        catch(error){loadStatus.textContent=error.message+' Open deze pagina opnieuw om te vernieuwen.';}
+    }
     metrics.forEach(metric => {
         const label = document.createElement('label'); label.textContent = `${metric.label} (${metric.unit})`;
         const input = document.createElement('input'); input.type = 'number'; input.name = metric.key;
-        input.min = metric.key === 'weightKg' ? '20' : '0'; input.max = String(metric.max);
+        input.min = metric.key === 'weightKg' ? '20' : metric.key === 'heightCm' ? '50' : '0'; input.max = String(metric.max);
         input.step = ['bmr', 'metabolicAge'].includes(metric.key) ? '1' : '0.1';
         input.inputMode = 'decimal'; input.placeholder = 'Optioneel'; label.append(input);
         $(metric.segment ? 'body-segment-fields' : 'body-total-fields').append(label);
@@ -50,7 +58,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const weights = window.capProfile.weights();
         weights.forEach(entry => {
             const item = document.createElement('li');
-            const date = window.capDateTime.dateTime(entry.recordedAt);
+            const date = entry.recordedAt ? window.capDateTime.dateTime(entry.recordedAt) : 'Uit het profiel · datum onbekend';
             item.textContent = `${format(entry.kg)} kg · ${date}`;
             history.append(item);
         });
@@ -60,7 +68,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const measurements = window.capProfile.measurements();
         const primary = ['bodyFatPercent', 'muscleKg', 'boneKg', 'waterPercent'];
         for (const [id, list] of [['health-composition-metrics', metrics.filter(metric => primary.includes(metric.key))],
-            ['health-extra-metrics', metrics.filter(metric => !primary.includes(metric.key) && metric.key !== 'weightKg')]]) {
+            ['health-extra-metrics', metrics.filter(metric => !primary.includes(metric.key) && !['weightKg','heightCm'].includes(metric.key))]]) {
             const container = $(id); container.replaceChildren();
             const values = document.createElement('dl'); values.className = 'health-metrics';
             list.forEach(metric => {
@@ -77,7 +85,7 @@ document.addEventListener('DOMContentLoaded', () => {
         $('body-latest').replaceChildren(); $('body-history').replaceChildren();
         if (!measurements.length) $('body-latest').textContent = 'Nog geen lichaamsmeting toegevoegd.';
         measurements.forEach((entry, index) => {
-            const date = window.capDateTime.dateTime(entry.recordedAt);
+            const date = entry.recordedAt ? window.capDateTime.dateTime(entry.recordedAt) : 'Uit het profiel · datum onbekend';
             if (index === 0) {
                 const stamp = document.createElement('p'); stamp.textContent = date; $('body-latest').append(stamp);
                 displayMeasurement(entry, $('body-latest'));
@@ -89,28 +97,36 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
     $('health-edit-profile').addEventListener('click', () => window.capOpenProfile());
-    measurementForm.addEventListener('submit', event => {
+    measurementForm.addEventListener('submit', async event => {
         event.preventDefault();
         if (!measurementForm.reportValidity()) return;
+        const button=measurementForm.querySelector('[type="submit"]');if(button.disabled)return;button.disabled=true;
         try {
-            window.capProfile.logMeasurement(Object.fromEntries(new FormData(measurementForm)));
-            measurementForm.reset(); $('body-measurement-status').textContent = 'Meting toegevoegd aan deze preview.';
-        } catch (error) { $('body-measurement-status').textContent = error.message; }
+            await window.capProfile.logMeasurement(Object.fromEntries(new FormData(measurementForm)));
+            measurementForm.reset(); $('body-measurement-status').textContent = window.capReal?'Meting bewaard in je account.':'Meting toegevoegd aan deze preview.';
+        } catch (error) { $('body-measurement-status').textContent = error.message; }finally{button.disabled=false;}
     });
-    $('weight-log-form').addEventListener('submit', event => {
+    $('weight-log-form').addEventListener('submit', async event => {
         event.preventDefault();
         const form = event.currentTarget;
         if (!form.reportValidity()) return;
+        const button=form.querySelector('[type="submit"]');if(button.disabled)return;button.disabled=true;
         try {
-            window.capProfile.logWeight(form.elements.namedItem('weightKg').value);
+            await window.capProfile.logWeight(form.elements.namedItem('weightKg').value);
             form.reset();
-            $('weight-log-status').textContent = 'Gewicht toegevoegd en bijgewerkt in je profiel voor deze preview.';
-        } catch (error) { $('weight-log-status').textContent = error.message; }
+            $('weight-log-status').textContent = window.capReal?'Gewicht bewaard en bijgewerkt in je profiel.':'Gewicht toegevoegd en bijgewerkt in je profiel voor deze preview.';
+        } catch (error) { $('weight-log-status').textContent = error.message; }finally{button.disabled=false;}
     });
     document.addEventListener('cap:profile-changed', renderHealth);
     document.addEventListener('cap:viewchange', () => {
         if (!window.capAccess.signedIn) { $('weight-log-form').reset(); $('weight-log-status').textContent = ''; measurementForm.reset(); $('body-measurement-status').textContent = ''; }
-        if (location.hash === '#health') renderHealth();
+        if (location.hash === '#health') {renderHealth();refreshProfile();}
     });
     renderHealth();
+    if(window.capReal){
+        $('health').querySelector(':scope > .sample-notice').textContent='Metingen en profielgegevens worden in je account bewaard en automatisch bijgewerkt.';
+        $('body-measurement-form').querySelector('.sample-notice').textContent='Handmatige invoer. Een weegschaal of Apple Health is nog niet gekoppeld.';
+        window.addEventListener('focus',()=>{if(location.hash==='#health')refreshProfile();});
+        if(window.capReal.account.role==='COACH')$('health').querySelector('.club-grid > article:last-child').hidden=true;
+    }
 });
