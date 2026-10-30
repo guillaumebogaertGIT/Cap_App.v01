@@ -223,13 +223,12 @@ public class WorkoutStore {
         }
         String date = assignmentDate(resolved.assignedDate());
         Workout assigned = new Workout(id, resolved.name(), resolved.description(), resolved.exercises(), resolved.athleteId(), date, resolved.category(), resolved.workoutType());
-        List<Workout> updated = workouts.stream().map(w -> w.id().equals(id) ? assigned
-            : resolved.athleteId().equals(w.athleteId()) && date.equals(w.assignedDate())
-                ? new Workout(w.id(), w.name(), w.description(), w.exercises(), "", "", w.category(), w.workoutType()) : w).toList();
         DatedWorkout scheduled = dated(assigned);
-        List<DatedWorkout> all = new ArrayList<>(assignments.stream().filter(a -> !a.assignmentId().equals(scheduled.assignmentId())).toList());
+        // A retry must preserve its snapshot, notes and schedule. The library stays unchanged.
+        if(assignments.stream().anyMatch(a->a.assignmentId().equals(scheduled.assignmentId())))return assignment(scheduled.assignmentId()).planned();
+        List<DatedWorkout> all = new ArrayList<>(assignments);
         all.add(scheduled);
-        save(updated, all);
+        save(workouts, all);
         return assigned;
     }
 

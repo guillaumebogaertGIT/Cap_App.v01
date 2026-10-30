@@ -30,31 +30,18 @@ class AccountSecurity {
     }
 
     @Bean
-    SecurityFilterChain accountFilterChain(HttpSecurity http, org.springframework.security.core.session.SessionRegistry registry,org.springframework.jdbc.core.JdbcTemplate jdbc) throws Exception {
+    SecurityFilterChain accountFilterChain(HttpSecurity http, org.springframework.security.core.session.SessionRegistry registry,org.springframework.jdbc.core.JdbcTemplate jdbc,AccountService accounts,StaffRequestAuthorization requests) throws Exception {
         return http.authorizeHttpRequests(auth -> auth
                 .dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
                 .requestMatchers(HttpMethod.GET, "/accounts/**", "/app/**").permitAll()
                 .requestMatchers("/api/health", "/api/accounts/csrf", "/api/accounts/accept", "/api/accounts/login").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/billing/webhook").permitAll()
-                .requestMatchers(HttpMethod.POST, "/api/billing/checkout", "/api/billing/portal", "/api/billing/reconcile", "/api/billing/cancel").hasRole("ATHLETE")
-                .requestMatchers("/api/billing", "/api/billing/**").authenticated()
-                .requestMatchers(HttpMethod.GET, "/api/finance").hasRole("COACH")
-                .requestMatchers(HttpMethod.GET, "/api/coaches", "/api/coaches/**").hasRole("COACH")
-                .requestMatchers(HttpMethod.POST, "/api/coaches").hasRole("COACH")
-                .requestMatchers(HttpMethod.PUT, "/api/coaches/*/active").hasRole("COACH")
-                .requestMatchers("/api/measurements/athletes/**").hasRole("COACH")
-                .requestMatchers("/api/measurements").authenticated()
-                .requestMatchers("/api/accounts/invitations").hasRole("COACH")
-                .requestMatchers("/api/accounts/me", "/api/accounts/profile/**").authenticated()
-                .requestMatchers(HttpMethod.POST, "/api/accounts/password").authenticated()
-                .requestMatchers("/api/club/**").authenticated()
-                .requestMatchers("/api/workouts/**", "/api/workout-assignments/**", "/api/training/**", "/api/records", "/api/session-workouts").authenticated()
-                .requestMatchers(HttpMethod.GET, "/api/nutrition-targets").authenticated()
-                .requestMatchers(HttpMethod.GET, "/api/food-diary").authenticated()
-                .requestMatchers("/api/food-diary/**").hasRole("ATHLETE")
-                .requestMatchers("/api/nutrition-targets/**").hasRole("COACH")
-                .requestMatchers(HttpMethod.GET, "/api/exercises").authenticated()
-                .requestMatchers("/api/exercises/**").hasRole("COACH")
+                .requestMatchers("/api/**").access((authentication, context) -> {
+                    var current=authentication.get();
+                    boolean authenticated=current!=null && current.isAuthenticated() && !(current instanceof org.springframework.security.authentication.AnonymousAuthenticationToken);
+                    return new org.springframework.security.authorization.AuthorizationDecision(authenticated && requests.allowed(
+                        accounts.account(current.getName()),context.getRequest().getMethod(),context.getRequest().getServletPath()));
+                })
                 // Legacy endpoints still use the example athlete. Deny them until migrated.
                 .anyRequest().denyAll())
             // Only Stripe's signature-verified endpoint bypasses browser CSRF protection.

@@ -17,7 +17,7 @@ class AccountWorkoutController {
     AccountWorkoutController(AccountService accounts,AccountWorkoutService service) { this.accounts=accounts;this.service=service; }
     private AccountService.Account user(Principal principal) { return accounts.account(principal.getName()); }
     @GetMapping("/api/workouts") List<Workout> list(Principal p) throws IOException { return service.list(user(p)); }
-    @GetMapping("/api/workout-assignments") List<WorkoutStore.DatedWorkout> assignments(Principal p) throws IOException { return service.assignments(user(p)); }
+    @GetMapping("/api/workout-assignments") List<AccountWorkoutService.AssignmentView> assignments(Principal p) throws IOException { return service.assignmentViews(user(p)); }
     @PostMapping("/api/workouts") @ResponseStatus(HttpStatus.CREATED)
     Workout create(Principal p,@RequestBody Workout input,@RequestParam(required=false) String weekStart) throws IOException { return service.save(null,input,weekStart,user(p)); }
     @PutMapping("/api/workouts/{id}") Workout update(Principal p,@PathVariable String id,@RequestBody Workout input) throws IOException { return service.save(id,input,null,user(p)); }

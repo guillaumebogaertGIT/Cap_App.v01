@@ -59,6 +59,7 @@ public class FoodDiaryController {
     @Transactional(readOnly = true)
     public ResponseEntity<List<Entry>> get(Principal principal, @RequestParam LocalDate date, @RequestParam(required = false) UUID athleteId) {
         var user = accounts.account(principal.getName());
+        if(user.role().equals("COACH"))new StaffPolicy(jdbc).require(user,StaffPolicy.Permission.NUTRITION_MANAGE);
         if (user.role().equals("ATHLETE")) {
             if (athleteId != null && !athleteId.equals(user.id())) throw new ResponseStatusException(HttpStatus.NOT_FOUND);
             athleteId = user.id();

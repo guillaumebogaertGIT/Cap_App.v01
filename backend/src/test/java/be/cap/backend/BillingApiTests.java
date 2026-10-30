@@ -140,7 +140,7 @@ class BillingApiTests extends AccountApiTests {
         assertEquals(200,request(owner,"POST","/api/billing/portal","{}",csrf(owner),false).statusCode());
         assertEquals(customer,fake.portalParameters.get("customer"));
         assertEquals(409,request(owner,"POST","/api/billing/checkout","{}",csrf(owner),false).statusCode());
-        assertEquals(405,request(owner,"PUT","/api/billing","{\"status\":\"active\"}",csrf(owner),false).statusCode());
+        assertEquals(403,request(owner,"PUT","/api/billing","{\"status\":\"active\"}",csrf(owner),false).statusCode());
         fake.state(customer,"past_due",false,"open",Instant.now().plus(Duration.ofDays(30)));
         deliver("invoice.payment_failed",customer);assertFalse(status(owner).path("membershipAccess").asBoolean());
         fake.state(customer,"active",false,"paid",Instant.now().plus(Duration.ofDays(60)));

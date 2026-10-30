@@ -11,7 +11,7 @@ import org.springframework.web.server.ResponseStatusException;
 import static org.junit.jupiter.api.Assertions.*;
 
 @ActiveProfiles("accounts")
-@SpringBootTest(properties={"spring.datasource.url=jdbc:h2:mem:real-workouts;MODE=PostgreSQL;DB_CLOSE_DELAY=-1","spring.datasource.username=sa","spring.datasource.password=", "cap.accounts.bootstrap-email=workout-coach@example.test","cap.accounts.bootstrap-password=Coach-test-password-123"})
+@SpringBootTest(properties={"spring.datasource.url=jdbc:h2:mem:real-workouts;MODE=PostgreSQL;DB_CLOSE_DELAY=-1","spring.datasource.username=sa","spring.datasource.password=", "cap.accounts.bootstrap-owner=true", "cap.accounts.bootstrap-email=workout-coach@example.test","cap.accounts.bootstrap-password=Coach-test-password-123"})
 class AccountWorkoutServiceTests {
     @org.springframework.test.context.DynamicPropertySource
     static void postgres(org.springframework.test.context.DynamicPropertyRegistry properties) { PostgresTestDatabase.configure(properties,"workouts"); }
@@ -65,8 +65,8 @@ class AccountWorkoutServiceTests {
     }
     @Test void exerciseChangesAreSharedWithoutRewritingWorkoutSnapshots() throws Exception {
         var input=new ExerciseStore.Exercise(null,"CAP DB "+UUID.randomUUID(),"Lower Body","Squat","","", "",false);
-        var created=exercises.save(null,input);assertTrue(exercises.list().stream().anyMatch(e->e.id().equals(created.id())));
-        exercises.archive(created.id(),true);assertTrue(exercises.list().stream().filter(e->e.id().equals(created.id())).findFirst().orElseThrow().archived());
-        exercises.archive(created.id(),false);assertFalse(exercises.list().stream().filter(e->e.id().equals(created.id())).findFirst().orElseThrow().archived());
+        var created=exercises.save(null,input,coach());assertTrue(exercises.list(coach()).stream().anyMatch(e->e.id().equals(created.id())));
+        exercises.archive(created.id(),true,coach());assertTrue(exercises.list(coach()).stream().filter(e->e.id().equals(created.id())).findFirst().orElseThrow().archived());
+        exercises.archive(created.id(),false,coach());assertFalse(exercises.list(coach()).stream().filter(e->e.id().equals(created.id())).findFirst().orElseThrow().archived());
     }
 }

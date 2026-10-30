@@ -27,7 +27,7 @@ public class AccountExerciseService {
         String json=jdbc.queryForObject("SELECT payload FROM exercise_state WHERE id=1"+(lock?" FOR UPDATE":""),String.class);
         return new ExerciseStore(seed,List.of(mapper.readValue(json,ExerciseStore.Exercise[].class)),state->jdbc.update("UPDATE exercise_state SET payload=? WHERE id=1",mapper.writeValueAsString(state)));
     }
-    public List<ExerciseStore.Exercise> list() throws IOException { return store(false).list(); }
-    public ExerciseStore.Exercise save(String id,ExerciseStore.Exercise input) throws IOException { var store=store(true);return id==null?store.create(input):store.update(id,input); }
-    public ExerciseStore.Exercise archive(String id,boolean archived) throws IOException { return store(true).archive(id,archived); }
+    public List<ExerciseStore.Exercise> list(AccountService.Account user) throws IOException {if(!user.role().equals("ATHLETE"))new StaffPolicy(jdbc).require(user,StaffPolicy.Permission.WORKOUT_VIEW);return store(false).list(); }
+    public ExerciseStore.Exercise save(String id,ExerciseStore.Exercise input,AccountService.Account user) throws IOException {new StaffPolicy(jdbc).require(user,StaffPolicy.Permission.WORKOUT_TEMPLATE_MANAGE);var store=store(true);return id==null?store.create(input):store.update(id,input); }
+    public ExerciseStore.Exercise archive(String id,boolean archived,AccountService.Account user) throws IOException {new StaffPolicy(jdbc).require(user,StaffPolicy.Permission.WORKOUT_TEMPLATE_MANAGE);return store(true).archive(id,archived); }
 }

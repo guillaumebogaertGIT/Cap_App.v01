@@ -13,14 +13,15 @@ import org.springframework.web.server.ResponseStatusException;
 @RequestMapping("/api/exercises")
 class AccountExerciseController {
     private final AccountExerciseService service;
-    AccountExerciseController(AccountExerciseService service) {this.service=service;}
+    private final AccountService accounts;
+    AccountExerciseController(AccountExerciseService service,AccountService accounts) {this.service=service;this.accounts=accounts;}
     private ExerciseStore.Exercise definition(ExerciseController.ExerciseInput input) {
         return new ExerciseStore.Exercise(null,input.name(),input.region(),input.category(),input.subcategory(),input.instructions(),input.notes(),false);
     }
-    @GetMapping List<ExerciseStore.Exercise> list() throws IOException {return service.list();}
-    @PostMapping @ResponseStatus(HttpStatus.CREATED) ExerciseStore.Exercise create(@RequestBody ExerciseController.ExerciseInput input) throws IOException {return service.save(null,definition(input));}
-    @PutMapping("/{id}") ExerciseStore.Exercise update(@PathVariable String id,@RequestBody ExerciseController.ExerciseInput input) throws IOException {return service.save(id,definition(input));}
-    @PatchMapping("/{id}/archive") ExerciseStore.Exercise archive(@PathVariable String id,@RequestBody ExerciseController.ArchiveRequest input) throws IOException {
-        if(input.archived()==null)throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"Kies archiveren of herstellen.");return service.archive(id,input.archived());
+    @GetMapping List<ExerciseStore.Exercise> list(java.security.Principal p) throws IOException {return service.list(accounts.account(p.getName()));}
+    @PostMapping @ResponseStatus(HttpStatus.CREATED) ExerciseStore.Exercise create(java.security.Principal p,@RequestBody ExerciseController.ExerciseInput input) throws IOException {return service.save(null,definition(input),accounts.account(p.getName()));}
+    @PutMapping("/{id}") ExerciseStore.Exercise update(java.security.Principal p,@PathVariable String id,@RequestBody ExerciseController.ExerciseInput input) throws IOException {return service.save(id,definition(input),accounts.account(p.getName()));}
+    @PatchMapping("/{id}/archive") ExerciseStore.Exercise archive(java.security.Principal p,@PathVariable String id,@RequestBody ExerciseController.ArchiveRequest input) throws IOException {
+        if(input.archived()==null)throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"Kies archiveren of herstellen.");return service.archive(id,input.archived(),accounts.account(p.getName()));
     }
 }

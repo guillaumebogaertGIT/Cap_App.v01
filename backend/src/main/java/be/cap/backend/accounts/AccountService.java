@@ -31,6 +31,12 @@ public class AccountService implements UserDetailsService {
     private final JdbcTemplate jdbc;
     private final PasswordEncoder passwords;
     private final SecureRandom random = new SecureRandom();
+    @org.springframework.beans.factory.annotation.Value("${cap.accounts.bootstrap-owner:false}")
+    private boolean bootstrapOwner;
+    @org.springframework.beans.factory.annotation.Value("${cap.accounts.development-access:false}")
+    private boolean developmentAccess;
+    @org.springframework.beans.factory.annotation.Autowired
+    private org.springframework.core.env.Environment environment;
 
     public AccountService(JdbcTemplate jdbc, PasswordEncoder passwords) {
         this.jdbc = jdbc;
@@ -69,9 +75,11 @@ public class AccountService implements UserDetailsService {
     @Override
     public UserDetails loadUserByUsername(String username) {
         String normalized = username == null ? "" : username.trim().toLowerCase(Locale.ROOT);
-        var users = jdbc.query("SELECT email, password_hash, role, active FROM cap_user WHERE email = ?",
+        var users = jdbc.query("SELECT email, password_hash, role, active, staff_role FROM cap_user WHERE email = ?",
             (row, index) -> User.withUsername(row.getString("email")).password(row.getString("password_hash"))
-                .roles(row.getString("role")).disabled(!row.getBoolean("active")).build(), normalized);
+                .roles(row.getString("role")).disabled(!row.getBoolean("active") || ("COACH".equals(row.getString("role"))
+                    && ("UNASSIGNED".equals(row.getString("staff_role")) || "DEVELOPMENT".equals(row.getString("staff_role"))
+                        && !(developmentAccess && environment.matchesProfiles("development-account") && !environment.matchesProfiles("production","prod"))))).build(), normalized);
         if (users.isEmpty()) throw new UsernameNotFoundException("Account niet gevonden.");
         return users.getFirst();
     }
@@ -99,6 +107,7 @@ public class AccountService implements UserDetailsService {
         validatePassword(password);
         jdbc.update("INSERT INTO cap_user (id, email, display_name, password_hash, role, created_at) VALUES (?, ?, ?, ?, 'COACH', ?)",
             UUID.randomUUID(), email, "CAP coach", passwords.encode(password), Timestamp.from(Instant.now()));
+        if(bootstrapOwner) jdbc.update("UPDATE cap_user SET staff_role='OWNER' WHERE email=?",email);
     }
 
     @Transactional
@@ -107,7 +116,7 @@ public class AccountService implements UserDetailsService {
         if (jdbc.queryForObject("SELECT COUNT(*) FROM cap_user WHERE email = ?", Long.class, email) > 0)
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Dit e-mailadres heeft al een account.");
         Account coach = account(coachEmail);
-        if (!coach.role().equals("COACH")) throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+        new StaffPolicy(jdbc).require(coach,StaffPolicy.Permission.CLIENT_SCOPE_MANAGE);
         byte[] bytes = new byte[32]; random.nextBytes(bytes);
         String token = HexFormat.of().formatHex(bytes);
         Instant expires = Instant.now().plus(7, ChronoUnit.DAYS);

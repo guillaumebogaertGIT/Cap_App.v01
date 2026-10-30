@@ -18,6 +18,19 @@ import static org.mockito.Mockito.*;
     "cap.billing.portal=bpc_FAKE"})
 class FinanceApiTests extends AccountApiTests {
     @MockitoBean StripeGateway stripe;
+    @Test void managerAndFinanceCanReadReportsButCannotExecuteStaffPaymentWrites() throws Exception {
+        when(stripe.get(anyString())).thenReturn(json.readTree("{\"data\":[],\"has_more\":false}"));
+        for(String role:List.of("MANAGER","FINANCE")) {
+            String email=UUID.randomUUID()+"@example.test";
+            jdbc.update("INSERT INTO cap_user(id,email,display_name,password_hash,role,staff_role,created_at) SELECT ?,?,'Financial reader',password_hash,'COACH',?,CURRENT_TIMESTAMP FROM cap_user WHERE email='coach@example.test'",UUID.randomUUID(),email,role);
+            var user=client();login(user,email,"Coach-test-password-123");
+            assertEquals(200,request(user,"GET","/api/finance?month=2026-10",null,null,false).statusCode());
+            var people=request(user,"GET","/api/billing/athletes",null,null,false);assertEquals(200,people.statusCode());
+            for(var person:json.readTree(people.body())) {assertEquals(2,person.size());assertTrue(person.has("id"));assertTrue(person.has("name"));}
+            for(String action:List.of("checkout","portal","cancel","reconcile"))assertEquals(403,request(user,"POST","/api/billing/"+action,"{}",csrf(user),false).statusCode());
+        }
+        verify(stripe,never()).post(anyString(),anyMap(),any());
+    }
     private Map<String,Object> charge(String id,String customer,long amount,long refund) {
         var value=new HashMap<String,Object>();
         value.put("id",id); value.put("customer",customer); value.put("amount_captured",amount);
@@ -27,19 +40,13 @@ class FinanceApiTests extends AccountApiTests {
         return value;
     }
     @Test void accessIsSeparateAndNeverTrustsDisplayNames() throws Exception {
-        var configured=new FinanceAccess(" COACH@example.test ");
-        assertTrue(configured.allows(new Account(UUID.randomUUID(),"coach@example.test","Other name","COACH")));
-        assertFalse(configured.allows(new Account(UUID.randomUUID(),"dieter@example.test","Glenn Vlamynck","COACH")));
-        assertFalse(configured.allows(new Account(UUID.randomUUID(),"coach@example.test","Glenn","ATHLETE")));
-        assertFalse(new FinanceAccess("").allows(new Account(UUID.randomUUID(),"coach@example.test","Glenn","COACH")));
-        assertThrows(IllegalStateException.class,()->new FinanceAccess("a@example.test,b@example.test"));
         String path="/api/finance?month=2026-10";
         assertEquals(401,request(client(),"GET",path,null,null,false).statusCode());
         var coach=client(); login(coach,"coach@example.test","Coach-test-password-123");
         var athlete=client(); acceptTestAthlete(coach,athlete,"finance-"+UUID.randomUUID()+"@example.test");
         assertEquals(403,request(athlete,"GET",path,null,null,false).statusCode());
         String email="ordinary-"+UUID.randomUUID()+"@example.test";
-        jdbc.update("INSERT INTO cap_user(id,email,display_name,password_hash,role,created_at) SELECT ?,?,'Glenn Vlamynck',password_hash,'COACH',? FROM cap_user WHERE email='coach@example.test'",
+        jdbc.update("INSERT INTO cap_user(id,email,display_name,password_hash,role,created_at,staff_role) SELECT ?,?,'Glenn Vlamynck',password_hash,'COACH',?,'INSTRUCTOR' FROM cap_user WHERE email='coach@example.test'",
             UUID.randomUUID(),email,Timestamp.from(Instant.now()));
         var ordinary=client(); login(ordinary,email,"Coach-test-password-123");
         assertEquals(403,request(ordinary,"GET",path,null,null,false).statusCode());

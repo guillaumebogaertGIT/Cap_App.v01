@@ -232,11 +232,11 @@ class CatalogBillingApiTests extends BillingApiTests {
         String coachId=json.readTree(request(coach,"GET","/api/accounts/me",null,null,false).body()).path("id").asText();
         assertEquals(404,request(coach,"GET","/api/billing/athletes/"+coachId,null,null,false).statusCode());
         assertEquals(400,request(coach,"GET","/api/billing/athletes/not-a-uuid",null,null,false).statusCode());
-        assertEquals(405,request(coach,"PUT",path,"{\"credits\":100}",csrf(coach),false).statusCode());
-        assertEquals(405,request(coach,"POST",path,"{}",csrf(coach),false).statusCode());
+        assertEquals(403,request(coach,"PUT",path,"{\"credits\":100}",csrf(coach),false).statusCode());
+        assertEquals(403,request(coach,"POST",path,"{}",csrf(coach),false).statusCode());
         assertEquals(204,request(coach,"POST","/api/accounts/logout","",csrf(coach),false).statusCode());assertEquals(401,request(coach,"GET",path,null,null,false).statusCode());
     }
-    @Test void membershipReviewIsLimitedToTheTwoDesignatedCoachLogins() throws Exception {
+    @Test void membershipReviewUsesFinancialRolesNotDisplayNamesOrEmails() throws Exception {
         var allowed=coach();var owner=client();String ownerId=athlete(owner);
         for (String email:List.of("second-reviewer@example.test","ordinary-coach@example.test")) {
             jdbc.update("""
@@ -244,6 +244,7 @@ class CatalogBillingApiTests extends BillingApiTests {
                 SELECT ?,?,'Glenn Vlamynck',password_hash,'COACH',CURRENT_TIMESTAMP FROM cap_user WHERE email='coach@example.test'
                 """,UUID.randomUUID(),email);
         }
+        jdbc.update("UPDATE cap_user SET staff_role='FINANCE' WHERE email='second-reviewer@example.test'"); jdbc.update("UPDATE cap_user SET staff_role='INSTRUCTOR' WHERE email='ordinary-coach@example.test'");
         var second=client();login(second,"second-reviewer@example.test","Coach-test-password-123");
         var ordinary=client();login(ordinary,"ordinary-coach@example.test","Coach-test-password-123");
         String path="/api/billing/athletes/"+ownerId;

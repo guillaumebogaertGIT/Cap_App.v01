@@ -47,6 +47,10 @@ public class BillingController {
         return ResponseEntity.ok().cacheControl(CacheControl.noStore())
             .body(billing.athleteSummary(accounts.account(principal.getName()),athleteId));
     }
+    @GetMapping("/athletes")
+    public ResponseEntity<List<BillingService.FinancialPerson>> financialPeople(Principal principal) {
+        return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(billing.financialPeople(accounts.account(principal.getName())));
+    }
     @PostMapping("/portal")
     public BillingService.Link portal(Principal principal,@RequestBody(required=false) Map<String,Object> input) {
         noInput(input); return billing.portal(accounts.account(principal.getName()));

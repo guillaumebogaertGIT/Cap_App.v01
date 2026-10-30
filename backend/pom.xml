@@ -28,6 +28,8 @@
 	</scm>
 	<properties>
 		<java.version>25</java.version>
+        <!-- Override for isolated verification while VS Code builds target/classes. -->
+        <cap.build.directory>${project.basedir}/target</cap.build.directory>
 	</properties>
 	<dependencies>
 		<dependency>
@@ -84,6 +86,7 @@
 	</profiles>
 
 	<build>
+        <directory>${cap.build.directory}</directory>
 		<resources>
             <resource><directory>../frontend</directory><targetPath>static/app</targetPath><excludes><exclude>accounts/**</exclude></excludes></resource>
 			<resource><directory>src/main/resources</directory></resource>

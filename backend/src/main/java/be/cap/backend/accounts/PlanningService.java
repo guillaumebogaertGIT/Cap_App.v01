@@ -30,7 +30,7 @@ public class PlanningService {
     public PlanningService(JdbcTemplate jdbc, be.cap.backend.accounts.billing.LessonAccess lessonAccess) { this.jdbc = jdbc; this.lessonAccess = lessonAccess; }
     private ResponseStatusException invalid(String message) { return new ResponseStatusException(HttpStatus.BAD_REQUEST, message); }
     private void coach(AccountService.Account user) {
-        if (!user.role().equals("COACH")) throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+        new StaffPolicy(jdbc).require(user,StaffPolicy.Permission.CLASS_MANAGE);
     }
     private boolean visible(UUID id, AccountService.Account user) {
         if (user.role().equals("COACH")) return true;
@@ -43,12 +43,16 @@ public class PlanningService {
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Les niet gevonden."));
     }
     public List<Person> people(AccountService.Account user) {
-        coach(user);
-        return jdbc.query("SELECT id, display_name, role FROM cap_user WHERE active=TRUE ORDER BY display_name", (row, index) ->
-            new Person(row.getObject("id", UUID.class), row.getString("display_name"), row.getString("role")));
+        var policy=new StaffPolicy(jdbc);policy.require(user,StaffPolicy.Permission.CLASS_VIEW);
+        boolean manager=policy.allows(user,StaffPolicy.Permission.CLASS_MANAGE);var clients=manager?Set.<UUID>of():policy.scopedClients(user);
+        return jdbc.query("SELECT id, display_name, role FROM cap_user WHERE active=TRUE AND (role='ATHLETE' OR staff_role IN ('OWNER','MANAGER','INSTRUCTOR')) ORDER BY display_name", (row, index) ->
+            new Person(row.getObject("id", UUID.class), row.getString("display_name"), row.getString("role"))).stream()
+            .filter(p->manager || p.id().equals(user.id()) || p.role().equals("ATHLETE") && clients.contains(p.id())).toList();
     }
     @Transactional(readOnly = true)
     public List<Session> list(AccountService.Account user, LocalDate from, LocalDate through) {
+        var policy=new StaffPolicy(jdbc);
+        if(user.role().equals("COACH"))policy.require(user,StaffPolicy.Permission.CLASS_VIEW);
         String sql = """
             SELECT s.*, u.display_name AS coach_name,
                 (SELECT COUNT(*) FROM session_booking b WHERE b.session_id = s.id AND b.cancelled = FALSE) AS booked_count,
@@ -58,13 +62,14 @@ public class PlanningService {
                 (SELECT 1 FROM session_recipient r WHERE r.session_id = s.id AND r.athlete_id = ?))
             """;
         List<Object> parameters = new ArrayList<>(List.of(user.id(), user.role().equals("COACH"), user.id()));
+        if(policy.role(user).equals("INSTRUCTOR")){sql+=" AND s.coach_id=?";parameters.add(user.id());}
         if (from != null) { sql += " AND s.session_date >= ?"; parameters.add(Date.valueOf(from)); }
         if (through != null) { sql += " AND s.session_date <= ?"; parameters.add(Date.valueOf(through)); }
         sql += " ORDER BY s.session_date, s.start_time, s.title";
         return jdbc.query(sql, (row, index) -> {
             UUID id = row.getObject("id", UUID.class);
             // Athletes receive no other athlete identities, even in their own private session.
-            List<UUID> recipients = user.role().equals("COACH")
+            List<UUID> recipients = policy.allows(user,StaffPolicy.Permission.CLASS_MANAGE)
                 ? jdbc.query("SELECT athlete_id FROM session_recipient WHERE session_id = ?", (r, i) -> r.getObject(1, UUID.class), id) : List.of();
             return new Session(id, row.getString("title"), row.getDate("session_date").toLocalDate(),
                 row.getTime("start_time").toLocalTime(), row.getTime("end_time").toLocalTime(),
@@ -147,6 +152,11 @@ public class PlanningService {
     }
     @Transactional(readOnly = true)
     public List<Booking> bookings(AccountService.Account user) {
+        var policy=new StaffPolicy(jdbc);
+        if(user.role().equals("COACH")) {
+            policy.require(user,StaffPolicy.Permission.CLASS_VIEW);
+            if(!policy.allows(user,StaffPolicy.Permission.CLASS_MANAGE))return List.of();
+        }
         return jdbc.query("""
             SELECT b.*, u.display_name FROM session_booking b JOIN cap_user u ON u.id = b.athlete_id
             JOIN club_session s ON s.id = b.session_id

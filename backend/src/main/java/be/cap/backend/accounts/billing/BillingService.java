@@ -263,6 +263,11 @@ public class BillingService {
         return new Summary(settings.enabled,true,"CAP lidmaatschap",0,"EUR","none",false,null,null,false,null,null,null,customer,catalog.offers(),balance,null,false);
     }
     /** Coaches inspect local records only; this never creates a Stripe customer or payment link. */
+    public record FinancialPerson(UUID id,String name){}
+    public List<FinancialPerson> financialPeople(Account user) {
+        if(!membershipReview.allows(user))throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+        return jdbc.query("SELECT id,display_name FROM cap_user WHERE role='ATHLETE' AND active=TRUE ORDER BY display_name",(r,i)->new FinancialPerson(r.getObject(1,UUID.class),r.getString(2)));
+    }
     public AthleteSummary athleteSummary(Account coach, UUID athleteId) {
         if (!membershipReview.allows(coach)) throw new ResponseStatusException(HttpStatus.FORBIDDEN,"Je hebt geen toestemming om lidmaatschappen van sporters te bekijken.");
         var athlete=jdbc.query("SELECT id,email,display_name,role FROM cap_user WHERE id=? AND role='ATHLETE'",

@@ -42,6 +42,7 @@ class PostgresRestartTests {
         settings.put("spring.datasource.password",System.getenv().getOrDefault("CAP_TEST_POSTGRES_PASSWORD",""));
         settings.put("spring.flyway.schemas",schema); settings.put("spring.flyway.default-schema",schema);
         settings.put("cap.accounts.bootstrap-email","restart-coach@example.test");
+        settings.put("cap.accounts.bootstrap-owner",true);
         settings.put("cap.accounts.bootstrap-password","Restart-test-password-25");
         settings.put("server.port",0);
         var client=HttpClient.newBuilder().cookieHandler(new CookieManager(null,CookiePolicy.ACCEPT_ALL)).build();

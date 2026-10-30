@@ -29,7 +29,7 @@ public class MeasurementController {
         return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(profiles.get(principal));
     }
     private AccountService.Account requireAthlete(Principal principal,UUID id) {
-        if(!accounts.account(principal.getName()).role().equals("COACH"))throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+        new StaffPolicy(jdbc).require(accounts.account(principal.getName()),StaffPolicy.Permission.CLIENT_HEALTH);
         return jdbc.query("SELECT id,email,display_name,role FROM cap_user WHERE id=? AND role='ATHLETE' AND active=TRUE",
             (row,index)->new AccountService.Account(row.getObject("id",UUID.class),row.getString("email"),row.getString("display_name"),row.getString("role")),id)
             .stream().findFirst().orElseThrow(()->new ResponseStatusException(HttpStatus.NOT_FOUND,"Sporter niet gevonden."));

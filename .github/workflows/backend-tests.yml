@@ -8,6 +8,25 @@ jobs:
   test:
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_DB: cap_test
+          POSTGRES_USER: cap_test
+          POSTGRES_PASSWORD: cap_test_fixture_only
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U cap_test -d cap_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    env:
+      CAP_TEST_POSTGRES_URL: jdbc:postgresql://127.0.0.1:5432/cap_test
+      CAP_TEST_POSTGRES_USER: cap_test
+      CAP_TEST_POSTGRES_PASSWORD: cap_test_fixture_only
+      CAP_REQUIRE_POSTGRES_TESTS: 'true'
     steps:
       - uses: actions/checkout@v4
       - name: Set up Java 25

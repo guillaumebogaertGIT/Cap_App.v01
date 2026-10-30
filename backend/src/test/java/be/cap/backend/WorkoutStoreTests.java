@@ -127,7 +127,7 @@ class WorkoutStoreTests {
         assertEquals(1, reloaded.assignments().size());
     }
 
-    @Test void assignsSavedWorkoutWithoutCopyAndReplacesTodaysAssignment() throws Exception {
+    @Test void assignsSavedWorkoutWithoutChangingLibraryTemplates() throws Exception {
         String file = directory.resolve("assignments.json").toString();
         WorkoutStore store = new WorkoutStore(file);
         Workout previous = store.create(workout("Previous", "preview-guillaume", 3));
@@ -138,8 +138,8 @@ class WorkoutStoreTests {
         assertEquals(previous.assignedDate(), assigned.assignedDate());
         var saved = new WorkoutStore(file).list();
         assertEquals(2, saved.size());
-        assertEquals("", saved.get(0).athleteId());
-        assertEquals("preview-guillaume", saved.get(1).athleteId());
+        assertEquals("preview-guillaume", saved.get(0).athleteId());
+        assertEquals("", saved.get(1).athleteId());
         store.assign(template.id(), request);
         assertEquals(2, store.list().size());
         assertThrows(ResponseStatusException.class, () -> store.assign("missing", request));

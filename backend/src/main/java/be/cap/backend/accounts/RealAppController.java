@@ -22,10 +22,12 @@ class RealAppController {
     private final MembershipReviewAccess membershipReview;
     private final FinanceAccess financeAccess;
     private final StaffManagementAccess staffManagement;
+    private final StaffPolicy staffPolicy;
     @Value("${cap.frontend-location:classpath:/static/app/}index.html")
     private Resource appTemplate;
 
-    RealAppController(AccountService accounts, PlanningService planning, AccountWorkoutService workouts, MembershipReviewAccess membershipReview, FinanceAccess financeAccess,StaffManagementAccess staffManagement) {
+    RealAppController(AccountService accounts, PlanningService planning, AccountWorkoutService workouts, MembershipReviewAccess membershipReview, FinanceAccess financeAccess,StaffManagementAccess staffManagement,StaffPolicy staffPolicy) {
+        this.staffPolicy=staffPolicy;
         this.staffManagement=staffManagement;
         this.financeAccess = financeAccess;
         this.accounts = accounts; this.planning = planning; this.workouts = workouts; this.membershipReview = membershipReview;
@@ -38,10 +40,12 @@ class RealAppController {
         var account = accounts.account(principal.getName());
         var data = new LinkedHashMap<String, Object>();
         data.put("account", account);
-        data.put("permissions", java.util.Map.of("reviewMemberships", membershipReview.allows(account), "reviewFinance", financeAccess.allows(account),"manageCoaches",staffManagement.allows(account)));
-        data.put("people", account.role().equals("COACH") ? planning.people(account) : List.of());
-        data.put("sessions", planning.list(account, null, null));
-        data.put("bookings", planning.bookings(account));
+        data.put("staffRole", staffPolicy.role(account));
+        data.put("permissions", staffPolicy.capabilities(account));
+        boolean planningAccess=account.role().equals("ATHLETE") || staffPolicy.allows(account,StaffPolicy.Permission.CLASS_VIEW);
+        data.put("people", staffPolicy.allows(account,StaffPolicy.Permission.CLASS_VIEW) ? planning.people(account) : List.of());
+        data.put("sessions", planningAccess?planning.list(account, null, null):List.of());
+        data.put("bookings", planningAccess?planning.bookings(account):List.of());
         data.put("draft", account.role().equals("ATHLETE") ? workouts.active(account) : null);
         String json = JsonMapper.builder().build().writeValueAsString(data)
             .replace("&", "\\u0026").replace("<", "\\u003c")

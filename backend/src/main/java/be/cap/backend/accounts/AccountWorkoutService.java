@@ -19,7 +19,8 @@ public class AccountWorkoutService {
     private final JdbcTemplate jdbc;
     private final JsonMapper mapper = JsonMapper.builder().build();
     public AccountWorkoutService(JdbcTemplate jdbc) { this.jdbc = jdbc; }
-    private void coach(AccountService.Account user) { if (!user.role().equals("COACH")) throw new ResponseStatusException(HttpStatus.FORBIDDEN); }
+    private StaffPolicy policy(){return new StaffPolicy(jdbc);}
+    private void coach(AccountService.Account user) { policy().require(user,StaffPolicy.Permission.WORKOUT_TEMPLATE_MANAGE); }
     private ResponseStatusException missing() { return new ResponseStatusException(HttpStatus.NOT_FOUND, "Workout niet gevonden."); }
     private boolean athlete(String id) {
         try { return jdbc.queryForObject("SELECT COUNT(*) FROM cap_user WHERE id=? AND role='ATHLETE'", Long.class, UUID.fromString(id)) == 1; }
@@ -40,15 +41,31 @@ public class AccountWorkoutService {
     }
     private WorkoutStore.DatedWorkout assignment(WorkoutStore store,String id,AccountService.Account user) {
         var assignment=store.assignment(id);
-        if (!user.role().equals("COACH") && !user.id().toString().equals(assignment.planned().athleteId())) throw missing();
+        if(user.role().equals("ATHLETE")) {if(!user.id().toString().equals(assignment.planned().athleteId()))throw missing();}
+        else {policy().require(user,StaffPolicy.Permission.WORKOUT_VIEW);policy().requireClient(user,assignment.planned().athleteId());}
         return assignment;
     }
     public List<Workout> list(AccountService.Account user) throws IOException {
         var store=workouts(false);
-        return user.role().equals("COACH")?store.list():store.assignments().stream().map(WorkoutStore.DatedWorkout::planned).filter(w->user.id().toString().equals(w.athleteId())).toList();
+        if(user.role().equals("COACH")) {policy().require(user,StaffPolicy.Permission.WORKOUT_VIEW);return store.list().stream().map(w->new Workout(w.id(),w.name(),w.description(),w.exercises(),"","",w.category(),w.workoutType())).toList();}
+        return store.assignments().stream().map(WorkoutStore.DatedWorkout::planned).filter(w->user.id().toString().equals(w.athleteId())).toList();
     }
     public List<WorkoutStore.DatedWorkout> assignments(AccountService.Account user) throws IOException {
-        return workouts(false).assignments().stream().filter(a->user.role().equals("COACH")||user.id().toString().equals(a.planned().athleteId())).toList();
+        if(user.role().equals("COACH"))policy().require(user,StaffPolicy.Permission.WORKOUT_VIEW);
+        var clients=user.role().equals("COACH")?policy().scopedClients(user):Set.of(user.id());
+        return workouts(false).assignments().stream().filter(a->clients.contains(UUID.fromString(a.planned().athleteId())))
+            .map(a->user.role().equals("ATHLETE")?new WorkoutStore.DatedWorkout(a.assignmentId(),a.planned(),"",a.weekStart()):a).toList();
+    }
+    public record AssignmentView(String assignmentId,Workout planned,String note,String weekStart,UUID assignedBy,String assignedAt,String assignedByName){}
+    public List<AssignmentView> assignmentViews(AccountService.Account user) throws IOException {
+        var values=new ArrayList<AssignmentView>();
+        for(var entry:assignments(user)) {
+            record Attribution(UUID id,String at,String name){}
+            var authors=jdbc.query("SELECT a.assigned_by,a.assigned_at,u.display_name FROM assignment_attribution a JOIN cap_user u ON u.id=a.assigned_by WHERE assignment_id=?",
+                (r,i)->new Attribution(r.getObject(1,UUID.class),r.getTimestamp(2).toInstant().toString(),r.getString(3)),entry.assignmentId());
+            values.add(new AssignmentView(entry.assignmentId(),entry.planned(),entry.note(),entry.weekStart(),authors.isEmpty()?null:authors.getFirst().id(),authors.isEmpty()?null:authors.getFirst().at(),authors.isEmpty()?null:authors.getFirst().name()));
+        }
+        return values;
     }
     public Workout save(String id,Workout input,String week,AccountService.Account user) throws IOException {
         coach(user); var store=workouts(true);
@@ -59,21 +76,33 @@ public class AccountWorkoutService {
         }
         Workout resolved=training(input.athleteId(),false).resolveTargets(input);
         if(id!=null) return store.update(id,resolved);
-        return week==null||week.isBlank()?store.create(resolved):store.createWeekly(resolved,week);
+        Workout created=store.create(new Workout(null,resolved.name(),resolved.description(),resolved.exercises(),"","",resolved.category(),resolved.workoutType()));
+        return input.athleteId()==null || input.athleteId().isBlank()?created:assign(created.id(),input.athleteId(),input.assignedDate(),week,user);
     }
     public void delete(String id,AccountService.Account user) throws IOException { coach(user); workouts(true).delete(id); }
     public Workout assign(String id,String athleteId,String date,String week,AccountService.Account user) throws IOException {
-        coach(user); var store=workouts(true);
+        policy().require(user,StaffPolicy.Permission.WORKOUT_ASSIGN);policy().requireClient(user,athleteId);var store=workouts(true);
+        jdbc.queryForObject("SELECT id FROM cap_user WHERE id=? FOR UPDATE",UUID.class,user.id());
+        policy().require(user,StaffPolicy.Permission.WORKOUT_ASSIGN);policy().requireClient(user,athleteId);
+        var previousAssignments=store.assignments().stream().map(WorkoutStore.DatedWorkout::assignmentId).collect(java.util.stream.Collectors.toSet());
         Workout old=store.list().stream().filter(w->w.id().equals(id)).findFirst().orElseThrow(this::missing);
         Workout input=new Workout(id,old.name(),old.description(),old.exercises(),athleteId,date,old.category(),old.workoutType());
         Workout resolved=training(athleteId,false).resolveTargets(input);
-        return week==null||week.isBlank()?store.assign(id,resolved):store.assignWeekly(id,resolved,week);
+        var assigned=week==null||week.isBlank()?store.assign(id,resolved):store.assignWeekly(id,resolved,week);
+        var entry=store.assignments().stream().filter(a->a.planned().id().equals(id) && athleteId.equals(a.planned().athleteId())
+            && (week==null||week.isBlank()?assigned.assignedDate().equals(a.planned().assignedDate()):week.equals(a.weekStart()))).findFirst().orElseThrow(this::missing);
+        if(!previousAssignments.contains(entry.assignmentId())) {
+            jdbc.update("INSERT INTO assignment_attribution(assignment_id,workout_id,client_id,assigned_by,assigned_at) VALUES(?,?,?,?,CURRENT_TIMESTAMP)",entry.assignmentId(),id,UUID.fromString(athleteId),user.id());
+            policy().audit(user,"WORKOUT_ASSIGN",entry.assignmentId(),athleteId);
+        }
+        return assigned;
     }
     private void unfinished(WorkoutStore.DatedWorkout assignment) throws IOException {
         if(training(assignment.planned().athleteId(),false).history().stream().anyMatch(s->assignment.assignmentId().equals(s.assignmentId())))
             throw new ResponseStatusException(HttpStatus.CONFLICT,"Deze workout is al afgerond.");
     }
     public WorkoutStore.DatedWorkout schedule(String id,String date,AccountService.Account user) throws IOException {
+        if(user.role().equals("COACH"))policy().require(user,StaffPolicy.Permission.WORKOUT_ASSIGN);
         var store=workouts(true); var selected=assignment(store,id,user); unfinished(selected); return store.schedule(id,date);
     }
     public WorkoutStore.DatedWorkout editAssignment(String id,Workout input,AccountService.Account user) throws IOException {
@@ -82,7 +111,7 @@ public class AccountWorkoutService {
         return store.updateAssignment(id,training(old.athleteId(),false).resolveTargets(new Workout(old.id(),input.name(),input.description(),input.exercises(),old.athleteId(),old.assignedDate(),input.category(),input.workoutType())));
     }
     public WorkoutStore.DatedWorkout note(String id,String note,AccountService.Account user) throws IOException {
-        coach(user);var store=workouts(true);assignment(store,id,user);return store.updateNote(id,note);
+        throw new ResponseStatusException(HttpStatus.FORBIDDEN,"Gebruik Notities om een privénotitie met auteur en datum toe te voegen.");
     }
     public void removeAssignment(String id,AccountService.Account user) throws IOException {
         coach(user);var store=workouts(true);unfinished(assignment(store,id,user));store.deleteAssignment(id);
@@ -92,6 +121,8 @@ public class AccountWorkoutService {
             if(athleteId!=null&&!athleteId.equals(user.id().toString())) throw missing();
             return user.id().toString();
         }
+        policy().require(user,StaffPolicy.Permission.WORKOUT_VIEW);
+        if(athleteId!=null)policy().requireClient(user,athleteId);
         return athleteId==null?"":athleteId;
     }
     public List<TrainingStore.Session> history(AccountService.Account user,String athleteId) throws IOException { return training(historyOwner(user,athleteId),false).history(); }

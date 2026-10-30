@@ -6,6 +6,7 @@ import java.util.*;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
+@org.springframework.test.context.TestPropertySource(properties="spring.datasource.url=jdbc:h2:mem:coach-directory;MODE=PostgreSQL;DB_CLOSE_DELAY=-1")
 class CoachDirectoryTests extends AccountApiTests {
     @Test void coachDirectoryRestrictsFieldsRolesAndWrites() throws Exception {
         var guest=client();assertEquals(401,request(guest,"GET","/api/coaches",null,null,false).statusCode());
@@ -29,7 +30,7 @@ class CoachDirectoryTests extends AccountApiTests {
         assertEquals(404,request(coach,"GET","/api/coaches/"+UUID.randomUUID(),null,null,false).statusCode());
         assertEquals(400,request(coach,"GET","/api/coaches/not-a-uuid",null,null,false).statusCode());
         assertEquals(403,request(coach,"PUT","/api/coaches/"+id,"{}",csrf(coach),false).statusCode());
-        var colleague=client();login(colleague,email,"Coach-test-password-123");
+        jdbc.update("UPDATE cap_user SET staff_role='INSTRUCTOR' WHERE id=?",id);var colleague=client();login(colleague,email,"Coach-test-password-123");
         var input=new HashMap<String,Object>();input.put("name","Fake colleague");input.put("birthDate","1995-02-03");
         input.put("heightCm",180);input.put("weightKg",75);input.put("phone","+32 470 12 34 56");input.put("coach_title","Owner");
         assertEquals(200,request(colleague,"PUT","/api/accounts/profile",json.writeValueAsString(input),csrf(colleague),false).statusCode());

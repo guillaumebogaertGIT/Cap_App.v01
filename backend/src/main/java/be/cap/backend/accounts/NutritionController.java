@@ -49,6 +49,7 @@ public class NutritionController {
         } else if (athleteId == null) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Kies eerst een sporter.");
         }
+        if(user.role().equals("COACH"))new StaffPolicy(jdbc).require(user,StaffPolicy.Permission.NUTRITION_MANAGE);
         if (jdbc.queryForObject("SELECT COUNT(*) FROM cap_user WHERE id=? AND role='ATHLETE'", Long.class, athleteId) == 0)
             throw missing();
         var plan = read(athleteId);
@@ -61,7 +62,7 @@ public class NutritionController {
     @PutMapping("/{athleteId}")
     public Plan save(Principal principal, @PathVariable UUID athleteId, @RequestBody Input input) {
         var coach = accounts.account(principal.getName());
-        if (!coach.role().equals("COACH")) throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+        new StaffPolicy(jdbc).require(coach,StaffPolicy.Permission.NUTRITION_MANAGE);
         if (input.targets() == null) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Vul alle vijf dagdoelen in.");
         var t = input.targets();
         valid(t.calories(), 1); valid(t.proteinG(), 0); valid(t.carbsG(), 0); valid(t.fatG(), 0); valid(t.waterMl(), 0);

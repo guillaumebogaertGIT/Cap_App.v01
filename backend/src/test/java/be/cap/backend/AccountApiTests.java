@@ -23,7 +23,7 @@ import static org.junit.jupiter.api.Assertions.*;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, properties = {
     "spring.datasource.url=jdbc:h2:mem:accounts;MODE=PostgreSQL;DB_CLOSE_DELAY=-1",
     "spring.datasource.username=sa", "spring.datasource.password=",
-    "cap.accounts.bootstrap-email=coach@example.test", "cap.accounts.bootstrap-password=Coach-test-password-123"
+    "cap.accounts.bootstrap-owner=true", "cap.accounts.bootstrap-email=coach@example.test", "cap.accounts.bootstrap-password=Coach-test-password-123"
 })
 class AccountApiTests {
     @TempDir static Path directory;
@@ -193,7 +193,7 @@ class AccountApiTests {
         assertTrue(context.getBeansOfType(WorkoutController.class).isEmpty());
         assertTrue(context.getBeansOfType(TrainingController.class).isEmpty());
         assertEquals(404,request(first,"GET","/api/training?athleteId=preview-guillaume",null,null,false).statusCode());
-        assertEquals(400,request(coach,"POST","/api/workouts/"+id+"/assignment",json.writeValueAsString(java.util.Map.of("athleteId","preview-guillaume","date",day)),csrf(coach),false).statusCode());
+        assertEquals(404,request(coach,"POST","/api/workouts/"+id+"/assignment",json.writeValueAsString(java.util.Map.of("athleteId","preview-guillaume","date",day)),csrf(coach),false).statusCode());
         var malformed=request(coach,"PUT","/api/accounts/profile","{broken-json-password-example",csrf(coach),false);
         assertEquals(400,malformed.statusCode());assertFalse(malformed.body().contains("password-example"));
         assertEquals(204,request(first,"POST","/api/accounts/logout","",csrf(first),false).statusCode());

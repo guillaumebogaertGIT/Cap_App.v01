@@ -15,7 +15,7 @@ import static org.junit.jupiter.api.Assertions.*;
 @SpringBootTest(properties = {
     "spring.datasource.url=jdbc:h2:mem:planning;MODE=PostgreSQL;DB_CLOSE_DELAY=-1",
     "spring.datasource.username=sa", "spring.datasource.password=",
-    "cap.accounts.bootstrap-email=planning-coach@example.test", "cap.accounts.bootstrap-password=Coach-test-password-123"
+    "cap.accounts.bootstrap-owner=true", "cap.accounts.bootstrap-email=planning-coach@example.test", "cap.accounts.bootstrap-password=Coach-test-password-123"
 })
 class PlanningServiceTests {
     @org.springframework.test.context.DynamicPropertySource

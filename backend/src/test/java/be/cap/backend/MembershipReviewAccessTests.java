@@ -1,23 +1,22 @@
 package be.cap.backend;
 
-import java.util.UUID;
-import be.cap.backend.accounts.AccountService.Account;
-import be.cap.backend.accounts.MembershipReviewAccess;
+import be.cap.backend.accounts.*;
+import java.util.*;
 import org.junit.jupiter.api.Test;
+import org.springframework.jdbc.core.JdbcTemplate;
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
 class MembershipReviewAccessTests {
-    private Account account(String email,String role) { return new Account(UUID.randomUUID(),email,"Glenn Vlamynck",role); }
-    @Test void denyByDefaultAndNeverTrustDisplayNamesOrAthleteEmailAlone() {
-        var coach=account("glenn@example.test","COACH");
-        assertFalse(new MembershipReviewAccess("").allows(coach));
-        var policy=new MembershipReviewAccess(" Glenn@example.test, dieter@example.test ");
-        assertTrue(policy.allows(coach));assertTrue(policy.allows(account("dieter@example.test","COACH")));
-        assertFalse(policy.allows(account("another@example.test","COACH")));
-        assertFalse(policy.allows(account("glenn@example.test","ATHLETE")));
-    }
-    @Test void rejectMoreThanTwoDesignatedCoachesAndInvalidConfiguration() {
-        assertThrows(IllegalStateException.class,()->new MembershipReviewAccess("one@example.test,two@example.test,three@example.test"));
-        assertThrows(IllegalStateException.class,()->new MembershipReviewAccess("not-an-email"));
+    @Test void grantsUseCurrentAccountIdRoleNotLoginNameOrOldAllowlist(){
+        var policy=spy(new StaffPolicy(mock(JdbcTemplate.class)));
+        var user=new AccountService.Account(UUID.randomUUID(),"owner@example.test","Glenn","COACH");
+        var access=new MembershipReviewAccess(policy);
+        for(String allowed:List.of("OWNER","MANAGER","FINANCE")){
+            doReturn(allowed).when(policy).role(user);assertTrue(access.allows(user));
+        }
+        for(String denied:List.of("INSTRUCTOR","CLIENT","UNASSIGNED","DEVELOPMENT")){
+            doReturn(denied).when(policy).role(user);assertFalse(access.allows(user));
+        }
     }
 }

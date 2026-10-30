@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import static org.junit.jupiter.api.Assertions.*;
 
+@org.springframework.test.context.TestPropertySource(properties="spring.datasource.url=jdbc:h2:mem:coach-setup;MODE=PostgreSQL;DB_CLOSE_DELAY=-1")
 class CoachSetupTests extends AccountApiTests {
     @Test void passwordChangeChecksCurrentPasswordCsrfAndEndsBothSessions() throws Exception {
         var coach=client();login(coach,"coach@example.test","Coach-test-password-123");
