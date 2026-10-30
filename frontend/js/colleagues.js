@@ -1,7 +1,7 @@
 document.addEventListener('DOMContentLoaded', () => {
     const real=window.capReal, page=document.getElementById('colleagues');
     const list=page.querySelector('ul'), status=page.querySelector('[role="status"]'), refresh=page.querySelector('#colleagues-refresh');
-    if(real?.account.role!=='COACH') {
+    if(real?.account.role!=='COACH' || !window.capCan('CLASS_VIEW')) {
         status.textContent='Het collega-overzicht is beschikbaar wanneer je met een coachaccount inlogt.';
         refresh.hidden=true; return;
     }
@@ -82,9 +82,11 @@ document.addEventListener('DOMContentLoaded', () => {
             <label>E-mailadres<input name="email" type="email" required maxlength="254" autocomplete="email"></label>
             <label>Titel<select name="title"><option>Trainer</option><option>Assistent · Trainer</option><option>Manager · Trainer</option><option>Standaard · Trainer</option><option>Coach</option></select></label>
             <label>Tijdelijk wachtwoord<input name="password" type="password" autocomplete="new-password" required minlength="12" maxlength="72"></label>
+            <label>Toegangsrol<select name="staffRole"><option value="INSTRUCTOR">Lesgever</option><option value="FINANCE">Financiën (alleen lezen)</option></select></label>
             <p class="sample-notice">Minstens 12 tekens, maximaal 72 UTF-8 bytes. Deel het wachtwoord persoonlijk. De coach kan het wijzigen via Wachtwoord. De titel geeft geen extra beheerrechten.</p>
             <p role="status" aria-live="polite"></p><button type="submit" class="primary-button">Coachaccount maken</button></form>`;
         document.body.append(editor);const form=editor.querySelector('form'),message=editor.querySelector('[role="status"]'),submit=form.querySelector('button');let saving=false;
+        if(real.staffRole==='OWNER'){form.elements.staffRole.add(new Option('Manager','MANAGER'));form.elements.staffRole.add(new Option('Eigenaar','OWNER'));}
         add.addEventListener('click',()=>{form.reset();message.textContent='';editor.showModal();});
         editor.querySelector('.session-dialog-close').addEventListener('click',()=>{if(!saving)editor.close();});
         editor.addEventListener('cancel',event=>{if(saving)event.preventDefault();});

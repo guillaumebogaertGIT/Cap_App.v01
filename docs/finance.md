@@ -1,5 +1,7 @@
 # Financiën (Stripe TEST)
 
+RBAC update: in the staged V13 source, OWNER, MANAGER and FINANCE replace the single-email permission below. The old reviewer settings no longer grant access. FINANCE reuses the membership/credit panel on the finance page, with a separate minimal financial client picker. Activation of real accounts is pending approval; see [staff RBAC](staff-rbac.md). Report calculations and limitations below are unchanged; the email-only instructions describe the previous running version.
+
 The Financiën sidebar page is available only to the configured finance reviewer with a CAP COACH account. Glenn's supplied login email is configured locally. Dieter's membership-review permission does not grant financial access. No staff accounts were created by this change.
 
 ## Start and inspect

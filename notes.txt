@@ -53,3 +53,5 @@ Confirmed rules (29/10/2026):
 - Cancel a lesson booking before its start to return its credit.
 - Credits cover both group lessons and Open gym sessions; show the remaining balance in athlete Planning.
 - Six confirmed coach accounts created on 30/10/2026; remaining staff roles/access are pending confirmation. These accounts are local until deployment.
+
+Staff RBAC target approved 30/10/2026 (source implemented, real activation pending): Glenn OWNER; Dieter MANAGER; Vince/Mathias/Maxim/Robin/Marlies INSTRUCTOR; Vic FINANCE; original coach Guillaume DEVELOPMENT only. Athlete Guillaume stays ATHLETE. Instructors assign existing templates to explicitly granted clients and add private attributed notes; no template/class/nutrition/finance administration. Finance is read-only. Verified UUID mapping is in ignored .local/staff-role-mapping.json; V13 backup/migration/mapping approval required before activation. No real accounts/roles/payments changed. See docs/staff-rbac.md and docs/staff-rbac-report.md.

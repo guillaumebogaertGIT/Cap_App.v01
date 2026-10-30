@@ -26,7 +26,7 @@ document.addEventListener('DOMContentLoaded', () => {
         status.textContent = 'Testbetalingen controleren bij Stripe…'; button.disabled = true;
         try {
             const report = await real.request('/api/finance?month=' + encodeURIComponent(selected));
-            if (version !== generation || location.hash !== '#finance') return;
+            if (version !== generation || page.hidden) return;
             if (!report.testMode || report.month !== selected) throw new Error('Het overzicht past niet bij de gekozen maand. Probeer opnieuw.');
             for (const key of ['received', 'refunded', 'remaining']) page.querySelector('#finance-' + key).textContent = money(report[key + 'Cents']);
             for (const payment of report.payments) {
@@ -50,7 +50,7 @@ document.addEventListener('DOMContentLoaded', () => {
     form.addEventListener('submit', event => { event.preventDefault(); load(); });
     form.addEventListener('input', () => { clear(); status.textContent = 'Kies Overzicht laden voor de geselecteerde maand.'; });
     document.addEventListener('cap:viewchange', () => {
-        if (location.hash === '#finance') load(); else clear();
+        if (!page.hidden) load(); else clear();
     });
-    if (location.hash === '#finance') load();
+    if (!page.hidden) load();
 });

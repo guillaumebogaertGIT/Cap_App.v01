@@ -41,6 +41,7 @@
 })();
 
 document.addEventListener('DOMContentLoaded', () => {
+    if(window.capReal?.account.role==='COACH' && !window.capCan('NUTRITION_MANAGE'))return;
     const $ = id => document.getElementById(id);
     const math = window.capFoodMath;
     const foods = window.capFoodDatabase.foods;

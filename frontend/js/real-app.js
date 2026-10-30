@@ -50,4 +50,5 @@
     window.capReal = { ...data, request, refreshAthletes,
         athletes: data.people.filter(person => person.role === 'ATHLETE'),
         coaches: data.people.filter(person => person.role === 'COACH') };
+    window.capCan = permission => Boolean(data.permissions?.[permission]);
 })();

@@ -1,4 +1,5 @@
 (() => {
+    if(window.capReal?.account.role==='COACH' && !window.capCan('WORKOUT_VIEW'))return;
     const $ = (selector) => document.querySelector(selector);
     let loading = false;
     const athleteId = () => window.capReal ? (previewRole === 'coach' ? window.capReal.selectedAthleteId : window.capReal.account.id) : 'preview-guillaume';
@@ -246,6 +247,10 @@
         if (!matches.length) list.append(node('p', 'Geen passende sessies op deze datum. Kies een andere datum of voeg eerst een sessie toe in Planning.'));
     }
     $('#assignment-target').addEventListener('change', updateAssignmentTargets);
+    if(window.capReal && !window.capCan('CLASS_MANAGE')) {
+        $('#assignment-target').querySelector('option[value="sessions"]')?.remove();
+        $('#assignment-target').value='athlete';
+    }
     $('#assignment-date').addEventListener('change', updateAssignmentTargets);
     $('#close-workout-assignment').addEventListener('click', () => assignmentDialog.close());
     assignmentDialog.addEventListener('cancel', event => { if (assignmentSaving) event.preventDefault(); });
@@ -319,6 +324,7 @@
         }
     }
     function details(workout, onRemove = null) {
+        if(window.capReal && !window.capCan('WORKOUT_TEMPLATE_MANAGE'))onRemove=null;
         const content = document.createElement('div');
         content.append(node('h4', workout.name));
         if (workout.description) content.append(node('p', workout.description));
@@ -341,7 +347,7 @@
             if (!Array.isArray(assignments)) throw new Error('Invalid assignments');
             if (!Array.isArray(workouts) || !workouts.every(w => typeof w.name === 'string' && Array.isArray(w.exercises))) throw new Error('Invalid data');
             const today = new Intl.DateTimeFormat('sv-SE', { timeZone: 'Europe/Brussels' }).format(new Date());
-            const allPersonal = assignments.map(a => ({ ...a.planned, assignmentId: a.assignmentId, note: a.note || '', weekStart: a.weekStart || '' })).filter(w => w.athleteId === athleteId());
+            const allPersonal = assignments.map(a => ({ ...a.planned, assignmentId: a.assignmentId, note: a.note || '', weekStart: a.weekStart || '', assignedBy:a.assignedBy, assignedByName:a.assignedByName, assignedAt:a.assignedAt })).filter(w => w.athleteId === athleteId());
             const personalWorkouts = allPersonal.filter(w => w.weekStart ? w.weekStart === viewedWeek : w.assignedDate >= viewedWeek && w.assignedDate <= window.capAgenda.add(viewedWeek, 6))
                 .sort((a, b) => (a.assignedDate || a.weekStart).localeCompare(b.assignedDate || b.weekStart));
             weekTitle.textContent = `Workouts deze week · ${window.capAgenda.range(viewedWeek)}`;
@@ -403,8 +409,7 @@
                 remove.type = 'button'; remove.className = 'secondary-button delete-workout';
                 remove.setAttribute('aria-label', `Workout ${workout.name} verwijderen`);
                 remove.addEventListener('click', () => deleteWorkout(workout, remove));
-                entry.append(remove);
-                entry.append(edit);
+                if(!window.capReal || window.capCan('WORKOUT_TEMPLATE_MANAGE')) {entry.append(remove);entry.append(edit);}
                 const assign = node('button', 'Toewijzen'); assign.type = 'button'; assign.className = 'secondary-button';
                 assign.setAttribute('aria-label', `Workout ${workout.name} toewijzen`);
                 assign.addEventListener('click', () => {
@@ -477,9 +482,11 @@
                     finally { assignmentSaving = false; remove.disabled = false; edit.disabled = false; }
                 });
                 const wholeWorkout = node('section', ''); wholeWorkout.className = 'whole-workout-actions';
+                entry.append(node('p',workout.assignedBy?'Toegewezen door '+(workout.assignedByName||workout.assignedBy)+' · '+window.capDateTime.dateTime(workout.assignedAt):'Bestaande toewijzing · oorspronkelijke medewerker en datum onbekend'));
                 const scope = node('div', '');
                 scope.append(node('h3', 'Volledige workout'), node('p', 'Verwijder deze volledige workout voor deze datum, inclusief alle oefeningen.'));
                 wholeWorkout.append(scope, remove);
+                if(window.capReal && !window.capCan('WORKOUT_TEMPLATE_MANAGE')) {wholeWorkout.hidden=true;edit.hidden=true;}
                 actions.append(edit);
                 if (workout.weekStart && !completed.has(workout.assignmentId) && window.capAgenda.add(workout.weekStart, 6) >= today) {
                     const plan = node('button', workout.assignedDate ? 'Dag wijzigen' : 'Dag plannen'); plan.type = 'button'; plan.className = 'secondary-button';
@@ -487,6 +494,7 @@
                 }
                 entry.append(wholeWorkout, preview);
                 const notePanel = document.createElement('details');
+                if(window.capReal && !window.capCan('WORKOUT_TEMPLATE_MANAGE'))notePanel.hidden=true;
                 notePanel.append(node('summary', workout.note ? 'Notitie bekijken / wijzigen' : 'Notitie toevoegen'));
                 const form = document.createElement('form'); form.className = 'club-form';
                 const label = node('label', 'Notitie voor deze workout');
@@ -505,6 +513,13 @@
                     } catch (error) { feedback.textContent = error.message; }
                     finally { assignmentSaving = false; save.disabled = false; }
                 });
+                if(window.capReal){
+                    notePanel.hidden=!workout.note;
+                    notePanel.replaceChildren(node('summary','Historische notitie · auteur en datum onbekend'),node('p',workout.note));
+                    const addNote=node('a','Privénotitie toevoegen');addNote.href='#staff-notes';addNote.className='secondary-button';
+                    addNote.addEventListener('click',()=>{athleteWorkoutsDialog.close();document.dispatchEvent(new CustomEvent('cap:note-client',{detail:{clientId:workout.athleteId,assignmentId:workout.assignmentId}}));});
+                    actions.append(addNote);
+                }
                 entry.append(actions, notePanel, feedback);
                 athleteWorkouts.append(entry);
             });

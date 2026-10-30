@@ -77,11 +77,23 @@ function showCurrentView(moveFocus = true) {
         sidebarNavigation.insertBefore(moreNavigation, sidebarNavigation.querySelector('.settings-link'));
     } else moreNavigation.remove();
     const requestedView = window.location.hash.slice(1);
-    const allowedViews = previewRole === 'coach' ? ['dashboard', 'settings', 'create-workout', 'saved-workouts', 'exercises', 'athletes', 'coach-health', 'coach-nutrition', 'planning', 'bookings', 'training'] : ['dashboard', 'workouts', 'health', 'nutrition', 'settings', 'planning', 'bookings', 'shop', 'training'];
+    let allowedViews = previewRole === 'coach' ? ['dashboard', 'settings', 'create-workout', 'saved-workouts', 'exercises', 'athletes', 'coach-health', 'coach-nutrition', 'planning', 'bookings', 'training'] : ['dashboard', 'workouts', 'health', 'nutrition', 'settings', 'planning', 'bookings', 'shop', 'training'];
     document.querySelector('[data-account="payment"]').hidden = previewRole === 'coach';
     if (previewRole === 'coach' && window.capReal?.permissions?.reviewFinance) allowedViews.push('finance');
     if (previewRole === 'coach') allowedViews.push('colleagues');
     if (previewRole === 'coach') allowedViews.push('health');
+    if (window.capReal && previewRole === 'coach') {
+        const routes = {'create-workout':'WORKOUT_TEMPLATE_MANAGE','saved-workouts':'WORKOUT_VIEW','exercises':'WORKOUT_TEMPLATE_MANAGE',
+            athletes:'WORKOUT_ASSIGN','coach-health':'CLIENT_HEALTH','coach-nutrition':'NUTRITION_MANAGE',planning:'CLASS_VIEW',
+            bookings:'CLASS_MANAGE',training:'WORKOUT_VIEW',colleagues:'CLASS_VIEW',finance:'FINANCE_VIEW','staff-notes':'NOTE_VIEW','staff-access':'STAFF_MANAGE'};
+        allowedViews = ['dashboard','settings','health',...Object.keys(routes).filter(route=>window.capCan(routes[route]))];
+        if(window.capReal.staffRole==='FINANCE')allowedViews=['dashboard','settings','finance'];
+        const instructor=window.capReal.staffRole==='INSTRUCTOR';
+        sidebarNavigation.querySelector('[data-view-link="planning"]').textContent=instructor?'Mijn uurrooster / Lessen':'Planning';
+        sidebarNavigation.querySelector('[data-view-link="saved-workouts"]').textContent=instructor?'Workouts':'Opgeslagen workouts';
+        sidebarNavigation.querySelector('[data-view-link="athletes"]').textContent=instructor?'Mijn klanten':'Sporters';
+        document.querySelectorAll('#coach .home-tile').forEach(link=>{link.hidden=!allowedViews.includes(link.hash.slice(1));});
+    }
     sidebarNavigation.querySelector('[data-view-link="health"]').textContent=previewRole==='coach'?'Mijn gezondheid':'Gezondheid & Progress';
     sidebarNavigation.querySelector('[data-view-link="coach-health"]').textContent='Gezondheid sporters';
     const routeId = allowedViews.includes(requestedView)
@@ -89,10 +101,11 @@ function showCurrentView(moveFocus = true) {
     const moreIsActive = previewRole === 'coach' && moreViews.includes(routeId);
     moreNavigation.classList.toggle('has-active-page', moreIsActive);
     if (moreIsActive) moreNavigation.open = true;
-    const viewId = previewRole === 'coach' && routeId === 'dashboard' ? 'coach' : routeId;
+    const viewId = previewRole === 'coach' && routeId === 'dashboard' ? (window.capReal?.staffRole==='FINANCE'?'finance':'coach') : routeId;
     document.body.classList.toggle('is-workout-editor', viewId === 'create-workout');
 
     sidebarNavigation.querySelectorAll('a').forEach((link) => {
+        if(window.capReal && previewRole==='coach'){link.hidden=!allowedViews.includes(link.dataset.viewLink);return;}
         if (link.dataset.viewLink === 'finance') {
             link.hidden = !allowedViews.includes('finance');
             return;
@@ -110,6 +123,7 @@ function showCurrentView(moveFocus = true) {
     document.querySelectorAll('[data-mobile-role]').forEach(link => {
         link.hidden = link.dataset.mobileRole !== previewRole;
     });
+    if(window.capReal && previewRole==='coach')document.querySelectorAll('.mobile-bottom-nav [data-view-link]').forEach(link=>{link.hidden=link.dataset.mobileRole==='athlete'||!allowedViews.includes(link.dataset.viewLink);});
 
     document.querySelectorAll('[data-view-link]').forEach((link) => {
         const isActive = link.dataset.viewLink === routeId;

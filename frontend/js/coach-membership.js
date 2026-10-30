@@ -2,9 +2,10 @@
 document.addEventListener('DOMContentLoaded', () => {
     const real = window.capReal;
     if (real?.account.role !== 'COACH') return;
-    const page = document.getElementById('athletes');
+    const financeOnly=real.staffRole==='FINANCE';
+    const page = document.getElementById(financeOnly?'finance':'athletes');
     page.querySelector(':scope > .sample-notice')?.remove();
-    page.querySelector('header .dashboard-intro').textContent = 'Bekijk en begeleid sporters met een CAP-account.';
+    if(!financeOnly)page.querySelector('header .dashboard-intro').textContent = 'Bekijk en begeleid sporters met een CAP-account.';
     if (!real.permissions?.reviewMemberships) return;
     const panel = document.createElement('section');
     panel.className = 'coach-membership'; panel.setAttribute('aria-labelledby', 'coach-membership-title');
@@ -20,22 +21,24 @@ document.addEventListener('DOMContentLoaded', () => {
     const status = panel.querySelector('[role="status"]');
     const details = panel.querySelector('dl');
     let generation = 0, timer;
+    let people=real.athletes;
+    const isOpen=()=>!page.hidden;
     const date = value => value ? window.capDateTime.date(value) : '—';
     const labels = { none: 'Geen lidmaatschap', active: 'Actief', incomplete: 'Betaling niet voltooid',
         incomplete_expired: 'Betaling verlopen', past_due: 'Betaling achterstallig', unpaid: 'Onbetaald',
         canceled: 'Beëindigd', paused: 'Gepauzeerd', trialing: 'Proefperiode', missing: 'Status niet bevestigd' };
     function populate() {
         const selected = picker.value;
-        picker.replaceChildren(new Option(real.athletes.length ? 'Kies een sporter' : 'Nog geen sporters', ''));
-        for (const athlete of real.athletes) picker.add(new Option(athlete.name, athlete.id));
-        picker.value = real.athletes.some(athlete => athlete.id === selected) ? selected : '';
-        picker.disabled = !real.athletes.length;
+        picker.replaceChildren(new Option(people.length ? 'Kies een sporter' : 'Nog geen sporters', ''));
+        for (const athlete of people) picker.add(new Option(athlete.name, athlete.id));
+        picker.value = people.some(athlete => athlete.id === selected) ? selected : '';
+        picker.disabled = !people.length;
         if (selected && !picker.value) schedule();
     }
     async function load(version, athleteId) {
         try {
             const value = await real.request('/api/billing/athletes/' + encodeURIComponent(athleteId));
-            if (version !== generation || picker.value !== athleteId || location.hash !== '#athletes') return;
+            if (version !== generation || picker.value !== athleteId || !isOpen()) return;
             if (value.athleteId !== athleteId) throw new Error('De gegevens passen niet bij de geselecteerde sporter. Probeer opnieuw.');
             for (const [label, text] of [
                 ['Lidmaatschap', value.status === 'none' ? 'Geen lidmaatschap' : value.plan],
@@ -50,7 +53,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 details.append(term, description);
             }
             details.hidden = false;
-            status.textContent = 'Accountgegevens van ' + (real.athletes.find(athlete => athlete.id === athleteId)?.name || 'de geselecteerde sporter') + '.';
+            status.textContent = 'Accountgegevens van ' + (people.find(athlete => athlete.id === athleteId)?.name || 'de geselecteerde sporter') + '.';
         } catch (error) {
             if (version === generation && picker.value === athleteId) status.textContent = error.message;
         } finally {
@@ -62,13 +65,14 @@ document.addEventListener('DOMContentLoaded', () => {
         clearTimeout(timer); details.replaceChildren(); details.hidden = true;
         refresh.disabled = !athleteId;
         status.textContent = athleteId ? 'Lidmaatschap en credits laden…' : 'Kies een sporter om het lidmaatschap en de credits te bekijken.';
-        if (athleteId && location.hash === '#athletes') timer = setTimeout(() => load(version, athleteId), 100);
+        if (athleteId && isOpen()) timer = setTimeout(() => load(version, athleteId), 100);
     }
     picker.addEventListener('change', schedule);
     refresh.addEventListener('click', schedule);
     document.addEventListener('cap:athletes-changed', populate);
-    document.addEventListener('cap:viewchange', () => { if (location.hash === '#athletes') schedule(); else { ++generation; clearTimeout(timer); } });
-    window.addEventListener('focus', () => { if (location.hash === '#athletes') schedule(); });
-    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && location.hash === '#athletes') schedule(); });
+    document.addEventListener('cap:viewchange', () => { if (isOpen()) schedule(); else { ++generation; clearTimeout(timer); } });
+    window.addEventListener('focus', () => { if (isOpen()) schedule(); });
+    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && isOpen()) schedule(); });
     populate();
+    if(financeOnly)real.request('/api/billing/athletes').then(values=>{people=values;populate();}).catch(error=>{status.textContent=error.message;});
 });

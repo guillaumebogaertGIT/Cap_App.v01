@@ -1,5 +1,6 @@
 // Browser-local coach drafts/targets; athlete preview always represents Guillaume.
 document.addEventListener('DOMContentLoaded', () => {
+    if(window.capReal?.account.role==='COACH' && !window.capCan('NUTRITION_MANAGE'))return;
     const $ = id => document.getElementById(id);
     const calculator = window.capNutritionCalculator;
     const form = $('nutrition-calculator-form');

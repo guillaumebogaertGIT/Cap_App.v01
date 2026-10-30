@@ -141,6 +141,7 @@
     const announce = (message) => { $('club-feedback').textContent = message; };
     let refreshVersion = 0;
     async function refreshReal(message) {
+        if(real?.account.role==='COACH' && !window.capCan('CLASS_VIEW'))return;
         const version = ++refreshVersion;
         const [sessions, bookings] = await Promise.all([real.request('/api/club/sessions'), real.request('/api/club/bookings')]);
         if (version !== refreshVersion) return;
@@ -223,7 +224,7 @@
         const actions = element('div', undefined, 'club-actions');
         if (session.type !== 'Open gym') card.append(programPreview(session));
         else card.append(element('p', 'Vrij trainen. Je reserveert een plek; je persoonlijke workout kies je zelf.', 'sample-notice'));
-        if (coach()) {
+        if (coach() && (!real || window.capCan('CLASS_MANAGE'))) {
             actions.append(button('Bewerken', () => openSession(session)));
             actions.append(button('Les verwijderen', () => {
                 if (!window.confirm(`Weet je zeker dat je de sessie "${session.title}" op ${dateLabel(session.date)} om ${session.start} wilt verwijderen? Bijbehorende boekingen worden ook verwijderd.`)) return;
@@ -233,7 +234,7 @@
                 save('Les en bijbehorende boekingen verwijderd uit de planning.');
                 $('calendar-day-title').focus();
             }));
-        } else {
+        } else if (!real || real.account.role==='ATHLETE') {
             const booked = active.some(ownBooking);
             const permitted = window.capAccess.can(bookingFeature(session));
             const unavailable = session.cancelled || past(session) || (!booked && count >= session.capacity);
@@ -256,7 +257,7 @@
         return card;
     }
     function renderPlanning() {
-        $('new-session').hidden = !coach();
+        $('new-session').hidden = !coach() || (real && !window.capCan('CLASS_MANAGE'));
     }
     function renderCoachBookings(list, openRows, focusKey) {
         list.className = 'coach-booking-days';

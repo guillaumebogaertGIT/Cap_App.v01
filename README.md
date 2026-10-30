@@ -2,6 +2,10 @@
 
 A Java learning project building toward a coaching platform for CAP in Gistel, Belgium.
 
+Staff RBAC implementation is staged: [roles, testing, backup and approval workflow](docs/staff-rbac.md).
+Do not apply V13 or replace the running CAP image until the real account-ID mapping and migration plan are approved.
+Existing accounts default to unassigned after this migration; explicit reviewed activation is required before staff can log in.
+
 Docker Desktop option: `.\scripts\start-docker.cmd`, then open **http://127.0.0.1:8081/app/index.html**.
 It uses your existing Windows PostgreSQL database. Stop native CAP first. See [Docker start, stop and rebuild guide](docs/docker.md).
 

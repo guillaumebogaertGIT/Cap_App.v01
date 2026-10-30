@@ -1,5 +1,7 @@
 # Coach accounts (local development)
 
+The new source implements OWNER/MANAGER/INSTRUCTOR/FINANCE roles. Activation is pending approval of immutable account IDs and migration V13; see [staff RBAC](staff-rbac.md). The table below describes the previously running version, not the new permission policy. No existing real account has been remapped automatically.
+
 Created on 30/10/2026 in the existing local PostgreSQL `cap` database:
 
 | Coach | Login email | Access |

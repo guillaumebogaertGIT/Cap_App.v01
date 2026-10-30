@@ -1,5 +1,6 @@
 // Coach preview: roster from Sporters; measurements saved in this browser per athlete.
 document.addEventListener('DOMContentLoaded', () => {
+    if(window.capReal && !window.capCan('CLIENT_HEALTH'))return;
     const real=window.capReal;
     const $ = id => document.getElementById(id);
     const node = (tag, text, className) => {

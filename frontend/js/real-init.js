@@ -35,7 +35,7 @@
     }
     renderAthletes();
     document.addEventListener('cap:athletes-changed', renderAthletes);
-    const refresh = () => real.refreshAthletes().catch(error => { invite.querySelector('[role="status"]').textContent = error.message; });
+    const refresh = () => {if(window.capCan('WORKOUT_ASSIGN'))real.refreshAthletes().catch(error => { invite.querySelector('[role="status"]').textContent = error.message; });};
     window.addEventListener('focus', refresh);
     document.addEventListener('cap:viewchange', () => {
         if (['#athletes', '#create-workout', '#saved-workouts'].includes(location.hash)) refresh();
@@ -44,6 +44,7 @@
     const invite = document.createElement('form'); invite.className = 'club-form settings-card';
     invite.innerHTML = '<h3>Sporter uitnodigen</h3><label>E-mailadres<input name="email" type="email" required autocomplete="email" maxlength="254"></label><button class="primary-button" type="submit">Uitnodigingslink maken</button><p role="status"></p><label hidden>Uitnodigingslink<input name="link" readonly></label>';
     groups.before(invite);
+    invite.hidden=!window.capCan('CLIENT_SCOPE_MANAGE');
     invite.addEventListener('submit', async event => {
         event.preventDefault(); const button = invite.querySelector('button'); button.disabled = true;
         const status = invite.querySelector('[role="status"]');
