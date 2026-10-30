@@ -4,7 +4,14 @@ const sidebar = document.querySelector('.sidebar');
 const sidebarToggle = document.querySelector('.sidebar-toggle');
 const mobileLayout = window.matchMedia('(max-width: 800px)');
 const originalSidebarLinks = Array.from(sidebarNavigation.children);
-const coachSidebarOrder = ['dashboard', 'planning', 'bookings', 'create-workout', 'exercises', 'saved-workouts', 'athletes', 'coach-nutrition', 'colleagues'];
+const coachSidebarOrder = ['dashboard', 'planning', 'bookings', 'create-workout', 'athletes', 'coach-nutrition'];
+const moreViews = ['colleagues', 'finance', 'saved-workouts', 'exercises'];
+const moreLinks = moreViews.map(view => originalSidebarLinks.find(link => link.dataset.viewLink === view));
+const moreNavigation = document.createElement('details');
+moreNavigation.className = 'sidebar-more';
+const moreSummary = document.createElement('summary');
+moreSummary.textContent = 'Meer';
+moreNavigation.append(moreSummary);
 let previewRole = window.capReal?.account.role === 'COACH' ? 'coach' : 'athlete';
 
 document.querySelectorAll('[name="preview-role"]').forEach((input) => {
@@ -62,11 +69,13 @@ function showCurrentView(moveFocus = true) {
     // Coach tasks follow the agreed order; sporters retain their original navigation.
     const coachLinks = coachSidebarOrder.map(view => originalSidebarLinks.find(link => link.dataset.viewLink === view));
     const orderedLinks = previewRole === 'coach'
-        ? [...coachLinks, ...originalSidebarLinks.filter(link => !coachLinks.includes(link))]
+        ? [...coachLinks, ...originalSidebarLinks.filter(link => !coachLinks.includes(link) && !moreLinks.includes(link))]
         : originalSidebarLinks;
-    if (orderedLinks.some((link, index) => sidebarNavigation.children[index] !== link)) {
-        sidebarNavigation.append(...orderedLinks);
-    }
+    sidebarNavigation.append(...orderedLinks);
+    if (previewRole === 'coach') {
+        moreNavigation.append(...moreLinks);
+        sidebarNavigation.insertBefore(moreNavigation, sidebarNavigation.querySelector('.settings-link'));
+    } else moreNavigation.remove();
     const requestedView = window.location.hash.slice(1);
     const allowedViews = previewRole === 'coach' ? ['dashboard', 'settings', 'create-workout', 'saved-workouts', 'exercises', 'athletes', 'coach-health', 'coach-nutrition', 'planning', 'bookings', 'training'] : ['dashboard', 'workouts', 'health', 'nutrition', 'settings', 'planning', 'bookings', 'shop', 'training'];
     document.querySelector('[data-account="payment"]').hidden = previewRole === 'coach';
@@ -77,6 +86,9 @@ function showCurrentView(moveFocus = true) {
     sidebarNavigation.querySelector('[data-view-link="coach-health"]').textContent='Gezondheid sporters';
     const routeId = allowedViews.includes(requestedView)
         ? requestedView : 'dashboard';
+    const moreIsActive = previewRole === 'coach' && moreViews.includes(routeId);
+    moreNavigation.classList.toggle('has-active-page', moreIsActive);
+    if (moreIsActive) moreNavigation.open = true;
     const viewId = previewRole === 'coach' && routeId === 'dashboard' ? 'coach' : routeId;
     document.body.classList.toggle('is-workout-editor', viewId === 'create-workout');
 
