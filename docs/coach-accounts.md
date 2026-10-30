@@ -15,6 +15,8 @@ Maxim, Vic and the marketing contact remain pending. Screenshot Admin/Manager/As
 
 ## Sign in as Glenn on this PC
 
+All COACH accounts have coaching access without payment or expiry. Their Home shows this explicitly; Shop and personal Betalingen are absent. Self-service checkout/portal/reconcile/cancel APIs reject coaches. This is role-based access, not a Stripe lifetime subscription. Athlete subscriptions are unchanged, and membership/finance review permissions remain restricted as listed above. Existing Stripe records are not deleted or automatically canceled.
+
 1. Stop the old backend with Ctrl+C (Y if asked), then from the project root run `.\scripts\start-stripe-test.cmd`. Keep Stripe forwarding running separately if testing payments. This restart loads the current code and local permission configuration.
 2. In another terminal run `.\scripts\coach-login.cmd`.
 3. The command opens CAP's login page. Enter `hello@cap-gistel.be` and paste the temporary password with Ctrl+V. The password is copied privately to your clipboard, never printed here. Clear clipboard/history when finished; clipboard sync/history may retain copied text.

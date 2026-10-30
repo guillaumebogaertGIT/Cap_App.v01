@@ -1,5 +1,10 @@
 # Session Log
 
+## October 30, 2026 — Free coach access
+
+- User requested no coach purchasing and permanent free coaching access. Removed coach Shop/Home/payment options, prevented billing dialog/self-status requests, added Home notice. COACH self summary is free/no expiry/no offers with no SQL/Stripe work; Spring Security and service checks deny four personal payment actions. Athlete billing and restricted review permissions retained; no existing Stripe records changed.
+- Isolated PostgreSQL catalogue+finance run: 31/32 initially passed; one old assertion expected coach access false and was updated for the new requirement. Both lifecycle/new coach tests reran successfully. Coach test verifies 403 actions/no gateway interactions/no billing-row creation; athlete checkout 200. Browser fake coach at 390/768/1440: no Shop/payment/dialog, zero billing calls, no overflow; athlete still sees Shop/payment/dialog. Docker image rebuilt and local app updated.
+
 ## October 30, 2026 — Docker app with native PostgreSQL
 
 - User installed WSL/Docker Desktop and authorized implementation. Added source-allowlisted multi-stage Java 25 image, Compose app-only localhost:8081 service, non-root/limited-memory runtime, HTTP health probe and start/stop/restart/status commands. Existing PostgreSQL 18.6 cap DB retained; no database/network authentication settings changed. See docs/docker.md.

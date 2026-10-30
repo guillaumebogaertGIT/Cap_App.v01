@@ -36,6 +36,7 @@ class AccountSecurity {
                 .requestMatchers(HttpMethod.GET, "/accounts/**", "/app/**").permitAll()
                 .requestMatchers("/api/health", "/api/accounts/csrf", "/api/accounts/accept", "/api/accounts/login").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/billing/webhook").permitAll()
+                .requestMatchers(HttpMethod.POST, "/api/billing/checkout", "/api/billing/portal", "/api/billing/reconcile", "/api/billing/cancel").hasRole("ATHLETE")
                 .requestMatchers("/api/billing", "/api/billing/**").authenticated()
                 .requestMatchers(HttpMethod.GET, "/api/finance").hasRole("COACH")
                 .requestMatchers("/api/accounts/invitations").hasRole("COACH")

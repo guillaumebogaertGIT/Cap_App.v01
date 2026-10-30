@@ -37,6 +37,9 @@ public class BillingService {
         this.jdbc=jdbc; this.stripe=stripe; this.settings=settings; this.catalog=catalog; this.orders=orders; this.tx=new TransactionTemplate(manager); this.membershipReview=membershipReview;
     }
     private ResponseStatusException conflict(String message) { return new ResponseStatusException(HttpStatus.CONFLICT,message); }
+    private void requireAthlete(Account user) {
+        if (!"ATHLETE".equals(user.role())) throw new ResponseStatusException(HttpStatus.FORBIDDEN,"Coachaccounts hebben geen betaald abonnement of credits nodig.");
+    }
     private void testObject(JsonNode object) {
         if (object==null || !object.has("livemode") || object.path("livemode").asBoolean(true))
             throw conflict("Alleen Stripe TEST-objecten zijn toegestaan.");
@@ -92,6 +95,7 @@ public class BillingService {
     }
     public Link checkout(Account user) { return checkout(user,"legacy_test"); }
     public Link checkout(Account user, String offerCode) {
+        requireAthlete(user);
         settings.requireEnabled();
         var offer=catalog.require(offerCode);
         String selectedPrice=catalog.price(offerCode);
@@ -169,6 +173,7 @@ public class BillingService {
         });
     }
     public Link portal(Account user) {
+        requireAthlete(user);
         settings.requireEnabled();
         String customer=jdbc.query("SELECT customer_id FROM billing_account WHERE user_id=?",(r,i)->r.getString(1),user.id()).stream().filter(Objects::nonNull).findFirst()
             .orElseThrow(()->conflict("Start eerst een testabonnement."));
@@ -222,6 +227,7 @@ public class BillingService {
         jdbc.update("UPDATE billing_account SET synced_at=? WHERE user_id=?",sql(Instant.now()),state.owner());
     }
     public Summary reconcile(Account user) {
+        requireAthlete(user);
         settings.requireEnabled();
         // Reading an unpaid account must not start the 23-hour remote-request retry window.
         if (jdbc.queryForObject("SELECT COUNT(*) FROM billing_account WHERE user_id=?",Integer.class,user.id())==0) return summary(user);
@@ -229,6 +235,9 @@ public class BillingService {
         return summary(user);
     }
     public Summary summary(Account user) {
+        // Coaching access comes from the COACH role, never a paid or expiring subscription.
+        if ("COACH".equals(user.role())) return new Summary(false,true,"Coach — onbeperkte toegang",0,"EUR","coach",true,
+            null,null,false,null,null,null,false,List.of(),0,null,false);
         int balance=orders.balance(user.id());
         var summaries=jdbc.query("""
             SELECT s.*, a.synced_at AS account_synced FROM billing_subscription s
@@ -276,6 +285,7 @@ public class BillingService {
         LOG.info("CAP Stripe TEST event handled: type={}",type);
     }
     public Summary cancel(Account user) {
+        requireAthlete(user);
         settings.requireEnabled();
         if (!orders.hasOrders(user.id())) throw conflict("Geen opzegbaar CAP-abonnement gevonden.");
         tx.executeWithoutResult(ignored->{

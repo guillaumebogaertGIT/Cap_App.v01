@@ -92,6 +92,25 @@ class BillingApiTests extends AccountApiTests {
     void deliver(String type,String customer) throws Exception {
         String body=event(type,customer);assertEquals(204,webhook(body,signature(body,Instant.now().getEpochSecond())).statusCode());
     }
+    @Test void coachesHavePermanentFreeAccessAndCannotUseSelfServicePayments() throws Exception {
+        var coach=client();login(coach,"coach@example.test","Coach-test-password-123");
+        var before=jdbc.queryForObject("SELECT COUNT(*) FROM billing_account",Integer.class);
+        var value=status(coach);
+        assertEquals("coach",value.path("status").asText());
+        assertTrue(value.path("membershipAccess").asBoolean());
+        assertFalse(value.path("configured").asBoolean());
+        assertTrue(value.path("periodEnd").isNull());assertTrue(value.path("termEnd").isNull());
+        assertEquals(0,value.path("offers").size()); assertFalse(value.path("canCancel").asBoolean());
+        for(String action:List.of("checkout","portal","reconcile","cancel"))
+            assertEquals(403,request(coach,"POST","/api/billing/"+action,"{}",csrf(coach),false).statusCode());
+        assertEquals(200,request(coach,"GET","/api/workouts",null,null,false).statusCode());
+        assertEquals(before,jdbc.queryForObject("SELECT COUNT(*) FROM billing_account",Integer.class));
+        verifyNoInteractions(stripe);
+        var owner=client();acceptTestAthlete(coach,owner,"coach-access-"+UUID.randomUUID()+"@example.test");
+        assertFalse(status(owner).path("membershipAccess").asBoolean());
+        assertTrue(status(owner).path("offers").size()>0);
+        assertEquals(200,request(owner,"POST","/api/billing/checkout","{}",csrf(owner),false).statusCode());
+    }
     @Test void checkoutWebhookRenewalCancellationAndOwnership() throws Exception {
         var coach=client();var owner=client();var other=client();
         login(coach,"coach@example.test","Coach-test-password-123");
@@ -114,7 +133,8 @@ class BillingApiTests extends AccountApiTests {
         deliver("checkout.session.completed",customer);
         assertTrue(status(owner).path("membershipAccess").asBoolean());
         assertFalse(status(other).path("membershipAccess").asBoolean());
-        assertFalse(status(coach).path("membershipAccess").asBoolean());
+        assertTrue(status(coach).path("membershipAccess").asBoolean()); // Coaching is free and independent of the athlete's payment.
+        assertEquals("coach",status(coach).path("status").asText());
         assertEquals(400,request(other,"POST","/api/billing/portal","{\"userId\":\""+ownerId+"\"}",csrf(other),false).statusCode());
         assertEquals(409,request(other,"POST","/api/billing/portal","{}",csrf(other),false).statusCode());
         assertEquals(200,request(owner,"POST","/api/billing/portal","{}",csrf(owner),false).statusCode());

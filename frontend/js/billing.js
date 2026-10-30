@@ -1,7 +1,7 @@
 // Real account billing only. The design preview never contacts Stripe.
 document.addEventListener('DOMContentLoaded', () => {
     const real = window.capReal;
-    if (!real) return;
+    if (!real || real.account.role === 'COACH') return;
     const parameters = new URLSearchParams(location.search);
     const returned = parameters.get('billing');
     const dialog = document.createElement('dialog');

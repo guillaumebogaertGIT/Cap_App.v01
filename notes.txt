@@ -19,6 +19,7 @@ Transcription notes:
 - The marketing contact's name is cropped; confirm it rather than guessing from the email.
 
 CAP access rules:
+- All COACH accounts have free coaching access without a subscription or expiry. No personal subscription/credit purchase options. Membership review and Financien permissions remain restricted as below.
 - Financien: only Glenn (hello@cap-gistel.be), with an actual CAP COACH account. Read-only Stripe TEST monthly payment overview; not profit or bank payouts. See docs/finance.md.
 - Membership/credit overview: only Glenn Vlamynck and Dieter Vlamynck.
 - Local reviewer configuration now uses hello@cap-gistel.be and dieter.vlamynck@gmail.com.

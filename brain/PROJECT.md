@@ -10,6 +10,8 @@ Basketball belongs to the separate RAW Hoops scope and is explicitly excluded fr
 
 ## Current state
 
+- October 30: Coach purchase UI removed (Shop navigation/Home tile, account payment menu and billing dialog). COACH role grants free non-expiring coaching access; self billing summary reflects this without Stripe/DB writes, payment actions reject coaches. Athletes retain Shop/checkout; restricted finance/membership review unchanged. Docker rebuilt/applied; PostgreSQL regression and responsive browser checks passed.
+
 - October 30: CAP now runs successfully in Docker Desktop on localhost:8081, using the original Windows PostgreSQL cap database through host.docker.internal. Java 25 multi-stage image, source-only build allowlist, non-root runtime, runtime secret configuration from encrypted Windows cache. Start/stop/restart/status helpers and docs/docker.md added; native live-development workflow retained. Actual coach login/permissions/guest/logout checks passed; account/password/workout fingerprints unchanged after container removal/recreation. Stripe TEST configured; no new checkout tested in Docker.
 
 - October 30: Created six confirmed COACH accounts in native local cap DB (Glenn, Dieter, Mathias, Marlies, Robin, Vince); verified all six actual logins. Unique temporary passwords live only in ignored Windows-encrypted coach-secrets.xml, copied privately by coach-login.cmd. Self-service password change checks current password/CSRF and expires sessions; no account reset. Old running backend needs restart to load new password endpoint and reviewer config. Remaining staff pending; docs/coach-accounts.md.

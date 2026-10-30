@@ -68,7 +68,8 @@ function showCurrentView(moveFocus = true) {
         sidebarNavigation.append(...orderedLinks);
     }
     const requestedView = window.location.hash.slice(1);
-    const allowedViews = previewRole === 'coach' ? ['dashboard', 'settings', 'create-workout', 'saved-workouts', 'exercises', 'athletes', 'coach-health', 'coach-nutrition', 'planning', 'bookings', 'shop', 'training'] : ['dashboard', 'workouts', 'health', 'nutrition', 'settings', 'planning', 'bookings', 'shop', 'training'];
+    const allowedViews = previewRole === 'coach' ? ['dashboard', 'settings', 'create-workout', 'saved-workouts', 'exercises', 'athletes', 'coach-health', 'coach-nutrition', 'planning', 'bookings', 'training'] : ['dashboard', 'workouts', 'health', 'nutrition', 'settings', 'planning', 'bookings', 'shop', 'training'];
+    document.querySelector('[data-account="payment"]').hidden = previewRole === 'coach';
     if (previewRole === 'coach' && window.capReal?.permissions?.reviewFinance) allowedViews.push('finance');
     const routeId = allowedViews.includes(requestedView)
         ? requestedView : 'dashboard';
@@ -81,7 +82,7 @@ function showCurrentView(moveFocus = true) {
             return;
         }
         link.hidden = previewRole === 'coach'
-            ? !['dashboard', 'settings', 'create-workout', 'saved-workouts', 'exercises', 'athletes', 'coach-health', 'coach-nutrition', 'planning', 'bookings', 'shop', 'training'].includes(link.dataset.viewLink)
+            ? !['dashboard', 'settings', 'create-workout', 'saved-workouts', 'exercises', 'athletes', 'coach-health', 'coach-nutrition', 'planning', 'bookings', 'training'].includes(link.dataset.viewLink)
             : link.hasAttribute('data-coach-only');
     });
 
