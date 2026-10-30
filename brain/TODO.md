@@ -4,6 +4,8 @@ Reviewed: September 29, 2026. This is not a new roadmap.
 
 ## Obviously incomplete in the current project
 
+- October 30: Glenn-only Financiën implemented; actual Glenn account provisioning and sandbox totals comparison remain. Finance HTTP tests passed on isolated PostgreSQL; mobile/tablet/desktop themes and error/empty/unauthorized UI verified with fake responses. Docker remains next after account/permission work.
+
 - No real accounts, password recovery, server roles/entitlements or per-user ownership; training belongs to one example athlete. Profile/messages/chat/notifications/payments are explanatory dialogs.
 - Planning, bookings, attendance and shop are browser-local previews without shared backend storage or checkout.
 - Exercise management now supports the imported 1,078-definition catalog plus persistent coach additions/edits/archive/restore (October 26). User review of Oefeningen and picker remains next; real server coach authorization is still absent. Saved workouts support editing/copies; multi-workout programs remain absent.

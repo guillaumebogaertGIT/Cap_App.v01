@@ -4,6 +4,8 @@ Reviewed: September 29, 2026.
 
 ## Browser application
 
+October 30: Financiën is an original-app route, visible only with bootstrap reviewFinance permission. FinanceAccess independently checks a single configured COACH login email. GET /api/finance reads paginated Stripe TEST charges for one Brussels month, filters customers linked in billing_account, and returns sanitized EUR captured/refunded totals and rows. No new storage/migration or payment mutations. Separate from Glenn/Dieter membership review; docs/finance.md defines exclusions/refund attribution.
+
 Local accounts launcher enables `accounts,local-frontend`: `/app/**` reads directly
 from the checkout frontend directory with caching disabled. RealAppController reads
 the same live index template and retains authentication/account injection. Plain

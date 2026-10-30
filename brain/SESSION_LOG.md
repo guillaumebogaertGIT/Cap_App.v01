@@ -1,5 +1,11 @@
 # Session Log
 
+## October 30, 2026 — Glenn financial overview
+
+- Added Financiën in existing sidebar/design, separate Glenn-only email + COACH permission, read-only monthly Stripe TEST captured/refunded EUR report for linked CAP customers. No payment mutations or migrations. Configured ignored local reviewer email; no real staff accounts created.
+- FinanceApiTests: 9 tests passed against isolated PostgreSQL (includes inherited account checks). Existing catalog/reviewer tests: 24 passed in combined run; initial finance route allowlist omission caught and fixed, then 9 finance tests rerun successfully. No real Stripe purchases or user database changes.
+- Browser fake-response checks at 390/768/1440, light/dark: no horizontal overflow; totals, Brussels dates, empty/error/retry, unauthorized hidden route/link and zero automatic finance requests passed. Actual Stripe report comparison on Glenn's future account remains manual. See docs/finance.md.
+
 ## October 20, 2026 — Compact athlete workouts
 
 ### Coach athletes grouped by subscription

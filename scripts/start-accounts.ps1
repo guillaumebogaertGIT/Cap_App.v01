@@ -11,8 +11,15 @@ $ErrorActionPreference = 'Stop'
 $capRoot = Split-Path $PSScriptRoot -Parent
 $capNames = 'CAP_DATABASE_URL','CAP_DATABASE_USER','CAP_DATABASE_PASSWORD','CAP_COACH_EMAIL','CAP_COACH_PASSWORD','CAP_FRONTEND_LOCATION','CAP_MEMBERSHIP_REVIEWER_EMAILS','PGPASSWORD','PGCONNECT_TIMEOUT','JAVA_HOME'
 $capPrevious = @{}
+$capNames += 'CAP_FINANCE_REVIEWER_EMAIL'
 foreach ($capName in $capNames) { $capPrevious[$capName] = [Environment]::GetEnvironmentVariable($capName, 'Process') }
 try {
+    $capFinancePath = Join-Path $capRoot '.local/finance-reviewer.json'
+    if (Test-Path -LiteralPath $capFinancePath) {
+        $capFinanceEmail = (Get-Content -Raw -LiteralPath $capFinancePath | ConvertFrom-Json).email
+        if ($capFinanceEmail -isnot [string] -or $capFinanceEmail -notmatch '^[^\s@]+@[^\s@]+\.[^\s@]+$') { throw 'finance-reviewer.json must contain one valid coach login email in its email field.' }
+        $env:CAP_FINANCE_REVIEWER_EMAIL = $capFinanceEmail
+    }
     $capReviewerPath = Join-Path $capRoot '.local/membership-reviewers.json'
     if (Test-Path -LiteralPath $capReviewerPath) {
         $capReviewerConfig = Get-Content -Raw -LiteralPath $capReviewerPath | ConvertFrom-Json

@@ -10,6 +10,8 @@ Basketball belongs to the separate RAW Hoops scope and is explicitly excluded fr
 
 ## Current state
 
+- October 30: Added Glenn-only Financiën page with on-demand Stripe TEST charge reads for linked CAP accounts: monthly captured EUR receipts, refunds against those receipts, remaining before fees, and payment list. Separate finance permission. No staff accounts created; sandbox comparison on Glenn's future account remains manual. See docs/finance.md. Docker remains next.
+
 - October 30: User supplied staff emails/roles in screenshots; transcribed in notes.txt, with uncertain/cropped details explicitly marked. Local membership-review allowlist now contains Glenn and Dieter's supplied login emails; actual CAP COACH accounts must still exist before access works. Other screenshot role labels are reference, not newly granted permissions. Docker is next.
 
 - October 29: Shop has the five confirmed memberships and four non-expiring credit packs in Stripe TEST mode. V9 stores orders/credits and finite monthly terms. The catalog launcher checks membership/credits for group and Open gym bookings, with pre-start credit return; private-session payment rules remain undefined. Athlete Planning displays the balance and refreshes after booking/cancellation. User verified a 5-credit sandbox purchase, shared lesson, balance 5 -> 4 -> 5 and EUR75 membership purchase/cancellation. Other plans/renewals/expiry remain unverified. See docs/memberships-test.md. Individual coach emails remain needed.

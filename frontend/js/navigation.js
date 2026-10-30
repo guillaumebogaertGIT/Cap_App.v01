@@ -69,12 +69,17 @@ function showCurrentView(moveFocus = true) {
     }
     const requestedView = window.location.hash.slice(1);
     const allowedViews = previewRole === 'coach' ? ['dashboard', 'settings', 'create-workout', 'saved-workouts', 'exercises', 'athletes', 'coach-health', 'coach-nutrition', 'planning', 'bookings', 'shop', 'training'] : ['dashboard', 'workouts', 'health', 'nutrition', 'settings', 'planning', 'bookings', 'shop', 'training'];
+    if (previewRole === 'coach' && window.capReal?.permissions?.reviewFinance) allowedViews.push('finance');
     const routeId = allowedViews.includes(requestedView)
         ? requestedView : 'dashboard';
     const viewId = previewRole === 'coach' && routeId === 'dashboard' ? 'coach' : routeId;
     document.body.classList.toggle('is-workout-editor', viewId === 'create-workout');
 
     sidebarNavigation.querySelectorAll('a').forEach((link) => {
+        if (link.dataset.viewLink === 'finance') {
+            link.hidden = !allowedViews.includes('finance');
+            return;
+        }
         link.hidden = previewRole === 'coach'
             ? !['dashboard', 'settings', 'create-workout', 'saved-workouts', 'exercises', 'athletes', 'coach-health', 'coach-nutrition', 'planning', 'bookings', 'shop', 'training'].includes(link.dataset.viewLink)
             : link.hasAttribute('data-coach-only');

@@ -29,6 +29,7 @@ class AccountSecurity {
                 .requestMatchers("/api/health", "/api/accounts/csrf", "/api/accounts/accept", "/api/accounts/login").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/billing/webhook").permitAll()
                 .requestMatchers("/api/billing", "/api/billing/**").authenticated()
+                .requestMatchers(HttpMethod.GET, "/api/finance").hasRole("COACH")
                 .requestMatchers("/api/accounts/invitations").hasRole("COACH")
                 .requestMatchers("/api/accounts/me", "/api/accounts/profile/**").authenticated()
                 .requestMatchers("/api/club/**").authenticated()

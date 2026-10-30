@@ -925,6 +925,20 @@ main { padding: 1rem; }
 .coach-membership .club-toolbar { align-items: end; }
 .coach-membership .club-toolbar label { min-width: 0; max-width: 30rem; }
 .coach-membership .secondary-button { min-height: 3rem; }
+.finance-totals { margin-block: 1.5rem; font-variant-numeric: tabular-nums; }
+.finance-totals > div { padding-block: 1rem; border-bottom: 1px solid var(--border); }
+.finance-totals dt { color: var(--muted); }
+.finance-totals dd { margin: .35rem 0 0; font-size: 1.5rem; font-weight: 700; }
+.finance-payments { list-style: none; padding: 0; }
+.finance-payments li { display: grid; gap: .4rem 1rem; padding-block: 1rem; border-bottom: 1px solid var(--border); overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
+#finance-filter label { min-width: 0; flex: 1 1 9rem; }
+#finance-filter input, #finance-filter select { width: 100%; min-height: 3rem; }
+#finance-filter button { min-height: 3rem; }
+#finance-results[hidden] { display: none; }
+@media (min-width: 48rem) {
+    .finance-totals { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1.5rem; }
+    .finance-payments li { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+}
 .coach-membership .billing-details[hidden] { display: none; }
 .planning-credit-summary { padding-block: .75rem; margin-block: 1rem; border-bottom: 1px solid var(--border); gap: .75rem; }
 .planning-credit-summary:not([hidden]) { display: flex; flex-direction: column; }
