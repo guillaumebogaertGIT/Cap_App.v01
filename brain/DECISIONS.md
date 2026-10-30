@@ -4,6 +4,8 @@ Reviewed: September 29, 2026. Explicit rules and implemented choices only; undoc
 
 ## Product and working rules
 
+- October 30: User requested Glenn can add/remove coach accounts. Implement removal as reversible deactivation to retain referenced lessons/history; block login and expire sessions, hide inactive coaches from normal directories/new lesson selections. Glenn alone can create/reactivate through separate configured staff-manager permission, not Admin title or finance permission. Protect own account; no athlete promotion, automatic emails, password lookup/reset or hard deletion. New coaches use chosen temporary passwords and existing self-service password change.
+
 - October 30: User requested all coaches see colleagues' titles/contact details. Add coach-only directory of actual COACH accounts, reuse supplied staff titles as display metadata, not permission grants. Optional phone self-edited in Profiel with clear shared-with-colleagues label. No inferred phone numbers, private health fields or pending staff accounts exposed.
 
 - October 30: User requires coaches to have full coaching access without payment or expiry and no subscription/credit purchasing. Enforce by COACH role rather than creating a lifetime Stripe plan. Remove coach Shop/payment UI; deny coach self-service payment APIs. Keep athlete billing and Glenn/Dieter review permissions; do not delete/cancel existing Stripe records automatically.

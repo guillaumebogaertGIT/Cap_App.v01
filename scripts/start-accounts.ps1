@@ -12,8 +12,15 @@ $capRoot = Split-Path $PSScriptRoot -Parent
 $capNames = 'CAP_DATABASE_URL','CAP_DATABASE_USER','CAP_DATABASE_PASSWORD','CAP_COACH_EMAIL','CAP_COACH_PASSWORD','CAP_FRONTEND_LOCATION','CAP_MEMBERSHIP_REVIEWER_EMAILS','PGPASSWORD','PGCONNECT_TIMEOUT','JAVA_HOME'
 $capPrevious = @{}
 $capNames += 'CAP_FINANCE_REVIEWER_EMAIL'
+$capNames += 'CAP_STAFF_MANAGER_EMAIL'
 foreach ($capName in $capNames) { $capPrevious[$capName] = [Environment]::GetEnvironmentVariable($capName, 'Process') }
 try {
+    $capStaffPath = Join-Path $capRoot '.local/staff-manager.json'
+    if (Test-Path -LiteralPath $capStaffPath) {
+        $capStaffEmail = (Get-Content -Raw -LiteralPath $capStaffPath | ConvertFrom-Json).email
+        if ($capStaffEmail -isnot [string] -or $capStaffEmail -notmatch '^[^\s@]+@[^\s@]+\.[^\s@]+$') { throw 'staff-manager.json must contain one valid coach login email in its email field.' }
+        $env:CAP_STAFF_MANAGER_EMAIL = $capStaffEmail
+    }
     $capFinancePath = Join-Path $capRoot '.local/finance-reviewer.json'
     if (Test-Path -LiteralPath $capFinancePath) {
         $capFinanceEmail = (Get-Content -Raw -LiteralPath $capFinancePath | ConvertFrom-Json).email

@@ -30,7 +30,7 @@ class AccountSecurity {
     }
 
     @Bean
-    SecurityFilterChain accountFilterChain(HttpSecurity http, org.springframework.security.core.session.SessionRegistry registry) throws Exception {
+    SecurityFilterChain accountFilterChain(HttpSecurity http, org.springframework.security.core.session.SessionRegistry registry,org.springframework.jdbc.core.JdbcTemplate jdbc) throws Exception {
         return http.authorizeHttpRequests(auth -> auth
                 .dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
                 .requestMatchers(HttpMethod.GET, "/accounts/**", "/app/**").permitAll()
@@ -40,6 +40,8 @@ class AccountSecurity {
                 .requestMatchers("/api/billing", "/api/billing/**").authenticated()
                 .requestMatchers(HttpMethod.GET, "/api/finance").hasRole("COACH")
                 .requestMatchers(HttpMethod.GET, "/api/coaches", "/api/coaches/**").hasRole("COACH")
+                .requestMatchers(HttpMethod.POST, "/api/coaches").hasRole("COACH")
+                .requestMatchers(HttpMethod.PUT, "/api/coaches/*/active").hasRole("COACH")
                 .requestMatchers("/api/accounts/invitations").hasRole("COACH")
                 .requestMatchers("/api/accounts/me", "/api/accounts/profile/**").authenticated()
                 .requestMatchers(HttpMethod.POST, "/api/accounts/password").authenticated()
@@ -58,6 +60,7 @@ class AccountSecurity {
             .requestCache(cache -> cache.disable())
             .sessionManagement(session -> session.maximumSessions(-1).sessionRegistry(registry)
                 .expiredSessionStrategy(event -> error(event.getResponse(),401,"Je sessie is beëindigd. Log opnieuw in.")))
+            .addFilterAfter(new ActiveAccountFilter(jdbc),org.springframework.security.web.session.ConcurrentSessionFilter.class)
             .exceptionHandling(errors -> errors
                 .authenticationEntryPoint((request, response, exception) -> error(response, 401, "Log in om verder te gaan."))
                 .accessDeniedHandler((request, response, exception) -> error(response, 403, "Deze actie is niet toegestaan. Vernieuw de pagina als je sessie is verlopen.")))

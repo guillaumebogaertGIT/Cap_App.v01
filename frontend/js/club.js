@@ -407,6 +407,7 @@
     function openSession(session, selectedDate) {
         if (!coach()) return;
         const form = $('session-form'); form.reset();
+        if(real) form.elements.namedItem('coach').replaceChildren(...real.coaches.map(person=>new Option(person.name,person.id)));
         form.elements.namedItem('date').min = today();
         const values = session || { id: '', date: selectedDate || week, start: '18:00', end: '19:00', coach: real?.account.name || 'Glenn', location: 'CAP Gistel', capacity: 8, type: 'Groep' };
         Object.entries(values).forEach(([name, value]) => { if (form.elements.namedItem(name)) form.elements.namedItem(name).value = value; });

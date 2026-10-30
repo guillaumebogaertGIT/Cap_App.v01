@@ -10,6 +10,8 @@ Basketball belongs to the separate RAW Hoops scope and is explicitly excluded fr
 
 ## Current state
 
+- October 30: Glenn-only staff management added inside Collega’s: create coaches with temporary passwords, deactivate/reactivate while preserving history and preventing self-deactivation. V11 active flag rejects login/revokes sessions; private-request activation checks cover stale/racing sessions. New coach/activation UI and direct API authorization tested with fake accounts, source Docker rebuilt/applied. No real staff account created/deactivated during QA. Configuration separate from titles/finance, via staff-manager.json/CAP_STAFF_MANAGER_EMAIL.
+
 - October 30: Added coach-only Collega’s directory with clickable email/optional-phone details and profile phone editing. V10 adds display titles from supplied staff roster (Admin/Manager/etc), independently of security roles. Only existing COACH accounts listed; no private health/profile fields exposed. PostgreSQL authorization/profile tests and responsive browser checks passed; Docker updated.
 
 - October 30: Coach purchase UI removed (Shop navigation/Home tile, account payment menu and billing dialog). COACH role grants free non-expiring coaching access; self billing summary reflects this without Stripe/DB writes, payment actions reject coaches. Athletes retain Shop/checkout; restricted finance/membership review unchanged. Docker rebuilt/applied; PostgreSQL regression and responsive browser checks passed.

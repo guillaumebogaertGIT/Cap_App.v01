@@ -21,10 +21,12 @@ class RealAppController {
     private final AccountWorkoutService workouts;
     private final MembershipReviewAccess membershipReview;
     private final FinanceAccess financeAccess;
+    private final StaffManagementAccess staffManagement;
     @Value("${cap.frontend-location:classpath:/static/app/}index.html")
     private Resource appTemplate;
 
-    RealAppController(AccountService accounts, PlanningService planning, AccountWorkoutService workouts, MembershipReviewAccess membershipReview, FinanceAccess financeAccess) {
+    RealAppController(AccountService accounts, PlanningService planning, AccountWorkoutService workouts, MembershipReviewAccess membershipReview, FinanceAccess financeAccess,StaffManagementAccess staffManagement) {
+        this.staffManagement=staffManagement;
         this.financeAccess = financeAccess;
         this.accounts = accounts; this.planning = planning; this.workouts = workouts; this.membershipReview = membershipReview;
     }
@@ -36,7 +38,7 @@ class RealAppController {
         var account = accounts.account(principal.getName());
         var data = new LinkedHashMap<String, Object>();
         data.put("account", account);
-        data.put("permissions", java.util.Map.of("reviewMemberships", membershipReview.allows(account), "reviewFinance", financeAccess.allows(account)));
+        data.put("permissions", java.util.Map.of("reviewMemberships", membershipReview.allows(account), "reviewFinance", financeAccess.allows(account),"manageCoaches",staffManagement.allows(account)));
         data.put("people", account.role().equals("COACH") ? planning.people(account) : List.of());
         data.put("sessions", planning.list(account, null, null));
         data.put("bookings", planning.bookings(account));

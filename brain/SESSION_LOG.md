@@ -1,5 +1,11 @@
 # Session Log
 
+## October 30, 2026 — Glenn staff administration
+
+- Added separate Glenn-only staff-manager capability/config and coach creation/deactivate/reactivate in Collega’s. Temporary password chosen by manager, BCrypt hash only; no emails or plaintext response/cache. V11 defaults existing accounts active, disables new login and revokes existing sessions. Indexed private-request activation check catches stale/racing auth; inactive coaches hidden from ordinary directory/new coach selections but historical lessons retained. Own deactivation blocked; titles do not grant access.
+- PostgreSQL: catalogue23 and directory7 passed; staff class8 passed in clean rerun after correcting a test lesson category. Covers role/CSRF denial, duplicate/athlete preservation, retained sessions, self protection, old sessions remaining expired after reactivation and direct stale-session DB flag check. No real staff mutations in QA.
+- Actual browser fake-manager add/login/deactivate401/reactivate/relogin passed; password fields cleared, own action hidden, ordinary coach controls absent. Both themes 390/768/1440 fit. Saved account + roster-refresh failure is reported clearly with retry. Final Docker rebuilt/restarted with actual local Glenn manager config; existing data fingerprints verified unchanged.
+
 ## October 30, 2026 — Coach colleague directory
 
 - Added Collega’s sidebar route, full-row name/title buttons, contact dialog with mail/tel links and missing-phone state. Coach profile includes optional phone with sharing notice. V10 additive coach_title column labels six existing staff emails from supplied screenshots; security roles/reviewer rules remain independent.

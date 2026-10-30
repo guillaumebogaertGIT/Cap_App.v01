@@ -15,6 +15,20 @@ Maxim, Vic and the marketing contact remain pending. Screenshot Admin/Manager/As
 
 ## Collega’s
 
+### Glenn: coaches toevoegen en verwijderen
+
+Glenn's configured account (`hello@cap-gistel.be`) sees **Coach toevoegen**. Enter name, email, a display title and a temporary password. Share that password privately; the coach can change it through **Wachtwoord**. New accounts always receive COACH access, never staff management or finance access from the selected title. Passwords are hashed and are not returned, logged, emailed or automatically added to `login.txt`.
+
+Click a colleague to choose **Coach deactiveren**. This is the removal operation: it disables login, expires sessions and removes the coach from ordinary colleague lists/new lesson choices, while retaining accounts, profiles, existing lessons, bookings and history. Existing future lessons are not canceled or reassigned automatically; Glenn can edit their coach if needed. Glenn can still see inactive entries and choose **Opnieuw activeren**, retaining the current password. Old sessions do not regain access; the coach signs in again. Glenn cannot deactivate his own account.
+
+This is a separate permission with one configured login email, independent of displayed Admin/Manager labels, finance access or membership review. The local launchers read ignored `.local/staff-manager.json` (`email` field); other environments use `CAP_STAFF_MANAGER_EMAIL`. Empty configuration denies staff administration to everyone. Other coaches keep read-only access to active colleagues; athletes/guests cannot access staff management. Existing athlete accounts are never silently promoted when an email collides.
+
+V11 adds `cap_user.active` (existing accounts default active). Spring login rejects disabled accounts, existing session registration is expired on activation changes, and an indexed activation check on private requests also covers stale sessions/concurrent login. Static assets and public login/health pages do not perform this extra lookup. Staff changes log actor/target IDs and action, not credentials.
+
+Endpoints: `POST /api/coaches` creates a COACH; `PUT /api/coaches/{id}/active` sets activation with `{ "active": false }` or `true`. Both require the configured manager and CSRF. There is no hard-delete endpoint. Password recovery/reset and editing existing titles remain separate future work.
+
+### Contactgegevens bekijken
+
 Every signed-in coach can open **Collega’s** in the sidebar (Menu on phones), then click a colleague to view their title, email and optional phone. The directory includes only existing COACH accounts; pending staff are not added automatically. Own entry is marked “jij”. Contact details are not available to athletes or guests.
 
 V10 adds `cap_user.coach_title` and labels the six existing supplied coach emails from the screenshots. Other/new coaches default to “Coach”. These labels are display information, not authorization; profile editing cannot change titles or privileges. Title administration remains future work.
@@ -25,7 +39,7 @@ Read-only, no-store endpoints: `GET /api/coaches` (IDs/names/titles) and `GET /a
 
 ## Sign in locally
 
-All COACH accounts have coaching access without payment or expiry. Their Home shows this explicitly; Shop and personal Betalingen are absent. Self-service checkout/portal/reconcile/cancel APIs reject coaches. This is role-based access, not a Stripe lifetime subscription. Athlete subscriptions are unchanged, and membership/finance review permissions remain restricted as listed above. Existing Stripe records are not deleted or automatically canceled.
+Active COACH accounts have coaching access without payment or expiry. Their Home shows this explicitly; Shop and personal Betalingen are absent. Self-service checkout/portal/reconcile/cancel APIs reject coaches. This is role-based access, not a Stripe lifetime subscription. Athlete subscriptions are unchanged, and membership/finance review permissions remain restricted as listed above. Existing Stripe records are not deleted or automatically canceled.
 
 1. Stop the old backend with Ctrl+C (Y if asked), then from the project root run `.\scripts\start-stripe-test.cmd`. Keep Stripe forwarding running separately if testing payments. This restart loads the current code and local permission configuration.
 2. In another terminal run `.\scripts\coach-login.cmd`.

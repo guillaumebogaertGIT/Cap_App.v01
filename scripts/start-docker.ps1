@@ -31,6 +31,7 @@ try {
         'cap.billing.enabled'=(!$WithoutPayments).ToString().ToLowerInvariant();
         'cap.billing.base-url'="http://127.0.0.1:$HttpPort";
         'cap.accounts.membership-reviewers'=''; 'cap.accounts.finance-reviewer'=''
+        'cap.accounts.staff-manager'=''
     }
     $capReviewPath=Join-Path $capRoot '.local/membership-reviewers.json'
     if (Test-Path -LiteralPath $capReviewPath) {
@@ -43,6 +44,12 @@ try {
         $capEmail=(Get-Content -Raw -LiteralPath $capFinancePath | ConvertFrom-Json).email
         if ($capEmail -isnot [string] -or $capEmail -notmatch '^[^\s@]+@[^\s@]+\.[^\s@]+$') { throw 'Invalid finance reviewer configuration.' }
         $capConfig['cap.accounts.finance-reviewer']=$capEmail
+    }
+    $capStaffPath=Join-Path $capRoot '.local/staff-manager.json'
+    if (Test-Path -LiteralPath $capStaffPath) {
+        $capStaffEmail=(Get-Content -Raw -LiteralPath $capStaffPath | ConvertFrom-Json).email
+        if ($capStaffEmail -isnot [string] -or $capStaffEmail -notmatch '^[^\s@]+@[^\s@]+\.[^\s@]+$') { throw 'Invalid staff manager configuration.' }
+        $capConfig['cap.accounts.staff-manager']=$capStaffEmail
     }
     if (!$WithoutPayments) {
         $capCatalogPath=Join-Path $capRoot '.local/stripe-test-catalog.json'

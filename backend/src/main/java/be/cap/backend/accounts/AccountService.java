@@ -69,9 +69,9 @@ public class AccountService implements UserDetailsService {
     @Override
     public UserDetails loadUserByUsername(String username) {
         String normalized = username == null ? "" : username.trim().toLowerCase(Locale.ROOT);
-        var users = jdbc.query("SELECT email, password_hash, role FROM cap_user WHERE email = ?",
+        var users = jdbc.query("SELECT email, password_hash, role, active FROM cap_user WHERE email = ?",
             (row, index) -> User.withUsername(row.getString("email")).password(row.getString("password_hash"))
-                .roles(row.getString("role")).build(), normalized);
+                .roles(row.getString("role")).disabled(!row.getBoolean("active")).build(), normalized);
         if (users.isEmpty()) throw new UsernameNotFoundException("Account niet gevonden.");
         return users.getFirst();
     }

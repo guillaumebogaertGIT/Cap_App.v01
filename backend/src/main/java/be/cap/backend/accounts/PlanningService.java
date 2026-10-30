@@ -44,7 +44,7 @@ public class PlanningService {
     }
     public List<Person> people(AccountService.Account user) {
         coach(user);
-        return jdbc.query("SELECT id, display_name, role FROM cap_user ORDER BY display_name", (row, index) ->
+        return jdbc.query("SELECT id, display_name, role FROM cap_user WHERE active=TRUE ORDER BY display_name", (row, index) ->
             new Person(row.getObject("id", UUID.class), row.getString("display_name"), row.getString("role")));
     }
     @Transactional(readOnly = true)
