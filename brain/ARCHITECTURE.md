@@ -4,6 +4,8 @@ Reviewed: September 29, 2026.
 
 ## Browser application
 
+October 30: POST /api/accounts/password changes only the authenticated user's BCrypt hash under row lock after checking current password. SessionRegistry + session lifecycle publisher track logins; successful change expires matching user sessions and logs out current request. Existing account menu opens password.js dialog. CoachProvisioner is an explicit local JDBC CLI, never an HTTP route/startup seed: atomic batch, no promotion/reset, local cap/cap_test only. create-coach-accounts.cmd stores per-coach temporary passwords in separate Windows-DPAPI .local/coach-secrets.xml; coach-login.cmd copies one to clipboard and opens login. No new dependencies or schema migration.
+
 October 30: Financiën is an original-app route, visible only with bootstrap reviewFinance permission. FinanceAccess independently checks a single configured COACH login email. GET /api/finance reads paginated Stripe TEST charges for one Brussels month, filters customers linked in billing_account, and returns sanitized EUR captured/refunded totals and rows. No new storage/migration or payment mutations. Separate from Glenn/Dieter membership review; docs/finance.md defines exclusions/refund attribution.
 
 Local accounts launcher enables `accounts,local-frontend`: `/app/**` reads directly

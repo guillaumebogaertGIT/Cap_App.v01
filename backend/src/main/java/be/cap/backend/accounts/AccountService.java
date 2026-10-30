@@ -76,6 +76,19 @@ public class AccountService implements UserDetailsService {
         return users.getFirst();
     }
 
+    @Transactional
+    public void changePassword(String email, String currentPassword, String newPassword) {
+        validatePassword(newPassword);
+        var hashes = jdbc.query("SELECT password_hash FROM cap_user WHERE email=? FOR UPDATE",
+            (row,index) -> row.getString(1), email);
+        if (currentPassword == null || currentPassword.getBytes(StandardCharsets.UTF_8).length>72 || hashes.isEmpty()
+            || !passwords.matches(currentPassword, hashes.getFirst()))
+            throw invalid("Je huidige wachtwoord klopt niet.");
+        if (passwords.matches(newPassword, hashes.getFirst()))
+            throw invalid("Kies een ander wachtwoord dan je huidige wachtwoord.");
+        jdbc.update("UPDATE cap_user SET password_hash=? WHERE email=?", passwords.encode(newPassword), email);
+    }
+
     /** First coach comes from local environment settings, never a public signup. */
     @Transactional
     public void bootstrap(String rawEmail, String password) {

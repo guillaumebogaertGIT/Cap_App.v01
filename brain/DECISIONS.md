@@ -4,6 +4,8 @@ Reviewed: September 29, 2026. Explicit rules and implemented choices only; undoc
 
 ## Product and working rules
 
+- October 30: User explicitly approved creating six confirmed coach accounts now with temporary passwords for later handover/change, rather than invitations. Keep others pending. Unique Windows-encrypted handover passwords, existing local PostgreSQL, no shared password or existing-account reset. Changing one's password terminates that account's sessions. No automatic email and no forced first-login change/expiry in this version.
+
 - October 30: User requested a Financiën page for Glenn after asking about revenue. First version reads monthly Stripe TEST payments on demand, including renewals, rather than estimating receipts from active memberships. Separate single-email COACH finance permission, denied by default. Refunds are attributed to original payment month; fees/VAT/dispute adjustments/external payments are explicitly outside these totals. No staff accounts or live billing created.
 
 - Prioritize workouts and coach/client use; nutrition and AI must not delay the core. Basketball/RAW Hoops is outside the MVP. Sources: master plan, README.

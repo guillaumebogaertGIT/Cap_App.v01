@@ -10,6 +10,8 @@ Basketball belongs to the separate RAW Hoops scope and is explicitly excluded fr
 
 ## Current state
 
+- October 30: Created six confirmed COACH accounts in native local cap DB (Glenn, Dieter, Mathias, Marlies, Robin, Vince); verified all six actual logins. Unique temporary passwords live only in ignored Windows-encrypted coach-secrets.xml, copied privately by coach-login.cmd. Self-service password change checks current password/CSRF and expires sessions; no account reset. Old running backend needs restart to load new password endpoint and reviewer config. Remaining staff pending; docs/coach-accounts.md.
+
 - October 30: Added Glenn-only Financiën page with on-demand Stripe TEST charge reads for linked CAP accounts: monthly captured EUR receipts, refunds against those receipts, remaining before fees, and payment list. Separate finance permission. No staff accounts created; sandbox comparison on Glenn's future account remains manual. See docs/finance.md. Docker remains next.
 
 - October 30: User supplied staff emails/roles in screenshots; transcribed in notes.txt, with uncertain/cropped details explicitly marked. Local membership-review allowlist now contains Glenn and Dieter's supplied login emails; actual CAP COACH accounts must still exist before access works. Other screenshot role labels are reference, not newly granted permissions. Docker is next.

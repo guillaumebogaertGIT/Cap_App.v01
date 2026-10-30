@@ -20,9 +20,17 @@ class AccountSecurity {
     }
     @Bean
     PasswordEncoder passwordEncoder() { return new BCryptPasswordEncoder(12); }
+    @Bean
+    org.springframework.security.core.session.SessionRegistry sessionRegistry() {
+        return new org.springframework.security.core.session.SessionRegistryImpl();
+    }
+    @Bean
+    org.springframework.security.web.session.HttpSessionEventPublisher sessionEvents() {
+        return new org.springframework.security.web.session.HttpSessionEventPublisher();
+    }
 
     @Bean
-    SecurityFilterChain accountFilterChain(HttpSecurity http) throws Exception {
+    SecurityFilterChain accountFilterChain(HttpSecurity http, org.springframework.security.core.session.SessionRegistry registry) throws Exception {
         return http.authorizeHttpRequests(auth -> auth
                 .dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
                 .requestMatchers(HttpMethod.GET, "/accounts/**", "/app/**").permitAll()
@@ -32,6 +40,7 @@ class AccountSecurity {
                 .requestMatchers(HttpMethod.GET, "/api/finance").hasRole("COACH")
                 .requestMatchers("/api/accounts/invitations").hasRole("COACH")
                 .requestMatchers("/api/accounts/me", "/api/accounts/profile/**").authenticated()
+                .requestMatchers(HttpMethod.POST, "/api/accounts/password").authenticated()
                 .requestMatchers("/api/club/**").authenticated()
                 .requestMatchers("/api/workouts/**", "/api/workout-assignments/**", "/api/training/**", "/api/records", "/api/session-workouts").authenticated()
                 .requestMatchers(HttpMethod.GET, "/api/nutrition-targets").authenticated()
@@ -45,6 +54,8 @@ class AccountSecurity {
             // Only Stripe's signature-verified endpoint bypasses browser CSRF protection.
             .csrf(csrf -> csrf.ignoringRequestMatchers("/api/billing/webhook"))
             .requestCache(cache -> cache.disable())
+            .sessionManagement(session -> session.maximumSessions(-1).sessionRegistry(registry)
+                .expiredSessionStrategy(event -> error(event.getResponse(),401,"Je sessie is beëindigd. Log opnieuw in.")))
             .exceptionHandling(errors -> errors
                 .authenticationEntryPoint((request, response, exception) -> error(response, 401, "Log in om verder te gaan."))
                 .accessDeniedHandler((request, response, exception) -> error(response, 403, "Deze actie is niet toegestaan. Vernieuw de pagina als je sessie is verlopen.")))

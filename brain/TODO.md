@@ -4,6 +4,8 @@ Reviewed: September 29, 2026. This is not a new roadmap.
 
 ## Obviously incomplete in the current project
 
+- October 30 update: Six confirmed coach accounts created and actual logins verified locally; remaining staff pending. Restart user backend for password UI/API and reviewer config. Glenn sandbox finance comparison still pending after restart. Staff password recovery, forced first-login change and deployment remain future work; handover described in docs/coach-accounts.md.
+
 - October 30: Glenn-only Financiën implemented; actual Glenn account provisioning and sandbox totals comparison remain. Finance HTTP tests passed on isolated PostgreSQL; mobile/tablet/desktop themes and error/empty/unauthorized UI verified with fake responses. Docker remains next after account/permission work.
 
 - No real accounts, password recovery, server roles/entitlements or per-user ownership; training belongs to one example athlete. Profile/messages/chat/notifications/payments are explanatory dialogs.

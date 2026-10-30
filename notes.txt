@@ -25,7 +25,8 @@ CAP access rules:
 - Access still requires an actual CAP account with the COACH role and that login email.
 - Mathias's Manager label does not grant membership-review access.
 - The screenshot role labels are reference information; their full CAP permissions still need defining.
-- No staff accounts, passwords or invitations were created by recording this list.
+- 30/10/2026: Created local CAP COACH accounts for Glenn, Dieter, Mathias, Marlies, Robin and Vince. Each has a separate encrypted temporary password; see docs/coach-accounts.md. No invitations/emails sent.
+- Maxim, Vic and the marketing contact remain pending. Account menu > Wachtwoord lets signed-in users change their own password.
 
 Subscriptions:
 Full acces:
@@ -48,4 +49,4 @@ Confirmed rules (29/10/2026):
 - Memberships stop after their stated duration; no automatic renewal.
 - Cancel a lesson booking before its start to return its credit.
 - Credits cover both group lessons and Open gym sessions; show the remaining balance in athlete Planning.
-- Staff email addresses supplied on 30/10/2026 as recorded above; individual account provisioning is still pending.
+- Six confirmed coach accounts created on 30/10/2026; remaining staff roles/access are pending confirmation. These accounts are local until deployment.

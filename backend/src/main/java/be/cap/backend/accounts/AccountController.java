@@ -14,6 +14,9 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/accounts")
 public class AccountController {
     record InviteRequest(String email) {}
+    record PasswordRequest(String currentPassword, String newPassword) {
+        @Override public String toString() { return "PasswordRequest[redacted]"; }
+    }
     record AcceptRequest(String token, String name, String password) {
         @Override public String toString() { return "AcceptRequest[redacted]"; }
     }
@@ -21,8 +24,11 @@ public class AccountController {
         @Override public String toString() { return "CsrfResponse[redacted]"; }
     }
     private final AccountService accounts;
+    private final org.springframework.security.core.session.SessionRegistry registry;
 
-    public AccountController(AccountService accounts) { this.accounts = accounts; }
+    public AccountController(AccountService accounts, org.springframework.security.core.session.SessionRegistry registry) {
+        this.accounts = accounts; this.registry = registry;
+    }
 
     @Bean
     ApplicationRunner firstCoach(@Value("${cap.accounts.bootstrap-email:}") String email,
@@ -35,6 +41,20 @@ public class AccountController {
 
     @GetMapping("/me")
     AccountService.Account me(Principal principal) { return accounts.account(principal.getName()); }
+
+    @PostMapping("/password")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    void password(@RequestBody PasswordRequest input, Principal principal,
+        jakarta.servlet.http.HttpServletRequest request, jakarta.servlet.http.HttpServletResponse response,
+        org.springframework.security.core.Authentication authentication) {
+        accounts.changePassword(principal.getName(),input.currentPassword(),input.newPassword());
+        for (Object user : registry.getAllPrincipals()) {
+            if (user instanceof org.springframework.security.core.userdetails.UserDetails details
+                && details.getUsername().equals(principal.getName()))
+                registry.getAllSessions(user,false).forEach(org.springframework.security.core.session.SessionInformation::expireNow);
+        }
+        new org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler().logout(request,response,authentication);
+    }
 
     @PostMapping("/invitations")
     @ResponseStatus(HttpStatus.CREATED)

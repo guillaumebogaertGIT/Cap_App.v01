@@ -1,5 +1,12 @@
 # Session Log
 
+## October 30, 2026 — Coach accounts and password changes
+
+- User approved six confirmed coaches with individual temporary passwords for later handover. Read-only preflight found no email collisions, then explicitly provisioned six COACH rows in existing local cap DB. Actual sign-ins all 204/COACH; logged out verification sessions. No existing records reset or staff emails sent.
+- Temporary values saved with Windows DPAPI/user-only ACL in ignored separate coach-secrets.xml. coach-login.cmd copies selected password privately and opens local login. Existing main server reported reviewer flags false; manual restart needed for config/new API.
+- Added own-password POST + CSRF/current-password checks, BCrypt update and registry expiration of matching sessions; original account menu dialog. Isolated PostgreSQL CoachSetupTests 8 passed (including inherited account checks); FinanceApiTests 9 passed with updated session config. Initial test fixture password mismatch corrected. Provisioning idempotence, role-conflict rollback, both-session expiry and old/new login behavior tested with fake data.
+- Browser dialog fits 390/768/1440; mismatch, wrong-password and success/cleared fields checked with fake responses. No actual staff password changed in tests. See docs/coach-accounts.md; Docker remains pending.
+
 ## October 30, 2026 — Glenn financial overview
 
 - Added Financiën in existing sidebar/design, separate Glenn-only email + COACH permission, read-only monthly Stripe TEST captured/refunded EUR report for linked CAP customers. No payment mutations or migrations. Configured ignored local reviewer email; no real staff accounts created.

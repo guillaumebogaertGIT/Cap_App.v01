@@ -12,7 +12,6 @@
         payment: ['Betalingen', 'Hier komen je betalingen en facturen. Er worden in deze preview geen betalingen verwerkt.'],
         logout: ['Uitloggen', 'Je gebruikt een voorbeeldaccount. Er is nog geen echte inlogsessie om af te sluiten.']
     };
-    if (window.capReal) previews.password[1] = 'Wachtwoord wijzigen is nog niet beschikbaar.';
     function closeMenu(returnFocus = false) {
         links.hidden = true;
         toggle.setAttribute('aria-expanded', 'false');
@@ -44,6 +43,9 @@
     });
     links.querySelectorAll('[data-account]').forEach((button) => {
         button.addEventListener('click', () => {
+            if (button.dataset.account === 'password' && window.capOpenPassword) {
+                closeMenu(); window.capOpenPassword(); return;
+            }
             if (button.dataset.account === 'payment' && window.capOpenBilling) {
                 closeMenu(); window.capOpenBilling(); return;
             }

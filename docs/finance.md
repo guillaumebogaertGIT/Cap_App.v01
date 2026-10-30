@@ -30,6 +30,6 @@ API: `GET /api/finance?month=2026-10`, no-store. Guests 401; athletes and unauth
 - Stripe unavailable or disabled: safe error, cleared totals, retry.
 - Phone and desktop, light/dark themes.
 
-Automated tests use fake Stripe and isolated PostgreSQL; browser layout checks use labeled fake payment responses. Actual sandbox comparison on Glenn's account remains manual once his account exists.
+Automated tests use fake Stripe and isolated PostgreSQL; browser layout checks use labeled fake payment responses. Glenn's local account now exists (see docs/coach-accounts.md); actual sandbox comparison remains manual after restarting the backend to load reviewer configuration.
 
 Stripe field definitions: [charges](https://docs.stripe.com/api/charges/object) and [listing/pagination](https://docs.stripe.com/api/charges/list).
