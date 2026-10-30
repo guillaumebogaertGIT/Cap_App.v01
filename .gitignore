@@ -29,6 +29,7 @@
 /.playwright-mcp/
 
 # Account/database credentials belong in the environment, never Git.
+/login.txt
 .env
 /.local/
 .env.*
