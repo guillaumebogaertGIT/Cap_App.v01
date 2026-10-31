@@ -65,6 +65,35 @@ document.addEventListener('keydown', (event) => {
 });
 
 // URL fragments let the browser's Back and Forward buttons switch screens too.
+function syncHomeShortcuts(allowedViews) {
+    const homes=[document.querySelector('#coach .home-tiles'),document.querySelector('#dashboard .home-tiles')];
+    const financeHome=document.getElementById('finance-home');
+    if(financeHome){
+        let grid=financeHome.querySelector('.home-tiles');
+        if(!grid){grid=document.createElement('nav');grid.className='home-tiles';grid.setAttribute('aria-label','Financiële taken');
+            const shortcut=financeHome.querySelector('a[href="#finance"]');shortcut.className='home-tile';grid.append(shortcut);financeHome.querySelector('#finance-home-status').before(grid);}
+        homes.push(grid);
+    }
+    const descriptions={colleagues:'Het team en contactgegevens',finance:'Betalingen en financieel overzicht',settings:'Jouw voorkeuren en instellingen',health:'Jouw metingen en vooruitgang'};
+    for(const grid of homes.filter(Boolean)){
+        grid.querySelectorAll('.home-tile').forEach(tile=>{tile.hidden=true;});
+        for(const link of sidebarNavigation.querySelectorAll('a[data-view-link]')){
+            const route=link.dataset.viewLink;
+            if(link.hidden||route==='dashboard'||!allowedViews.includes(route))continue;
+            let tile=grid.querySelector('a[href="#'+route+'"]');
+            if(!tile){tile=document.createElement('a');tile.className='home-tile';tile.href='#'+route;grid.append(tile);}
+            let heading=tile.querySelector('strong');
+            if(!heading){tile.replaceChildren();heading=document.createElement('strong');tile.append(heading);}
+            heading.textContent=link.textContent.trim()||'Instellingen';
+            if(!tile.querySelector('svg')){
+                const icon=document.createElementNS('http://www.w3.org/2000/svg','svg');icon.setAttribute('viewBox','0 0 24 24');icon.setAttribute('aria-hidden','true');
+                const path=document.createElementNS(icon.namespaceURI,'path');path.setAttribute('d','M4 4h16v16H4zM8 8h8m-8 4h8m-8 4h5');icon.append(path);tile.prepend(icon);
+            }
+            if(!tile.querySelector('span')){const description=document.createElement('span');description.textContent=descriptions[route]||'Open '+heading.textContent;tile.append(description);}
+            tile.hidden=false;grid.append(tile);
+        }
+    }
+}
 function showCurrentView(moveFocus = true) {
     // Coach tasks follow the agreed order; sporters retain their original navigation.
     const coachLinks = coachSidebarOrder.map(view => originalSidebarLinks.find(link => link.dataset.viewLink === view));
@@ -117,6 +146,7 @@ function showCurrentView(moveFocus = true) {
             : link.hasAttribute('data-coach-only');
     });
 
+    syncHomeShortcuts(allowedViews);
     document.querySelectorAll('[data-view]').forEach((view) => {
         view.hidden = view.id !== viewId;
     });
