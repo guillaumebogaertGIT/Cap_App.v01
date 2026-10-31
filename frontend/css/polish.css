@@ -1003,3 +1003,21 @@ main { padding: 1rem; }
 .sidebar-more > a {
     margin-inline-start: .75rem;
 }
+/* Athlete directory opens one dossier; details reuse existing feature screens. */
+#athletes .athlete-directory-entry { display: block; padding: 0; }
+#athletes .athlete-directory-entry h3 { margin: 0; }
+.athlete-directory-open {
+    display: block; width: 100%; min-height: 3.5rem; padding: 1rem;
+    border: 0; background: transparent; color: var(--text); text-align: left;
+    font: inherit; font-weight: 600; cursor: pointer; overflow-wrap: anywhere;
+}
+.athlete-directory-open:hover { background: var(--hover); }
+.athlete-directory-open:focus-visible { outline: 2px solid var(--accent-text); outline-offset: -3px; }
+.athlete-details-actions { display: grid; gap: .65rem; }
+#athlete-details-dialog > .session-dialog-header { position: sticky; top: 0; z-index: 1; background: var(--surface); padding-block: .5rem; }
+.athlete-details-actions button { min-height: 3rem; white-space: normal; }
+.athlete-coach-assignment { margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--border); }
+.athlete-linked-coaches { padding: 0; list-style: none; }
+.athlete-linked-coaches li { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .75rem; padding-block: .5rem; }
+.athlete-linked-coaches button { min-height: 2.75rem; }
+@media (min-width: 40rem) { .athlete-details-actions { grid-template-columns: repeat(2,minmax(0,1fr)); } }

@@ -116,4 +116,18 @@ class StaffRbacTests extends AccountApiTests {
         assertEquals(204,request(manager.client(),"DELETE","/api/club/sessions/"+id,null,csrf(manager.client()),false).statusCode());
         assertEquals(204,request(manager.client(),"PUT","/api/coaches/"+instructor+"/active","{\"active\":false}",csrf(manager.client()),false).statusCode());
     }
+    @Test void bothAdminsHaveIdenticalCapabilitiesAndCanLinkCoachesFromAthleteDossier() throws Exception {
+        var first=client();login(first,"coach@example.test","Coach-test-password-123");var second=staff("OWNER");var instructor=staff("INSTRUCTOR");var finance=staff("FINANCE");
+        var accounts=context.getBean(be.cap.backend.accounts.AccountService.class);var policy=context.getBean(be.cap.backend.accounts.StaffPolicy.class);
+        assertEquals(policy.capabilities(accounts.account("coach@example.test")),policy.capabilities(accounts.account(second.email())));
+        String clientId=athlete(first,client()),path="/api/staff/clients/"+clientId+"/instructors",grant="/api/staff/"+instructor.id()+"/clients/"+clientId;
+        assertEquals("[]",request(first,"GET",path,null,null,false).body());
+        assertEquals(204,request(second.client(),"PUT",grant,null,csrf(second.client()),false).statusCode());
+        var linked=request(first,"GET",path,null,null,false);assertEquals(200,linked.statusCode());assertEquals(instructor.id().toString(),json.readTree(linked.body()).get(0).asText());
+        assertTrue(linked.headers().firstValue("cache-control").orElse("").contains("no-store"));
+        assertEquals(403,request(instructor.client(),"GET",path,null,null,false).statusCode());assertEquals(403,request(finance.client(),"GET",path,null,null,false).statusCode());
+        assertEquals(401,request(client(),"GET",path,null,null,false).statusCode());
+        assertEquals(404,request(first,"GET","/api/staff/clients/"+instructor.id()+"/instructors",null,null,false).statusCode());
+        assertEquals(204,request(first,"DELETE",grant,null,csrf(first),false).statusCode());assertEquals("[]",request(second.client(),"GET",path,null,null,false).body());
+    }
 }

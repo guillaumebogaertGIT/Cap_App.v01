@@ -22,14 +22,12 @@
         }
         for (const person of real.athletes) {
             const item = document.createElement('li'); item.className = 'athlete-card'; item.dataset.athleteId = person.id;
-            const name = document.createElement('h3'); name.textContent = person.name;
+            const name = document.createElement('h3');
+            const open=document.createElement('button');open.type='button';open.className='athlete-directory-open';open.textContent=person.name;
+            open.setAttribute('aria-label','Dossier van '+person.name+' bekijken');name.append(open);
+            open.addEventListener('click',()=>{real.selectedAthleteId=person.id;document.dispatchEvent(new CustomEvent('cap:open-athlete',{detail:{id:person.id,opener:open}}));});
             const identity = document.createElement('div'); identity.append(name);
-            const actions = document.createElement('div'); actions.className = 'athlete-actions';
-            item.append(identity, actions);
-            for (const [label, target] of [['Workouts bekijken', 'review-athlete-workouts'], ['Workout toewijzen', 'assign-athlete-workout']]) {
-                const button = document.createElement('button'); button.type = 'button'; button.className = 'secondary-button'; button.textContent = label;
-                button.addEventListener('click', () => { real.selectedAthleteId = person.id; document.getElementById(target).click(); }); actions.append(button);
-            }
+            item.classList.add('athlete-directory-entry');item.append(identity);
             list.append(item);
         }
     }

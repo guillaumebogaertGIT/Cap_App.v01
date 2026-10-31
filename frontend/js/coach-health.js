@@ -215,6 +215,7 @@ document.addEventListener('DOMContentLoaded', () => {
     $('coach-health-change').addEventListener('click', () => { $('coach-health-search').value = ''; renderPicker(); $('coach-health-search').focus(); });
     $('coach-health-reload').addEventListener('click', ()=>{loadTraining();if(real)loadMeasurements();});
     document.addEventListener('cap:profile-changed', () => { if (isOpen() && selectedId === 'preview-guillaume') renderMeasurements(); });
+    document.addEventListener('cap:select-athlete',event=>{if(!roster.some(a=>a.id===event.detail.id)||saving)return;selectedId=event.detail.id;form.reset();$('coach-health-search').value='';renderPicker();if(isOpen()){loadMeasurements();loadTraining();}});
     document.addEventListener('cap:viewchange', () => {
         if (!isOpen()) { ++measurementGeneration;request?.abort(); request = null; if (dialog.open) dialog.close(); }
         if (!window.capAccess.signedIn) {

@@ -227,6 +227,7 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (error) { $('nutrition-save-status').textContent = error.message; }
     });
     $('nutrition-athlete-search').addEventListener('input', renderPicker);
+    document.addEventListener('cap:select-athlete',event=>{if(!canEdit()||saving||!roster.some(a=>a.id===event.detail.id))return;remember(!drafts.get(selectedId)?.unsaved);selectedId=event.detail.id;$('nutrition-athlete-search').value='';loadAthlete();renderPicker();});
     $('nutrition-athlete-select').addEventListener('change', event => {
         if (!roster.some(athlete => athlete.id === event.target.value)) return;
         remember(!drafts.get(selectedId)?.unsaved); selectedId = event.target.value; loadAthlete();

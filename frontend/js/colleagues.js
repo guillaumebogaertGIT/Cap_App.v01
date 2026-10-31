@@ -86,7 +86,7 @@ document.addEventListener('DOMContentLoaded', () => {
             <p class="sample-notice">Minstens 12 tekens, maximaal 72 UTF-8 bytes. Deel het wachtwoord persoonlijk. De coach kan het wijzigen via Wachtwoord. De titel geeft geen extra beheerrechten.</p>
             <p role="status" aria-live="polite"></p><button type="submit" class="primary-button">Coachaccount maken</button></form>`;
         document.body.append(editor);const form=editor.querySelector('form'),message=editor.querySelector('[role="status"]'),submit=form.querySelector('button');let saving=false;
-        if(real.staffRole==='OWNER'){form.elements.staffRole.add(new Option('Manager','MANAGER'));form.elements.staffRole.add(new Option('Eigenaar','OWNER'));}
+        if(real.staffRole==='OWNER'){form.elements.staffRole.add(new Option('Beheerder','MANAGER'));form.elements.staffRole.add(new Option('Admin','OWNER'));}
         add.addEventListener('click',()=>{form.reset();message.textContent='';editor.showModal();});
         editor.querySelector('.session-dialog-close').addEventListener('click',()=>{if(!saving)editor.close();});
         editor.addEventListener('cancel',event=>{if(saving)event.preventDefault();});

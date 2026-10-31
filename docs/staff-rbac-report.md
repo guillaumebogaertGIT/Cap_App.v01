@@ -1,5 +1,7 @@
 # Staff RBAC implementation report — 30/10/2026
 
+Subsequent clarification: both Glenn and Dieter are proposed as OWNER (display label Admin), with the same full access. Their real records are still unchanged. An athlete dossier popup now opens from Sporters, links to existing athlete-specific screens, and provides audited coach linking/unlinking. This follow-up passed 19 focused PostgreSQL tests and browser checks at 390/768/1440 in both themes. See the athlete-first section in staff-rbac.md.
+
 ## Delivery status
 
 Implemented in source and verified using fake accounts on isolated PostgreSQL. **Not activated on the ordinary CAP database and not deployed to the running Docker app.** No real passwords, staff roles, client records, subscriptions or Stripe configuration were changed. The ordinary database remains V12; V13 and the exact account-ID mapping require approval first.

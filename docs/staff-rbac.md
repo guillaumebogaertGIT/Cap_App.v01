@@ -1,5 +1,13 @@
 # Staff access control
 
+Product clarification: Glenn and Dieter both receive OWNER, displayed as **Admin**, with identical permissions. MANAGER remains a narrower optional role for future use; it is no longer Dieter's proposed role. The revised local UUID mapping is still pending activation approval.
+
+## Athlete-first coaching
+
+Open **Sporters**, click an athlete's name, then use the dossier popup. It links to that athlete's existing workouts, assignment action, measurements/PRs/training history, nutrition targets, private notes and membership information according to permissions.
+
+Admins can choose an instructor under **Aan coach koppelen**. Existing links are listed with **Ontkoppelen**. Multiple instructors are supported; removing one does not remove the others. Admins already have club-wide access. The popup uses the same audited instructor-client grants as Rollen & klanten; it does not create a second assignment system. Instructor popups omit nutrition/measurement/finance and coach-link controls. `GET /api/staff/clients/{id}/instructors` is staff-management-only, no-store, and returns only linked account IDs.
+
 ## Implementation and activation are separate
 
 The new source extends the existing COACH/ATHLETE accounts, BCrypt passwords, cookie sessions, CSRF protection, PostgreSQL and original frontend. It does not replace authentication or billing. Migration V13 **has not been approved for the ordinary CAP database**. Do not rebuild/restart the ordinary CAP app with this source until its migration and account-ID mapping are approved.

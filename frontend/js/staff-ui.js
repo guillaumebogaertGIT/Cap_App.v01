@@ -61,9 +61,10 @@
     }
     const staff=screen('staff-access','Rollen & klanten','STAFF_MANAGE');
     if(staff){
-        staff.append(node('p','Rollen bepalen toegang. Een zichtbare titel geeft geen rechten. Alleen de eigenaar kan eigenaars en managers beheren.'));
+        staff.append(node('p','Rollen bepalen toegang. Een zichtbare titel geeft geen rechten. Alleen admins kunnen andere admins en beheerders beheren.'));
         const card=node('article');card.className='club-card';
-        const member=select('Medewerker',[]),role=select('Rol', (real.staffRole==='OWNER'?['OWNER','MANAGER','INSTRUCTOR','FINANCE']:['INSTRUCTOR','FINANCE']).map(r=>[r,r]));
+        const labels={OWNER:'Admin',MANAGER:'Beheerder',INSTRUCTOR:'Lesgever',FINANCE:'Financiën',DEVELOPMENT:'Ontwikkeling',UNASSIGNED:'Niet ingesteld'};
+        const member=select('Medewerker',[]),role=select('Rol', (real.staffRole==='OWNER'?['OWNER','MANAGER','INSTRUCTOR','FINANCE']:['INSTRUCTOR','FINANCE']).map(r=>[r,labels[r]]));
         const change=node('button','Rol bewaren');change.type='button';change.className='secondary-button';
         const client=select('Sporter',real.athletes.map(p=>[p.id,p.name]));const grant=node('button','Klant koppelen'),revoke=node('button','Koppeling verwijderen');
         for(const b of [grant,revoke]){b.type='button';b.className='secondary-button';}
@@ -75,11 +76,11 @@
             change.disabled=!manageable;role.input.value=current?.role||'';
             grant.disabled=revoke.disabled=!(current?.active&&current.role==='INSTRUCTOR'&&client.input.value);
             if(!current){status.textContent='Nog geen medewerkers.';return;}
-            status.textContent=current.name+' · '+current.role+(current.active?'':' · gedeactiveerd');
+            status.textContent=current.name+' · '+(labels[current.role]||current.role)+(current.active?'':' · gedeactiveerd');
             if(current.role!=='INSTRUCTOR')return;
             try{const ids=await real.request('/api/staff/'+id+'/clients');if(version!==generation)return;ids.forEach(id=>linked.append(node('li',real.athletes.find(a=>a.id===id)?.name||id)));if(!ids.length)linked.append(node('li','Nog geen gekoppelde klanten.'));}catch(error){if(version===generation)status.textContent=error.message;}}
         document.addEventListener('cap:athletes-changed',()=>{const selected=client.input.value;client.input.replaceChildren(...real.athletes.map(p=>new Option(p.name,p.id)));if(real.athletes.some(p=>p.id===selected))client.input.value=selected;});
-        async function load(){try{await real.refreshAthletes();const selected=member.input.value;members=await real.request('/api/staff/members');member.input.replaceChildren(...members.map(m=>new Option(m.name+' · '+m.role,m.id)));if(members.some(m=>m.id===selected))member.input.value=selected;await selection();}catch(error){status.textContent=error.message;}}
+        async function load(){try{await real.refreshAthletes();const selected=member.input.value;members=await real.request('/api/staff/members');member.input.replaceChildren(...members.map(m=>new Option(m.name+' · '+(labels[m.role]||m.role),m.id)));if(members.some(m=>m.id===selected))member.input.value=selected;await selection();}catch(error){status.textContent=error.message;}}
         async function mutate(path,method,body){if(busy)return;busy=true;change.disabled=grant.disabled=revoke.disabled=true;member.input.disabled=client.input.disabled=role.input.disabled=true;let feedback='';try{await real.request(path,method,body);await load();feedback='Toegang bijgewerkt. Rolwijzigingen beëindigen bestaande sessies.';}catch(error){feedback=error.message;}finally{busy=false;member.input.disabled=client.input.disabled=role.input.disabled=false;await selection();status.textContent=feedback;}}
         member.input.addEventListener('change',selection);client.input.addEventListener('change',selection);
         change.addEventListener('click',()=>{if(role.input.value&&confirm('De rol van deze medewerker wijzigen?'))mutate('/api/staff/'+member.input.value+'/role','PUT',{role:role.input.value});});

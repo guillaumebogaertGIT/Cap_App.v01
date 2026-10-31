@@ -20,6 +20,12 @@ class StaffController {
     ResponseEntity<List<Map<String,Object>>> members(Principal p){actor(p);return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(jdbc.queryForList(
         "SELECT id,display_name AS name,email,staff_role AS role,active FROM cap_user WHERE role='COACH' ORDER BY display_name"));}
     record Role(String role){}
+    @GetMapping("/clients/{client}/instructors")
+    ResponseEntity<List<UUID>> instructors(Principal p,@PathVariable UUID client){actor(p);
+        if(jdbc.queryForObject("SELECT COUNT(*) FROM cap_user WHERE id=? AND role='ATHLETE'",Integer.class,client)!=1)
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND,"Sporter niet gevonden.");
+        return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(jdbc.query(
+            "SELECT instructor_id FROM instructor_client WHERE client_id=? ORDER BY instructor_id",(r,i)->r.getObject(1,UUID.class),client));}
     @PutMapping("/{id}/role")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     void role(Principal p,@PathVariable UUID id,@RequestBody Role input){staff.role(actor(p),id,input.role());}
