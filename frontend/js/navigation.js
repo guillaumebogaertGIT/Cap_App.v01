@@ -13,6 +13,10 @@ const moreSummary = document.createElement('summary');
 moreSummary.textContent = 'Meer';
 moreNavigation.append(moreSummary);
 let previewRole = window.capReal?.account.role === 'COACH' ? 'coach' : 'athlete';
+const mobileMorePage=document.createElement('section');mobileMorePage.id='more';mobileMorePage.dataset.view='';mobileMorePage.hidden=true;
+mobileMorePage.setAttribute('aria-labelledby','more-title');
+mobileMorePage.innerHTML='<header class="dashboard-header"><h2 id="more-title" tabindex="-1">Meer</h2></header><nav class="home-tiles" aria-label="Overige pagina’s"></nav>';
+document.querySelector('main').append(mobileMorePage);
 
 document.querySelectorAll('[name="preview-role"]').forEach((input) => {
     input.checked = input.value === previewRole;
@@ -132,6 +136,9 @@ function showCurrentView(moveFocus = true) {
         sidebarNavigation.querySelector('[data-view-link="athletes"]').textContent=instructor?'Mijn klanten':'Sporters';
         document.querySelectorAll('#coach .home-tile').forEach(link=>{link.hidden=!allowedViews.includes(link.hash.slice(1));});
     }
+    const adminBottom=previewRole==='coach'&&['OWNER','MANAGER'].includes(window.capReal?.staffRole);
+    document.querySelector('.mobile-bottom-nav').classList.toggle('has-admin-tabs',adminBottom);
+    if(adminBottom)allowedViews.push('more');
     sidebarNavigation.querySelector('[data-view-link="health"]').textContent=previewRole==='coach'?'Mijn gezondheid':'Gezondheid & Progress';
     sidebarNavigation.querySelector('[data-view-link="coach-health"]').textContent='Gezondheid sporters';
     const routeId = allowedViews.includes(requestedView)
@@ -163,6 +170,14 @@ function showCurrentView(moveFocus = true) {
         link.hidden = link.dataset.mobileRole !== previewRole;
     });
     if(window.capReal && previewRole==='coach')document.querySelectorAll('.mobile-bottom-nav [data-view-link]').forEach(link=>{link.hidden=link.dataset.mobileRole==='athlete'||!allowedViews.includes(link.dataset.viewLink);});
+    document.querySelectorAll('.mobile-bottom-nav [data-admin-bottom]').forEach(link=>{link.hidden=!adminBottom;});
+    if(adminBottom)document.querySelector('.mobile-bottom-nav [data-view-link="athletes"]').hidden=true;
+    const moreGrid=mobileMorePage.querySelector('nav');moreGrid.replaceChildren();
+    if(adminBottom)for(const link of sidebarNavigation.querySelectorAll('a[data-view-link]')){
+        if(link.hidden||['dashboard','planning','create-workout','finance'].includes(link.dataset.viewLink))continue;
+        const tile=document.createElement('a');tile.className='home-tile';tile.href=link.hash;
+        const heading=document.createElement('strong');heading.textContent=link.textContent.trim();tile.append(heading);moreGrid.append(tile);
+    }
 
     document.querySelectorAll('[data-view-link]').forEach((link) => {
         const isActive = link.dataset.viewLink === routeId;

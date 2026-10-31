@@ -154,6 +154,7 @@ main { width: 100%; max-width: 1600px; padding: 1.25rem; }
         text-align: center;
         overflow-wrap: anywhere;
     }
+    .mobile-bottom-nav.has-admin-tabs { grid-template-columns: repeat(5, minmax(0, 1fr)); }
     .mobile-bottom-nav svg { width: 1.5rem; height: 1.5rem; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
     .mobile-bottom-nav a.active { color: var(--text); background: var(--highlight); font-weight: 700; }
     .mobile-bottom-nav a:focus-visible { outline: 2px solid var(--accent-text); outline-offset: -2px; }
