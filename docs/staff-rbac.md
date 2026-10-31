@@ -6,7 +6,7 @@ Product clarification: Glenn and Dieter both receive OWNER, displayed as **Admin
 
 Open **Sporters**, click an athlete's name, then use the dossier popup. It links to that athlete's existing workouts, assignment action, measurements/PRs/training history, nutrition targets, private notes and membership information according to permissions.
 
-Admins can choose an instructor under **Aan coach koppelen**. Existing links are listed with **Ontkoppelen**. Multiple instructors are supported; removing one does not remove the others. Admins already have club-wide access. The popup uses the same audited instructor-client grants as Rollen & klanten; it does not create a second assignment system. Instructor popups omit nutrition/measurement/finance and coach-link controls. `GET /api/staff/clients/{id}/instructors` is staff-management-only, no-store, and returns only linked account IDs.
+Admins can choose an instructor under **Aan coach koppelen**. Existing links are listed with **Ontkoppelen**. Multiple instructors are supported; removing one does not remove the others. Admins already have club-wide access. The popup uses the same audited instructor-client grants as the existing staff API; it does not create a second assignment system. Instructor popups omit nutrition/measurement/finance and coach-link controls. `GET /api/staff/clients/{id}/instructors` is staff-management-only, no-store, and returns only linked account IDs.
 
 ## Implementation and activation are separate
 
@@ -33,7 +33,7 @@ ATHLETE remains the existing account type and retains own workouts, training, bo
 
 `StaffPolicy` maps roles to named capabilities and reads current grants by account UUID. `StaffRequestAuthorization` protects the API surface; services enforce operation and client scope. There is no fallback from COACH, display title, first name or the old email allowlists. FinanceAccess/MembershipReviewAccess/StaffManagementAccess are compatibility facades over this policy.
 
-The client association is explicit: class attendance never creates a grant. OWNER/MANAGER use **Rollen & klanten** to link/unlink clients. Instructors receive only their linked client roster and their own classes; booking identities and unrelated private class recipients are not returned. Revoked scope is checked again on subsequent requests. Sensitive nutrition/measurement access is not granted to instructors even for a linked client.
+The client association is explicit: class attendance never creates a grant. OWNER/MANAGER use **Sporters > athlete > Aan coach koppelen** to link/unlink clients. Instructors receive only their linked client roster and their own classes; booking identities and unrelated private class recipients are not returned. Revoked scope is checked again on subsequent requests. Sensitive nutrition/measurement access is not granted to instructors even for a linked client.
 
 Role changes end registered sessions. Authorization also reads the current role, rather than trusting stale session role grants. Existing account deactivation checks and session invalidation remain. Managers cannot promote themselves or administer OWNER/MANAGER/DEVELOPMENT targets; self-role changes, self-deactivation and loss of the last active owner are blocked. Ordinary creation requires an explicit permitted role or defaults to INSTRUCTOR, never OWNER from a display title.
 
@@ -41,7 +41,7 @@ Role changes end registered sessions. Authorization also reads the current role,
 
 `staff_note` is separate from the old assignment `note`. Notes record client, optional assignment, authenticated author, server creation time, content and retry UUID. They are append-only: no staff-note edit/delete routes exist. Duplicate retries return the same note; conflicting reuse is rejected. Neither notes nor their contents enter athlete responses or initial HTML. Author names are displayed with Brussels timestamps.
 
-Legacy notes stay in the original workout JSON, without invented authors/times. They remain readable in authorized staff assignment records, but are redacted in athlete assignment responses. Legacy notes are read-only in real account mode; new private notes use Notities and the old write endpoint is denied. The assignment view links directly to an attributed private note for that client/workout.
+Legacy notes stay in the original workout JSON, without invented authors/times. They remain readable in authorized staff assignment records, but are redacted in athlete assignment responses. Legacy notes are read-only in real account mode; new private notes open contextually from the athlete dossier or assignment and the old write endpoint is denied. The assignment view links directly to an attributed private note for that client/workout.
 
 Dated and weekly assignments use existing snapshots. Assigning and retrying no longer modifies the library template or erases assignment notes. New assignments have `assignment_attribution` (workout, client, assigning staff, timestamp); historical entries remain unattributed. Creating a template and assigning it goes through the same assignment path. Instructor requests cannot supply a different prescription: the backend reads the saved template. Owner/manager prescription editing remains available separately.
 

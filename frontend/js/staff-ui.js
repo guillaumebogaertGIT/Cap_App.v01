@@ -18,8 +18,6 @@
         const page=node('section');page.id=id;page.dataset.view='';page.hidden=true;
         const heading=node('h2',title);heading.id=id+'-title';heading.tabIndex=-1;page.setAttribute('aria-labelledby',heading.id);page.append(heading);
         document.querySelector('main').append(page);
-        const link=node('a',title);link.href='#'+id;link.dataset.viewLink=id;link.dataset.coachOnly='';
-        const nav=document.getElementById('sidebar-navigation');nav.insertBefore(link,nav.querySelector('.settings-link'));
         return page;
     }
     function select(label,options){const wrap=node('label',label),input=node('select');for(const [value,text] of options)input.add(new Option(text,value));wrap.append(input);return {wrap,input};}
@@ -58,35 +56,5 @@
             catch(error){status.textContent=error.message;}finally{busy=false;submit.disabled=false;client.input.disabled=false;assignment.input.disabled=false;text.disabled=false;}});
         document.addEventListener('cap:viewchange',()=>{if(location.hash==='#staff-notes')real.refreshAthletes().then(load).catch(error=>{status.textContent=error.message;});else ++generation;});
         if(location.hash==='#staff-notes')load();
-    }
-    const staff=screen('staff-access','Rollen & klanten','STAFF_MANAGE');
-    if(staff){
-        staff.append(node('p','Rollen bepalen toegang. Een zichtbare titel geeft geen rechten. Alleen admins kunnen andere admins en beheerders beheren.'));
-        const card=node('article');card.className='club-card';
-        const labels={OWNER:'Admin',MANAGER:'Beheerder',INSTRUCTOR:'Lesgever',FINANCE:'Financiën',DEVELOPMENT:'Ontwikkeling',UNASSIGNED:'Niet ingesteld'};
-        const member=select('Medewerker',[]),role=select('Rol', (real.staffRole==='OWNER'?['OWNER','MANAGER','INSTRUCTOR','FINANCE']:['INSTRUCTOR','FINANCE']).map(r=>[r,labels[r]]));
-        const change=node('button','Rol bewaren');change.type='button';change.className='secondary-button';
-        const client=select('Sporter',real.athletes.map(p=>[p.id,p.name]));const grant=node('button','Klant koppelen'),revoke=node('button','Koppeling verwijderen');
-        for(const b of [grant,revoke]){b.type='button';b.className='secondary-button';}
-        const status=node('p');status.setAttribute('role','status');const linked=node('ul'),audit=node('details'),auditRows=node('ul'),auditReload=node('button','Beheerhistorie laden');auditReload.type='button';auditReload.className='secondary-button';audit.append(node('summary','Beheerhistorie'),auditReload,auditRows);
-        const actions=node('div');actions.className='club-actions';actions.append(grant,revoke);card.append(member.wrap,role.wrap,change,client.wrap,actions,status,linked,audit);staff.append(card);
-        let members=[],busy=false,generation=0;
-        async function selection(){const version=++generation,id=member.input.value;linked.replaceChildren();const current=members.find(m=>m.id===id);
-            const manageable=current && current.role!=='DEVELOPMENT' && current.id!==real.account.id && (real.staffRole==='OWNER'||['INSTRUCTOR','FINANCE'].includes(current.role));
-            change.disabled=!manageable;role.input.value=current?.role||'';
-            grant.disabled=revoke.disabled=!(current?.active&&current.role==='INSTRUCTOR'&&client.input.value);
-            if(!current){status.textContent='Nog geen medewerkers.';return;}
-            status.textContent=current.name+' · '+(labels[current.role]||current.role)+(current.active?'':' · gedeactiveerd');
-            if(current.role!=='INSTRUCTOR')return;
-            try{const ids=await real.request('/api/staff/'+id+'/clients');if(version!==generation)return;ids.forEach(id=>linked.append(node('li',real.athletes.find(a=>a.id===id)?.name||id)));if(!ids.length)linked.append(node('li','Nog geen gekoppelde klanten.'));}catch(error){if(version===generation)status.textContent=error.message;}}
-        document.addEventListener('cap:athletes-changed',()=>{const selected=client.input.value;client.input.replaceChildren(...real.athletes.map(p=>new Option(p.name,p.id)));if(real.athletes.some(p=>p.id===selected))client.input.value=selected;});
-        async function load(){try{await real.refreshAthletes();const selected=member.input.value;members=await real.request('/api/staff/members');member.input.replaceChildren(...members.map(m=>new Option(m.name+' · '+(labels[m.role]||m.role),m.id)));if(members.some(m=>m.id===selected))member.input.value=selected;await selection();}catch(error){status.textContent=error.message;}}
-        async function mutate(path,method,body){if(busy)return;busy=true;change.disabled=grant.disabled=revoke.disabled=true;member.input.disabled=client.input.disabled=role.input.disabled=true;let feedback='';try{await real.request(path,method,body);await load();feedback='Toegang bijgewerkt. Rolwijzigingen beëindigen bestaande sessies.';}catch(error){feedback=error.message;}finally{busy=false;member.input.disabled=client.input.disabled=role.input.disabled=false;await selection();status.textContent=feedback;}}
-        member.input.addEventListener('change',selection);client.input.addEventListener('change',selection);
-        change.addEventListener('click',()=>{if(role.input.value&&confirm('De rol van deze medewerker wijzigen?'))mutate('/api/staff/'+member.input.value+'/role','PUT',{role:role.input.value});});
-        grant.addEventListener('click',()=>mutate('/api/staff/'+member.input.value+'/clients/'+client.input.value,'PUT'));
-        revoke.addEventListener('click',()=>mutate('/api/staff/'+member.input.value+'/clients/'+client.input.value,'DELETE'));
-        auditReload.addEventListener('click',async()=>{auditReload.disabled=true;auditRows.replaceChildren();try{for(const entry of await real.request('/api/staff/audit'))auditRows.append(node('li',window.capDateTime.dateTime(entry.created_at)+' · '+entry.actor+' · '+entry.action+' · '+entry.detail));}catch(error){status.textContent=error.message;}finally{auditReload.disabled=false;}});
-        document.addEventListener('cap:viewchange',()=>{if(location.hash==='#staff-access')load();else ++generation;});if(location.hash==='#staff-access')load();
     }
 })();

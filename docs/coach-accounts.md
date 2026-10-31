@@ -19,17 +19,15 @@ Maxim and Vic were created after the user's explicit request using the supplied 
 
 ## Collega’s
 
-### Glenn: coaches toevoegen en verwijderen
+### Admins: accounts en rollen beheren
 
-Glenn's configured account (`hello@cap-gistel.be`) sees **Coach toevoegen**. Enter name, email, a display title and a temporary password. Share that password privately; the coach can change it through **Wachtwoord**. New accounts always receive COACH access, never staff management or finance access from the selected title. Passwords are hashed and are not returned, logged, emailed or automatically added to `login.txt`.
+Glenn en Dieter hebben beide Admin (OWNER). Open **Meer > Collega?s**. **Coach toevoegen** maakt een account met een gekozen toegangsrol en tijdelijk wachtwoord. Deel dit persoonlijk; de medewerker kan het wijzigen via **Wachtwoord**. Het wordt gehasht opgeslagen en niet automatisch aan login.txt toegevoegd. Een titel verleent geen rechten.
 
-Click a colleague to choose **Coach deactiveren**. This is the removal operation: it disables login, expires sessions and removes the coach from ordinary colleague lists/new lesson choices, while retaining accounts, profiles, existing lessons, bookings and history. Existing future lessons are not canceled or reassigned automatically; Glenn can edit their coach if needed. Glenn can still see inactive entries and choose **Opnieuw activeren**, retaining the current password. Old sessions do not regain access; the coach signs in again. Glenn cannot deactivate his own account.
+Klik op een collega voor contactgegevens en **Toegangsrol > Rol bewaren**. Een rolwijziging be?indigt bestaande sessies. **Account verwijderen** trekt toegang in en bewaart lessen, notities en geschiedenis. Inactieve accounts blijven zichtbaar voor admins en kunnen opnieuw worden geactiveerd. Bestaande lessen worden niet automatisch geannuleerd of herverdeeld.
 
-This is a separate permission with one configured login email, independent of displayed Admin/Manager labels, finance access or membership review. The local launchers read ignored `.local/staff-manager.json` (`email` field); other environments use `CAP_STAFF_MANAGER_EMAIL`. Empty configuration denies staff administration to everyone. Other coaches keep read-only access to active colleagues; athletes/guests cannot access staff management. Existing athlete accounts are never silently promoted when an email collides.
+Je kunt je eigen rol niet wijzigen of je eigen account verwijderen. De backend bewaakt deze regels, de laatste actieve OWNER en beperktere MANAGER-bevoegdheden. Instructors hebben alleen leesrechten op actieve collega?s. FINANCE, sporters en gasten hebben geen toegang tot deze medewerkersadministratie. Oude e-mailconfiguratie bepaalt geen rechten meer.
 
-V11 adds `cap_user.active` (existing accounts default active). Spring login rejects disabled accounts, existing session registration is expired on activation changes, and an indexed activation check on private requests also covers stale sessions/concurrent login. Static assets and public login/health pages do not perform this extra lookup. Staff changes log actor/target IDs and action, not credentials.
-
-Endpoints: `POST /api/coaches` creates a COACH; `PUT /api/coaches/{id}/active` sets activation with `{ "active": false }` or `true`. Both require the configured manager and CSRF. There is no hard-delete endpoint. Password recovery/reset and editing existing titles remain separate future work.
+Bestaande endpoints: POST /api/coaches, PUT /api/coaches/{id}/active, GET /api/staff/members en PUT /api/staff/{id}/role. Wijzigingen vereisen serverrechten en CSRF. Geen hard-delete endpoint. Wachtwoordherstel en titels wijzigen blijven apart toekomstig werk.
 
 ### Contactgegevens bekijken
 

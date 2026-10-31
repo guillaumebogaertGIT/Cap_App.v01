@@ -9,16 +9,21 @@ document.addEventListener('DOMContentLoaded', () => {
     dialog.innerHTML=`<div class="session-dialog-header"><h2 id="colleague-name">Collega</h2><button type="button" class="secondary-button session-dialog-close" aria-label="Sluiten"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button></div>
         <p id="colleague-title"></p><p role="status" aria-live="polite"></p><dl class="colleague-contact" hidden></dl>
         <button type="button" class="secondary-button" data-contact-retry hidden>Opnieuw proberen</button>
-        <div class="colleagues-actions" data-staff-actions hidden><p class="sample-notice" data-staff-note></p><button type="button" class="secondary-button" data-toggle-coach></button></div>`;
+        <div class="colleagues-actions" data-staff-actions hidden><p class="sample-notice" data-staff-note></p>
+        <form class="club-form" data-role-form><label>Toegangsrol<select name="staffRole"></select></label><button type="submit" class="secondary-button">Rol bewaren</button></form>
+        <button type="button" class="secondary-button" data-toggle-coach></button></div>`;
     document.body.append(dialog);
     const feedback=dialog.querySelector('[role="status"]'),details=dialog.querySelector('dl'),retry=dialog.querySelector('[data-contact-retry]');
     const manage=!!real.permissions?.manageCoaches, actions=dialog.querySelector('[data-staff-actions]'),toggle=dialog.querySelector('[data-toggle-coach]');
+    const roleForm=dialog.querySelector('[data-role-form]'),roleSelect=roleForm.elements.staffRole,roleSave=roleForm.querySelector('button');
+    const roleLabels={OWNER:'Admin',MANAGER:'Beheerder',INSTRUCTOR:'Lesgever',FINANCE:'Financiën',DEVELOPMENT:'Ontwikkeling',UNASSIGNED:'Niet ingesteld'};
+    for(const role of real.staffRole==='OWNER'?['OWNER','MANAGER','INSTRUCTOR','FINANCE']:['INSTRUCTOR','FINANCE'])roleSelect.add(new Option(roleLabels[role],role));
     let generation=0,detailGeneration=0,selected,opener,selectedActive=true,changing=false;
     async function contact() {
         const version=++detailGeneration, id=selected.id;
         feedback.textContent='Contactgegevens laden…';details.hidden=true;details.replaceChildren();retry.hidden=true;actions.hidden=true;
         try {
-            const value=await real.request('/api/coaches/'+encodeURIComponent(id));
+            const [value,staff]=await Promise.all([real.request('/api/coaches/'+encodeURIComponent(id)),manage?real.request('/api/staff/members'):Promise.resolve([])]);
             if(version!==detailGeneration || !dialog.open) return;
             if(value.id!==id) throw new Error('De contactgegevens passen niet bij deze collega. Probeer opnieuw.');
             dialog.querySelector('h2').textContent=value.name;dialog.querySelector('#colleague-title').textContent=value.title;
@@ -31,11 +36,15 @@ document.addEventListener('DOMContentLoaded', () => {
             feedback.textContent='';details.hidden=false;
             selectedActive=value.active;
             if(manage){
-                actions.hidden=false;toggle.hidden=value.id===real.account.id;
-                toggle.textContent=value.active?'Coach deactiveren':'Opnieuw activeren';
-                dialog.querySelector('[data-staff-note]').textContent=value.id===real.account.id?'Je kunt je eigen account niet deactiveren.':value.active?'Deactiveren stopt de toegang. Lessen en geschiedenis blijven bewaard.':'Dit account is gedeactiveerd. Opnieuw activeren behoudt het huidige wachtwoord.';
+                const member=staff.find(person=>person.id===id);
+                const allowed=member&&id!==real.account.id&&member.role!=='DEVELOPMENT'&&(real.staffRole==='OWNER'||['INSTRUCTOR','FINANCE'].includes(member.role));
+                actions.hidden=false;toggle.hidden=!allowed;roleForm.hidden=!allowed;roleSelect.value=member?.role||'';
+                if(member)dialog.querySelector('#colleague-title').textContent=(roleLabels[member.role]||member.role)+' · '+value.title;
+                toggle.textContent=value.active?'Account verwijderen':'Opnieuw activeren';
+                dialog.querySelector('[data-staff-note]').textContent=id===real.account.id?'Je kunt je eigen rol niet wijzigen of je eigen account verwijderen.':!allowed?'Dit account kan hier niet worden gewijzigd.':value.active?'Verwijderen stopt de toegang. Lessen, notities en geschiedenis blijven bewaard.':'Dit account is verwijderd uit de actieve medewerkers. Opnieuw activeren behoudt het wachtwoord en de geschiedenis.';
             }
-        } catch(error) { if(version===detailGeneration && dialog.open){feedback.textContent=error.message;retry.hidden=false;} }
+            return true;
+        } catch(error) { if(version===detailGeneration && dialog.open){feedback.textContent=error.message;retry.hidden=false;} return false; }
     }
     function open(member,button) {
         if(changing)return;
@@ -45,12 +54,13 @@ document.addEventListener('DOMContentLoaded', () => {
     async function load() {
         const version=++generation;list.replaceChildren();status.textContent='Collega’s laden…';refresh.disabled=true;
         try {
-            const members=await real.request('/api/coaches');if(version!==generation || location.hash!=='#colleagues') return;
+            const [members,staff]=await Promise.all([real.request('/api/coaches'),manage?real.request('/api/staff/members'):Promise.resolve([])]);if(version!==generation || location.hash!=='#colleagues') return;
             real.coaches.splice(0,real.coaches.length,...members.filter(member=>member.active).map(member=>({id:member.id,name:member.name,role:'COACH'})));
             for(const member of members) {
                 const item=document.createElement('li'),button=document.createElement('button'),name=document.createElement('strong'),title=document.createElement('span');
                 button.type='button';button.className='colleague-button';name.textContent=member.name+(member.id===real.account.id?' (jij)':'');title.textContent=member.title;
-                if(!member.active)title.textContent+=' · Inactief';
+                const role=staff.find(person=>person.id===member.id)?.role;if(role)title.textContent=(roleLabels[role]||role)+' · '+member.title;
+                if(!member.active)title.textContent+=' · Verwijderd';
                 button.append(name,title);button.addEventListener('click',()=>open(member,button));item.append(button);list.append(item);
             }
             status.textContent=members.length?'Kies een collega om contactgegevens te bekijken.':'Er zijn nog geen coachaccounts.';
@@ -62,17 +72,26 @@ document.addEventListener('DOMContentLoaded', () => {
     dialog.addEventListener('cancel',event=>{if(changing)event.preventDefault();});
     dialog.addEventListener('close',()=>{++detailGeneration;details.replaceChildren();details.hidden=true;opener?.isConnected&&opener.focus();});
     retry.addEventListener('click',contact);refresh.addEventListener('click',load);
+    roleForm.addEventListener('submit',async event=>{
+        event.preventDefault();if(changing||!manage||selected.id===real.account.id||!roleSelect.value)return;
+        const id=selected.id,role=roleSelect.value;
+        if(!window.confirm('De toegangsrol van '+selected.name+' wijzigen naar '+roleLabels[role]+'? Bestaande sessies worden beëindigd.'))return;
+        changing=true;roleSave.disabled=roleSelect.disabled=toggle.disabled=true;feedback.textContent='Rol bewaren…';
+        try{await real.request('/api/staff/'+encodeURIComponent(id)+'/role','PUT',{role});const refreshed=await load();const loaded=await contact();if(loaded)feedback.textContent='Rol bijgewerkt. De medewerker moet opnieuw inloggen.'+(refreshed?'':' Vernieuw het collega-overzicht.');}
+        catch(error){feedback.textContent=error.message;}
+        finally{changing=false;roleSave.disabled=roleSelect.disabled=toggle.disabled=false;}
+    });
     toggle.addEventListener('click',async()=>{
         if(changing || !manage || selected.id===real.account.id) return;
         const id=selected.id,active=!selectedActive;
-        if(!window.confirm(active?'Deze coach opnieuw toegang geven?':'Deze coach deactiveren? De toegang stopt; lessen en geschiedenis blijven bewaard.'))return;
-        changing=true;toggle.disabled=true;feedback.textContent='Coachaccount bijwerken…';
+        if(!window.confirm(active?'Dit account opnieuw toegang geven?':'Dit account verwijderen? De toegang stopt; lessen, notities en geschiedenis blijven bewaard.'))return;
+        changing=true;toggle.disabled=roleSave.disabled=roleSelect.disabled=true;feedback.textContent='Account bijwerken…';
         try {
             await real.request('/api/coaches/'+encodeURIComponent(id)+'/active','PUT',{active});
             dialog.close();const refreshed=await load();
-            status.textContent=(active?'Coach opnieuw geactiveerd.':'Coach gedeactiveerd. De toegang is beëindigd; lessen en geschiedenis blijven bewaard.')+(refreshed?'':' Het overzicht kon niet worden vernieuwd. Kies Opnieuw laden.');
+            status.textContent=(active?'Account opnieuw geactiveerd.':'Account verwijderd uit de actieve medewerkers. De geschiedenis blijft bewaard.')+(refreshed?'':' Het overzicht kon niet worden vernieuwd. Kies Opnieuw laden.');
         }catch(error){feedback.textContent=error.message;}
-        finally{changing=false;toggle.disabled=false;}
+        finally{changing=false;toggle.disabled=roleSave.disabled=roleSelect.disabled=false;}
     });
     if(manage){
         const add=page.querySelector('#coach-add');add.hidden=false;

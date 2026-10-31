@@ -85,7 +85,7 @@ function showCurrentView(moveFocus = true) {
     if (window.capReal && previewRole === 'coach') {
         const routes = {'create-workout':'WORKOUT_TEMPLATE_MANAGE','saved-workouts':'WORKOUT_VIEW','exercises':'WORKOUT_TEMPLATE_MANAGE',
             athletes:'WORKOUT_ASSIGN','coach-health':'CLIENT_HEALTH','coach-nutrition':'NUTRITION_MANAGE',planning:'CLASS_VIEW',
-            bookings:'CLASS_MANAGE',training:'WORKOUT_VIEW',colleagues:'CLASS_VIEW',finance:'FINANCE_VIEW','staff-notes':'NOTE_VIEW','staff-access':'STAFF_MANAGE'};
+            bookings:'CLASS_MANAGE',training:'WORKOUT_VIEW',colleagues:'CLASS_VIEW',finance:'FINANCE_VIEW','staff-notes':'NOTE_VIEW'};
         allowedViews = ['dashboard','settings','health',...Object.keys(routes).filter(route=>window.capCan(routes[route]))];
         if(window.capReal.staffRole==='FINANCE')allowedViews=['dashboard','settings','finance'];
         const instructor=window.capReal.staffRole==='INSTRUCTOR';
