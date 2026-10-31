@@ -610,6 +610,16 @@
             <p id="colleagues-status" role="status" aria-live="polite"></p>
             <ul id="colleagues-list" class="colleagues-list"></ul>
         </section>
+        <section id="finance-home" data-view aria-labelledby="finance-home-title" hidden>
+            <header class="dashboard-header"><h2 id="finance-home-title" tabindex="-1">Financieel overzicht</h2></header>
+            <p class="sample-notice">Stripe TEST MODE · Testbetalingen, geen echte CAP-omzet.</p>
+            <p>De huidige maand in beeld. Alleen ontvangen EUR-betalingen van gekoppelde CAP-accounts tellen mee.</p>
+            <p id="finance-home-status" role="status" aria-live="polite"></p>
+            <div id="finance-home-summary" hidden></div>
+            <a class="primary-button" href="#finance">Financiën openen</a>
+            <button id="finance-home-refresh" class="secondary-button" type="button">Opnieuw laden</button>
+            <p class="sample-notice">Voor Stripe-kosten; geen winst- of btw-rapport. Terugbetalingen horen bij de oorspronkelijke betaalmaand. Betwiste bedragen zijn niet afgetrokken. Contante en externe betalingen ontbreken.</p>
+        </section>
         <section id="finance" data-view aria-labelledby="finance-title" hidden>
             <header class="dashboard-header"><h2 id="finance-title" tabindex="-1">Financiën</h2></header>
             <p class="sample-notice">Stripe TEST MODE · Dit zijn testbetalingen, geen echte omzet.</p>

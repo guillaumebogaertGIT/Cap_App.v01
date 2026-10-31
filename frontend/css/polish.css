@@ -1024,3 +1024,13 @@ main { padding: 1rem; }
 .athlete-linked-coaches li { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .75rem; padding-block: .5rem; }
 .athlete-linked-coaches button { min-height: 2.75rem; }
 @media (min-width: 40rem) { .athlete-details-actions { grid-template-columns: repeat(2,minmax(0,1fr)); } }
+
+/* Read-only finance charts reuse CAP colors and scale to small screens. */
+.finance-daily { margin-block: 1.5rem; }
+.finance-bars { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0,1fr); gap: 2px; height: 10rem; border-bottom: 1px solid var(--muted); }
+.finance-bar { display: flex; align-items: flex-end; justify-content: center; min-width: 0; min-height: 44px; padding: 0; border: 0; background: transparent; cursor: pointer; }
+.finance-bar span { display: block; width: 100%; min-height: 2px; background: var(--accent-text); border-radius: .2rem .2rem 0 0; }
+.finance-bar:hover span, .finance-bar:focus-visible span { opacity: .7; }
+.finance-bar:focus-visible { outline: 2px solid var(--text); outline-offset: 1px; }
+.finance-chart-scale, .finance-chart-readout { font-size: .9rem; }
+.finance-totals dd, .finance-payments { font-variant-numeric: tabular-nums; }

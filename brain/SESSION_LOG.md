@@ -385,3 +385,5 @@ Created requested Maxim Mortier INSTRUCTOR and Vic Vandaele FINANCE from existin
 October 30: Simplified staff navigation: removed Notities and Rollen & klanten sidebar entries; notes remain contextual and athlete linking stays in the athlete dossier. Collega?s combines role editing, account creation and safe removal/reactivation using existing server guards. Fake PostgreSQL browser workflow passed; no real staff changes.
 
 October 30: Collega?s now displays existing PostgreSQL coach profile photos in the list and contact dialog, with initials fallback. Protected no-store JPEG endpoint excludes athletes and guests and respects inactive directory visibility. Seven PostgreSQL tests passed; fake photo upload/display and phone/tablet/desktop overflow checks passed. No real profile photos changed.
+
+October 30: FINANCE Home dashboard, direct finance navigation without Meer, daily Brussels payment graph and local payment search/refund/dispute filters. Reuses read-only monthly Stripe TEST report, no backend/payment/schema changes. Fake-account browser QA with mocked financial responses verified totals/day selection/filter/error/empty states and responsive widths.

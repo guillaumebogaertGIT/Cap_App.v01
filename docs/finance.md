@@ -35,3 +35,7 @@ API: `GET /api/finance?month=2026-10`, no-store. Guests 401; athletes and unauth
 Automated tests use fake Stripe and isolated PostgreSQL; browser layout checks use labeled fake payment responses. Glenn's local account now exists (see docs/coach-accounts.md); actual sandbox comparison remains manual after restarting the backend to load reviewer configuration.
 
 Stripe field definitions: [charges](https://docs.stripe.com/api/charges/object) and [listing/pagination](https://docs.stripe.com/api/charges/list).
+
+## Finance navigation and daily graph
+
+FINANCE accounts now have Home and a direct finance link, without Meer. Home reads the current Brussels month from the same read-only report and shows totals plus daily captured receipts. The detailed finance page adds athlete search and refund/dispute filters; totals/chart remain the full selected month. A day can be selected for its exact amount. No new Stripe calls per graph or filter, dependency, migration, payment action or invented revenue. Error/retry and empty states clear old figures. UI QA used isolated fake-account authentication and explicitly mocked report responses, including error/empty cases and 390/768/1440px layouts; actual Stripe figures were not independently reconciled in this UI change.

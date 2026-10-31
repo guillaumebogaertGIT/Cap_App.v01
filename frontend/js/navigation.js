@@ -72,10 +72,10 @@ function showCurrentView(moveFocus = true) {
         ? [...coachLinks, ...originalSidebarLinks.filter(link => !coachLinks.includes(link) && !moreLinks.includes(link))]
         : originalSidebarLinks;
     sidebarNavigation.append(...orderedLinks);
-    if (previewRole === 'coach') {
+    if (previewRole === 'coach' && window.capReal?.staffRole !== 'FINANCE') {
         moreNavigation.append(...moreLinks);
         sidebarNavigation.insertBefore(moreNavigation, sidebarNavigation.querySelector('.settings-link'));
-    } else moreNavigation.remove();
+    } else { moreNavigation.remove(); if(window.capReal?.staffRole==='FINANCE')sidebarNavigation.insertBefore(originalSidebarLinks.find(link=>link.dataset.viewLink==='finance'),sidebarNavigation.querySelector('.settings-link')); }
     const requestedView = window.location.hash.slice(1);
     let allowedViews = previewRole === 'coach' ? ['dashboard', 'settings', 'create-workout', 'saved-workouts', 'exercises', 'athletes', 'coach-health', 'coach-nutrition', 'planning', 'bookings', 'training'] : ['dashboard', 'workouts', 'health', 'nutrition', 'settings', 'planning', 'bookings', 'shop', 'training'];
     document.querySelector('[data-account="payment"]').hidden = previewRole === 'coach';
@@ -101,7 +101,7 @@ function showCurrentView(moveFocus = true) {
     const moreIsActive = previewRole === 'coach' && moreViews.includes(routeId);
     moreNavigation.classList.toggle('has-active-page', moreIsActive);
     if (moreIsActive) moreNavigation.open = true;
-    const viewId = previewRole === 'coach' && routeId === 'dashboard' ? (window.capReal?.staffRole==='FINANCE'?'finance':'coach') : routeId;
+    const viewId = previewRole === 'coach' && routeId === 'dashboard' ? (window.capReal?.staffRole==='FINANCE'?'finance-home':'coach') : routeId;
     document.body.classList.toggle('is-workout-editor', viewId === 'create-workout');
 
     sidebarNavigation.querySelectorAll('a').forEach((link) => {
