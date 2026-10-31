@@ -82,3 +82,5 @@ October 30 update: Real profile/weight/body-measurement persistence now implemen
 October 30 RBAC: source/tests/UI/docs implemented. Approval gate next: exact UUID mapping (.local/staff-role-mapping.json), verified backup, V13 application and real role activation; then separately approve app replacement. Ordinary cap remains V12/old permissions. Maxim/Vic not provisioned; confirm login identifiers. Assign real instructor/client grants after activation. Remote CI and physical iPhone QA remain.
 
 RBAC activation gate resolved by explicit user approval; local cap V13 and approved roles/Docker now active. Next user check: Glenn/Dieter login, Sporters dossier and desired instructor/client links. No instructor clients were guessed or auto-granted. Maxim/Vic require confirmed account details; external hosting/live billing remain separate.
+
+Maxim/Vic provisioning completed at user request. Remaining: admins choose Maxim's client links; staff handover/password changes; marketing contact remains unprovisioned.

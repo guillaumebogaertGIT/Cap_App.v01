@@ -12,8 +12,10 @@ Created on 30/10/2026 in the existing local PostgreSQL `cap` database:
 | Marlies Vermeersch | marliesvermeesch@hotmail.com | INSTRUCTOR, linked clients and own lessons |
 | Robin Van geluwe | robinvgeluwe@gmail.com | INSTRUCTOR, linked clients and own lessons |
 | Vince Decraemer | vince.decraemer@hotmail.com | INSTRUCTOR, linked clients and own lessons |
+| Maxim Mortier | mortiermaxim@hotmail.be | INSTRUCTOR, linked clients and own lessons |
+| Vic Vandaele | vic@kantoorbm.be | FINANCE, read-only reports and membership review |
 
-Maxim, Vic and the marketing contact remain pending. All six retain the COACH account type; staff_role determines permissions. Display titles do not grant access. No messages or invitations have been sent. Original Coach Guillaume is DEVELOPMENT and cannot log in by default; his separate ATHLETE account is unchanged.
+Maxim and Vic were created after the user's explicit request using the supplied notes/screenshot emails. Their actual logins and permission boundaries passed; unique temporary passwords are in ignored login.txt and Windows-encrypted coach-secrets.xml. Maxim has no client grants until an admin links them. Supplied display titles are Assistent and Accountant. Existing accounts/passwords were preserved. The marketing contact remains pending. Staff retain the COACH account type; staff_role determines permissions. No messages or invitations have been sent. Original Coach Guillaume is DEVELOPMENT and cannot log in by default; his separate ATHLETE account is unchanged.
 
 ## Collega’s
 

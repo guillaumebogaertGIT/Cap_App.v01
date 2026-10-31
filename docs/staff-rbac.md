@@ -72,7 +72,7 @@ Recovery: prefer a forward correction while keeping unauthorized accounts blocke
 
 The original coach Guillaume is proposed as DEVELOPMENT, not OWNER/MANAGER. DEVELOPMENT cannot be promoted through staff administration. Production/default login is disabled. Explicit local-only login requires both the `development-account` Spring profile and `cap.accounts.development-access=true`; it remains disabled with prod/production profiles. Even locally it has only self-profile/measurement access and no private client, financial or operational privileges. Use isolated fake role fixtures to exercise staff behavior, not a production impersonation switch. The ordinary account and its historical records are retained.
 
-No accounts/passwords were invented for Maxim or Vic. After verified details are supplied, OWNER or MANAGER can use the existing **Collega's → Coach toevoegen** dialog, selecting INSTRUCTOR or FINANCE. They can change the temporary password through the existing password flow. Titles never grant permissions.
+At the user's subsequent explicit request, Maxim (`mortiermaxim@hotmail.be`, INSTRUCTOR) and Vic (`vic@kantoorbm.be`, FINANCE) were created using the previously supplied notes/screenshot details. No contact identifiers were guessed. Actual login and permission checks passed; passwords are handed over privately and can be changed through the existing password flow. No client grants were automatically assigned to Maxim. Titles never grant permissions.
 
 The old provisioning CLI creates unassigned accounts and cannot silently grant staff permissions. `cap.accounts.bootstrap-owner=true` is an explicit empty-database bootstrap option used only by fake test fixtures; it does not promote an existing coach.
 

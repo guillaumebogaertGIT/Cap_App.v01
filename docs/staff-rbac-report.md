@@ -88,7 +88,7 @@ Actual deployed read-only checks passed: Dieter login 204, Admin capabilities, a
 
 Remaining:
 
-1. Confirm actual login details for Maxim/Vic before provisioning; no accounts or passwords invented.
+1. Completed subsequently at the user's explicit request: Maxim INSTRUCTOR and Vic FINANCE created using the supplied emails. Actual logins and direct API restrictions passed; unique temporary handover passwords stored privately. No existing passwords changed and no client grants inferred.
 2. Assign real instructor/client grants explicitly through the athlete popup; none inferred from class bookings.
 3. Perform the manual staff QA checklist, especially Glenn's login using his own current password and the athlete popup flow.
 4. Remote production deployment, live billing and activation on any other database still require separate approval.
