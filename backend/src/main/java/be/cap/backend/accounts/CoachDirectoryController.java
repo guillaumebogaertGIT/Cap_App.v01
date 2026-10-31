@@ -52,6 +52,17 @@ public class CoachDirectoryController {
         if(contacts.isEmpty()) throw new ResponseStatusException(HttpStatus.NOT_FOUND,"Collega niet gevonden.");
         return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(contacts.getFirst());
     }
+    @GetMapping("/{id}/photo")
+    public ResponseEntity<byte[]> photo(Principal principal,@PathVariable UUID id) {
+        coach(principal);
+        var photos=jdbc.query("""
+            SELECT p.photo FROM cap_user u LEFT JOIN account_profile p ON p.user_id=u.id
+            WHERE u.id=? AND u.role='COACH' AND (u.active=TRUE OR ?=TRUE)
+            """,(row,index)->row.getBytes(1),id,management.allows(accounts.account(principal.getName())));
+        if(photos.isEmpty() || photos.getFirst()==null) return ResponseEntity.notFound().build();
+        return ResponseEntity.ok().contentType(MediaType.IMAGE_JPEG).cacheControl(CacheControl.noStore())
+            .header("X-Content-Type-Options","nosniff").body(photos.getFirst());
+    }
     @PostMapping
     public ResponseEntity<Member> create(Principal principal,@RequestBody StaffManagementService.Create input) {
         return ResponseEntity.status(HttpStatus.CREATED).cacheControl(CacheControl.noStore()).body(staff.create(accounts.account(principal.getName()),input));

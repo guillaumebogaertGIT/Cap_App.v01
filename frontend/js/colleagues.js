@@ -19,6 +19,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const roleLabels={OWNER:'Admin',MANAGER:'Beheerder',INSTRUCTOR:'Lesgever',FINANCE:'Financiën',DEVELOPMENT:'Ontwikkeling',UNASSIGNED:'Niet ingesteld'};
     for(const role of real.staffRole==='OWNER'?['OWNER','MANAGER','INSTRUCTOR','FINANCE']:['INSTRUCTOR','FINANCE'])roleSelect.add(new Option(roleLabels[role],role));
     let generation=0,detailGeneration=0,selected,opener,selectedActive=true,changing=false;
+    function avatar(member) {
+        const wrap=document.createElement('span'),img=document.createElement('img');
+        wrap.className='colleague-avatar';wrap.setAttribute('aria-hidden','true');
+        wrap.textContent=member.name.trim().split(/\s+/).slice(0,2).map(part=>part[0]).join('').toUpperCase();
+        img.alt='';img.loading='lazy';img.src='/api/coaches/'+encodeURIComponent(member.id)+'/photo';
+        img.addEventListener('error',()=>img.remove());wrap.append(img);return wrap;
+    }
     async function contact() {
         const version=++detailGeneration, id=selected.id;
         feedback.textContent='Contactgegevens laden…';details.hidden=true;details.replaceChildren();retry.hidden=true;actions.hidden=true;
@@ -49,6 +56,8 @@ document.addEventListener('DOMContentLoaded', () => {
     function open(member,button) {
         if(changing)return;
         selected=member;opener=button;dialog.querySelector('h2').textContent=member.name;
+        dialog.querySelector('.colleague-avatar')?.remove();
+        dialog.querySelector('#colleague-title').before(avatar(member));
         dialog.querySelector('#colleague-title').textContent=member.title;dialog.showModal();contact();
     }
     async function load() {
@@ -61,7 +70,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 button.type='button';button.className='colleague-button';name.textContent=member.name+(member.id===real.account.id?' (jij)':'');title.textContent=member.title;
                 const role=staff.find(person=>person.id===member.id)?.role;if(role)title.textContent=(roleLabels[role]||role)+' · '+member.title;
                 if(!member.active)title.textContent+=' · Verwijderd';
-                button.append(name,title);button.addEventListener('click',()=>open(member,button));item.append(button);list.append(item);
+                const text=document.createElement('div');text.className='colleague-summary';text.append(name,title);
+                button.append(avatar(member),text);button.addEventListener('click',()=>open(member,button));item.append(button);list.append(item);
             }
             status.textContent=members.length?'Kies een collega om contactgegevens te bekijken.':'Er zijn nog geen coachaccounts.';
             return true;
