@@ -74,7 +74,15 @@ function syncHomeShortcuts(allowedViews) {
             const shortcut=financeHome.querySelector('a[href="#finance"]');shortcut.className='home-tile';grid.append(shortcut);financeHome.querySelector('#finance-home-status').before(grid);}
         homes.push(grid);
     }
-    const descriptions={colleagues:'Het team en contactgegevens',finance:'Betalingen en financieel overzicht',settings:'Jouw voorkeuren en instellingen',health:'Jouw metingen en vooruitgang'};
+    const instructor=window.capReal?.staffRole==='INSTRUCTOR';
+    const descriptions={colleagues:'Het team en contactgegevens',finance:'Betalingen en financieel overzicht',settings:'Jouw voorkeuren en instellingen',health:'Jouw metingen en vooruitgang',
+        ...(instructor?{planning:'Jouw lessen en lesmomenten',athletes:'Sporters die aan jou gekoppeld zijn','saved-workouts':'Bekijk trainingen en wijs ze toe'}:{})};
+    const icons={
+        colleagues:'M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 3a4 4 0 1 0 0 8 4 4 0 0 0 0-8m8 1a4 4 0 0 1 0 7m5 10v-2a4 4 0 0 0-3-4',
+        finance:'M4 20h16M6 16v-5m6 5V5m6 11V8',
+        health:'M3 12h4l3-7 4 14 3-7h4',
+        settings:'M12 3v3m0 12v3M3 12h3m12 0h3M5.6 5.6l2.1 2.1m8.6 8.6 2.1 2.1m0-12.8-2.1 2.1m-8.6 8.6-2.1 2.1M16 12a4 4 0 1 0-8 0 4 4 0 0 0 8 0'
+    };
     for(const grid of homes.filter(Boolean)){
         grid.querySelectorAll('.home-tile').forEach(tile=>{tile.hidden=true;});
         for(const link of sidebarNavigation.querySelectorAll('a[data-view-link]')){
@@ -87,9 +95,10 @@ function syncHomeShortcuts(allowedViews) {
             heading.textContent=link.textContent.trim()||'Instellingen';
             if(!tile.querySelector('svg')){
                 const icon=document.createElementNS('http://www.w3.org/2000/svg','svg');icon.setAttribute('viewBox','0 0 24 24');icon.setAttribute('aria-hidden','true');
-                const path=document.createElementNS(icon.namespaceURI,'path');path.setAttribute('d','M4 4h16v16H4zM8 8h8m-8 4h8m-8 4h5');icon.append(path);tile.prepend(icon);
+                const path=document.createElementNS(icon.namespaceURI,'path');path.setAttribute('d',icons[route]||'M4 4h16v16H4zM8 8h8m-8 4h8m-8 4h5');icon.append(path);tile.prepend(icon);
             }
             if(!tile.querySelector('span')){const description=document.createElement('span');description.textContent=descriptions[route]||'Open '+heading.textContent;tile.append(description);}
+            if(descriptions[route]&&!tile.querySelector('span[id]'))tile.querySelector('span').textContent=descriptions[route];
             tile.hidden=false;grid.append(tile);
         }
     }

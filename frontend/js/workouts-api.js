@@ -524,7 +524,7 @@
                 athleteWorkouts.append(entry);
             });
             $('#home-workout-meta').textContent = assigned ? 'Workout voor vandaag klaar' : 'Jouw trainingen';
-            $('#athlete-assignment-status').textContent = assigned ? `${assigned.weekStart ? 'Deze week' : 'Vandaag'}: ${assigned.name}` : 'Geen workout klaar voor vandaag of deze week.';
+            $('#athlete-assignment-status').textContent = window.capReal?.account.role==='COACH' ? 'Bekijk sporters en hun toegewezen trainingen' : assigned ? `${assigned.weekStart ? 'Deze week' : 'Vandaag'}: ${assigned.name}` : 'Geen workout klaar voor vandaag of deze week.';
             $('#athlete-list-assignment').textContent = assigned ? `${assigned.name} · ${scheduleLabel(assigned)}` : 'Geen workout klaar voor vandaag of deze week.';
             $('#coach-library-empty').hidden = workouts.length > 0;
             $('#workouts-status').textContent = personalWorkouts.length ? 'Jouw workouts voor deze week. Kies eventueel een dag of open een workout om te trainen.' : 'Geen persoonlijke workouts in deze week. Gebruik de pijlen voor een andere week. Geboekte groepssessies verschijnen hierboven.';

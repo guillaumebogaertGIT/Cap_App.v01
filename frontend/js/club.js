@@ -138,6 +138,7 @@
     let visibleSessionLimit = 6;
     document.querySelector('.welcome-bar').after($('club-storage-note'), $('club-feedback'));
     $('club-storage-note').textContent = real?.staffRole==='FINANCE' ? 'Financieel overzicht en ontvangen testbetalingen.' : real ? 'Planning, boekingen en workouts worden gedeeld via de CAP-server.' : storageMessage;
+    $('club-storage-note').hidden=!!real;
     const announce = (message) => { $('club-feedback').textContent = message; };
     let refreshVersion = 0;
     async function refreshReal(message) {

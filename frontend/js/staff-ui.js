@@ -6,6 +6,7 @@
         if(!window.capCan('WORKOUT_TEMPLATE_MANAGE'))document.querySelectorAll('a[href="#create-workout"]').forEach(link=>{link.hidden=true;});
         if(!window.capCan('CLASS_MANAGE')){const add=document.getElementById('new-session');if(add)add.hidden=true;}
         if(real.staffRole==='INSTRUCTOR'){
+            const notice=document.querySelector('#coach .sample-notice');if(notice)notice.textContent='Lesgever · Jouw lessen, gekoppelde sporters en beschikbare workouts.';
             const title=document.getElementById('planning-title');if(title)title.textContent='Mijn uurrooster / Lessen';
             document.querySelector('#coach-title')?.replaceChildren(document.createTextNode('Mijn coaching'));
         }
