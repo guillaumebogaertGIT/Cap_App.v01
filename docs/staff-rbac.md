@@ -1,6 +1,6 @@
 # Staff access control
 
-Product clarification: Glenn and Dieter both receive OWNER, displayed as **Admin**, with identical permissions. MANAGER remains a narrower optional role for future use; it is no longer Dieter's proposed role. The revised local UUID mapping is still pending activation approval.
+Product clarification: Glenn and Dieter both receive OWNER, displayed as **Admin**, with identical permissions. MANAGER remains a narrower optional role for future use; it is not Dieter's role. The user approved the revised UUID mapping and local activation; V13 and the seven mapped staff roles are now active in the local database.
 
 ## Athlete-first coaching
 
@@ -10,9 +10,9 @@ Admins can choose an instructor under **Aan coach koppelen**. Existing links are
 
 ## Implementation and activation are separate
 
-The new source extends the existing COACH/ATHLETE accounts, BCrypt passwords, cookie sessions, CSRF protection, PostgreSQL and original frontend. It does not replace authentication or billing. Migration V13 **has not been approved for the ordinary CAP database**. Do not rebuild/restart the ordinary CAP app with this source until its migration and account-ID mapping are approved.
+The source extends the existing COACH/ATHLETE accounts, BCrypt passwords, cookie sessions, CSRF protection, PostgreSQL and original frontend. It does not replace authentication or billing. The user explicitly approved local V13/mapping activation and Docker replacement. That local activation is complete; applying to any other database or production environment still requires its own reviewed mapping, backup and approval.
 
-The existing Docker image can keep running the previous version while this work is reviewed. Automated tests and browser verification use isolated PostgreSQL schemas and fake users.
+The local Docker app now runs the approved version. A private custom-format backup was restored into a separate isolated PostgreSQL instance; all 18 original data tables matched before activation and remained unchanged after migration, role activation and smoke checks. The old Docker image is retained as a recovery artifact, not an automatic authorization-safe rollback. Automated tests and browser verification use isolated schemas and fake users.
 
 ## Role matrix
 

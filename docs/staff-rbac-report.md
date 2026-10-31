@@ -1,12 +1,12 @@
 # Staff RBAC implementation report — 30/10/2026
 
-Subsequent clarification: both Glenn and Dieter are proposed as OWNER (display label Admin), with the same full access. Their real records are still unchanged. An athlete dossier popup now opens from Sporters, links to existing athlete-specific screens, and provides audited coach linking/unlinking. This follow-up passed 19 focused PostgreSQL tests and browser checks at 390/768/1440 in both themes. See the athlete-first section in staff-rbac.md.
+Subsequent clarification: both Glenn and Dieter are OWNER (display label Admin), with the same full access. After the user's explicit approval, the local database and Docker app were activated. An athlete dossier popup opens from Sporters, links to existing athlete-specific screens, and provides audited coach linking/unlinking. This follow-up passed 19 focused PostgreSQL tests and browser checks at 390/768/1440 in both themes. See the athlete-first section in staff-rbac.md.
 
 ## Delivery status
 
-Implemented in source and verified using fake accounts on isolated PostgreSQL. **Not activated on the ordinary CAP database and not deployed to the running Docker app.** No real passwords, staff roles, client records, subscriptions or Stripe configuration were changed. The ordinary database remains V12; V13 and the exact account-ID mapping require approval first.
+Implemented in source and verified using fake accounts on isolated PostgreSQL. **User-approved local activation is complete:** restore-verified backup, V13, exact UUID staff mapping and updated Docker image. Seven staff-role changes were recorded in the audit. Passwords and every original client/workout/nutrition/measurement/booking/payment record remained unchanged; no Stripe settings or transactions were modified.
 
-The mapping proposal is in ignored `.local/staff-role-mapping.json`. Its IDs/emails were read from the existing local database and verified with the packaged read-only provisioning tool. Maxim/Vic were not created. The mapping is a proposal, not a runtime email allowlist.
+The approved mapping is in ignored `.local/staff-role-mapping.json`. Its IDs/emails were read from the existing local database and verified before transactional activation. Maxim/Vic were not created. The mapping is offline activation input, not a runtime email allowlist.
 
 ## Existing functionality reused
 
@@ -78,14 +78,20 @@ Browser verification used a separate CAP server on 55434 with fake OWNER/MANAGER
 
 GitHub's test workflow now specifies PostgreSQL; remote CI results are separate from the verified local results above.
 
-## Remaining approval and configuration
+## Local activation record and remaining configuration
 
-1. Approve the exact UUID/email/role mapping in `.local/staff-role-mapping.json` and the V13 plan in `staff-rbac.md`.
-2. Take and restore-test a backup before migration. No ordinary CAP backup/restore or schema activation was performed by this implementation.
-3. Activate reviewed roles during a maintenance window, then separately approve replacing the running app. Until then, the current app keeps its old permission behavior.
-4. Confirm actual login details for Maxim/Vic before provisioning; no accounts or passwords invented.
-5. Assign real instructor/client grants explicitly; none inferred from class bookings.
-6. Perform the manual staff QA checklist in `staff-rbac.md` with approved accounts. No real staff password was changed or used to test the new roles.
+The user approved the complete local plan. CAP was stopped, a user-restricted custom-format backup was created at `backups/rbac-activation-20261031-011034Z/cap-before-v13.dump`, and restored into a new database on the isolated PostgreSQL instance. All 18 original data-table fingerprints matched with UTC timestamp normalization and byte ordering; an initial comparison using locale-sensitive text ordering was corrected before migration.
+
+V13 was applied through the reviewed packaged app on a temporary loopback port, that app was stopped, and the seven exact-ID roles were activated atomically. Glenn/Dieter are OWNER; Vince/Mathias/Robin/Marlies INSTRUCTOR; original coach Guillaume DEVELOPMENT. Seven offline activation audit rows were recorded. Docker was replaced with the approved image and is healthy. All 18 original tables still match the backup after startup/smoke checks (excluding only the intentional new staff_role field). Passwords and financial records are unchanged.
+
+Actual deployed read-only checks passed: Dieter login 204, Admin capabilities, athlete-coach lookup 200 and Stripe TEST financial report read; Vince login 204, no ungranted athlete roster and 403 for finance/staff/client measurements/training/notes. Both sessions returned 401 after logout. Glenn's changed password was not accessed or reset; his OWNER mapping was verified in SQL. The isolated restore database was stopped afterward. No payment or subscription modifications were performed.
+
+Remaining:
+
+1. Confirm actual login details for Maxim/Vic before provisioning; no accounts or passwords invented.
+2. Assign real instructor/client grants explicitly through the athlete popup; none inferred from class bookings.
+3. Perform the manual staff QA checklist, especially Glenn's login using his own current password and the athlete popup flow.
+4. Remote production deployment, live billing and activation on any other database still require separate approval.
 
 No live Stripe, refunds, staff financial writes, financial exports, comprehensive accounting, password recovery, custom permission editor, or production deployment was added. Actual device QA and remote CI remain separate. The financial report retains its documented TEST-only limitations.
 

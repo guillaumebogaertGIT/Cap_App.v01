@@ -1,19 +1,19 @@
 # Coach accounts (local development)
 
-The new source implements OWNER/MANAGER/INSTRUCTOR/FINANCE roles. Activation is pending approval of immutable account IDs and migration V13; see [staff RBAC](staff-rbac.md). The table below describes the previously running version, not the new permission policy. No existing real account has been remapped automatically.
+The approved local app uses OWNER/MANAGER/INSTRUCTOR/FINANCE staff roles. V13 and the verified account-ID mapping were explicitly approved and activated; see [staff RBAC](staff-rbac.md). Existing passwords and historical records were preserved.
 
 Created on 30/10/2026 in the existing local PostgreSQL `cap` database:
 
 | Coach | Login email | Access |
 | --- | --- | --- |
-| Glenn Vlamynck | hello@cap-gistel.be | Coaching, membership review, Financiën |
-| Dieter Vlamynck | dieter.vlamynck@gmail.com | Coaching, membership review |
-| Mathias Marchand | mmarchand@hotmail.be | Coaching |
-| Marlies Vermeersch | marliesvermeesch@hotmail.com | Coaching |
-| Robin Van geluwe | robinvgeluwe@gmail.com | Coaching |
-| Vince Decraemer | vince.decraemer@hotmail.com | Coaching |
+| Glenn Vlamynck | hello@cap-gistel.be | Admin (OWNER), full access |
+| Dieter Vlamynck | dieter.vlamynck@gmail.com | Admin (OWNER), identical full access |
+| Mathias Marchand | mmarchand@hotmail.be | INSTRUCTOR, linked clients and own lessons |
+| Marlies Vermeersch | marliesvermeesch@hotmail.com | INSTRUCTOR, linked clients and own lessons |
+| Robin Van geluwe | robinvgeluwe@gmail.com | INSTRUCTOR, linked clients and own lessons |
+| Vince Decraemer | vince.decraemer@hotmail.com | INSTRUCTOR, linked clients and own lessons |
 
-Maxim, Vic and the marketing contact remain pending. Screenshot Admin/Manager/Assistent labels have not become new backend roles. All six use COACH; the two review permissions are separate. No messages or invitations have been sent.
+Maxim, Vic and the marketing contact remain pending. All six retain the COACH account type; staff_role determines permissions. Display titles do not grant access. No messages or invitations have been sent. Original Coach Guillaume is DEVELOPMENT and cannot log in by default; his separate ATHLETE account is unchanged.
 
 ## Collega’s
 
