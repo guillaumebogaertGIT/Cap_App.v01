@@ -11,9 +11,12 @@ import org.springframework.web.bind.annotation.*;
 @CrossOrigin(origins = "http://127.0.0.1:5500")
 public class ExerciseController {
     public record ExerciseInput(String name, String region, String category, String subcategory,
-                                String instructions, String notes) {
+                                String instructions, String notes, String videoUrl) {
+        public ExerciseInput(String name, String region, String category, String subcategory, String instructions, String notes) {
+            this(name, region, category, subcategory, instructions, notes, "");
+        }
         ExerciseStore.Exercise definition() {
-            return new ExerciseStore.Exercise(null, name, region, category, subcategory, instructions, notes, false);
+            return new ExerciseStore.Exercise(null, name, region, category, subcategory, instructions, notes, false, videoUrl);
         }
     }
     public record ArchiveRequest(Boolean archived) {}

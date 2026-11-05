@@ -17,14 +17,16 @@
     <script src="js/athlete-details.js" defer></script>
     <script src="js/navigation.js" defer></script>
     <script src="js/workout-view.js" defer></script>
+    <script src="js/exercise-catalog.js" defer></script>
+    <script src="js/exercise-video.js" defer></script>
     <script src="js/assignment-agenda.js" defer></script>
     <script src="js/session-access.js" defer></script>
     <script src="js/club.js" defer></script>
     <script src="js/planning-calendar.js" defer></script>
     <script src="js/exercise-data.js" defer></script>
-    <script src="js/exercise-catalog.js" defer></script>
     <script src="js/exercise-picker.js" defer></script>
     <script src="js/coach-workouts.js" defer></script>
+    <script src="js/lesson-workout.js" defer></script>
     <script src="js/exercise-library.js" defer></script>
     <script src="js/account-menu.js" defer></script>
     <script src="js/billing.js" defer></script>
@@ -41,7 +43,13 @@
     <script src="js/nutrition.js" defer></script>
     <script src="js/food-data.js" defer></script>
     <script src="js/food-diary.js" defer></script>
+    <script src="js/food-barcode.js" defer></script>
+    <script src="js/food-market-search.js" defer></script>
+    <script src="js/food-personal-products.js" defer></script>
+    <script src="js/food-scanner.js" defer></script>
     <script src="js/date-inputs.js" defer></script>
+    <script src="js/home-training.js" defer></script>
+    <script src="js/dialog-close.js" defer></script>
 </head>
 
 <body class="is-signed-out">
@@ -372,6 +380,7 @@
                     <label>Categorie<input name="category" required maxlength="100" list="exercise-categories" placeholder="Bijv. Squat of Chest"></label>
                     <label>Beweging / subcategorie (optioneel)<input name="subcategory" maxlength="100" placeholder="Bijv. Bilateral"></label>
                     <label>Instructies (optioneel)<textarea name="instructions" maxlength="4000" rows="3"></textarea></label>
+                    <label>Videolink (optioneel)<input name="videoUrl" type="url" maxlength="2000" placeholder="https://…" pattern="[hH][tT][tT][pP][sS]?://.*" aria-describedby="exercise-video-help"><small id="exercise-video-help">Plak de link naar een demonstratievideo. Sporters openen deze in een nieuw tabblad.</small></label>
                     <label>Notities (optioneel)<textarea name="notes" maxlength="2000" rows="3"></textarea></label>
                 </div>
                 <datalist id="exercise-categories"></datalist>
@@ -574,9 +583,22 @@
                         <div id="food-saved-meals"></div>
                         <p id="food-saved-feedback" role="status"></p>
                     </details>
+                    <details id="food-barcode-panel" class="saved-workout food-barcode-panel">
+                        <summary id="food-barcode-title">Product opzoeken met barcode</summary>
+                        <form id="food-barcode-form" class="club-form food-barcode-form">
+                            <label>Barcode<input id="food-barcode" type="text" inputmode="numeric" autocomplete="off" maxlength="32" placeholder="Cijfers onder de streepjescode" required aria-describedby="food-barcode-help"></label>
+                            <button type="submit" class="secondary-button">Product opzoeken</button>
+                        </form>
+                        <p id="food-barcode-help" class="sample-notice">Typ de barcode van je verpakking. Controleer het gevonden product en de waarden voordat je het gebruikt.</p>
+                        <p id="food-barcode-status" role="status" aria-live="polite"></p>
+                        <div id="food-barcode-result" hidden></div>
+                        <button id="food-barcode-manual" class="secondary-button" type="button" hidden>Product zelf invullen</button>
+                        <p class="sample-notice">Productgegevens: <a href="https://world.openfoodfacts.org/" target="_blank" rel="noopener noreferrer">Open Food Facts</a> · <a href="https://opendatacommons.org/licenses/odbl/1-0/" target="_blank" rel="noopener noreferrer">ODbL</a>. Niet elk product is beschikbaar.</p>
+                    </details>
                     <div class="food-portion-layout">
                     <form id="food-entry-form" class="club-form">
                         <label>Zoek een product<input id="food-search" type="search" placeholder="Bijv. yoghurt, brood of kip" autocomplete="off"></label>
+                        <button id="food-scan-start" type="button" class="secondary-button food-search-action"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 6l1.5-2h5L16 6h4a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1z"/><circle cx="12" cy="12" r="4"/></svg><span>Scan barcode</span></button>
                         <label>Product<select id="food-product" required><option value="">Kies een product</option></select></label>
                         <label id="food-amount-label">Hoeveelheid <span id="food-unit"></span><input id="food-amount" type="number" min="0.01" step="0.01" inputmode="decimal" required></label>
                         <p id="food-portion-preview" class="sample-notice" role="status"></p>

@@ -86,6 +86,7 @@
         });
         active.planned.exercises.forEach((exercise, index) => {
             const block = node('fieldset', null, 'exercise-row'); block.append(node('legend', exercise.name), node('p', `Gepland: ${target(exercise)}`));
+            window.capExerciseVideo.append(block, exercise.name);
             if (exercise.supersetGroup) block.classList.add('superset-exercise');
             const sets = active.exercises[index].sets;
             sets.forEach((set, setIndex) => {
@@ -140,6 +141,7 @@
                     throw new Error(result.message || 'Opslaan mislukt.');
                 }
                 active = null; persist();
+                document.dispatchEvent(new CustomEvent('cap:training-changed'));
                 $('training-message').textContent = 'Training opgeslagen. Je overzicht en records zijn bijgewerkt.';
                 showOverview(result); await loadHistory();
             } catch (error) {
@@ -205,6 +207,7 @@
         finally { historyLoading = false; $('reload-training').disabled = false; }
     }
     window.capTraining = {
+        get hasActive() { return Boolean(active); },
         isActive(workoutId) { return active?.planned.id === workoutId; },
         async start(workout) {
             if (previewRole !== 'athlete' || !window.capAccess.signedIn) return;

@@ -227,6 +227,71 @@ input.local-date-original { position: absolute !important; width: 1px !important
 .session-dialog-header h2 { margin: 0; min-width: 0; }
 .session-dialog-close { display: grid; place-items: center; flex-shrink: 0; width: 2.75rem; height: 2.75rem; padding: 0.6rem; }
 .session-dialog-close svg { width: 1.25rem; height: 1.25rem; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
+.exercise-video:empty { display: none; }
+.exercise-video { display: block; }
+.exercise-video a { display: inline-flex; align-items: center; min-height: 2.75rem; color: var(--accent-text); text-underline-offset: .2em; }
+.lesson-workout-dialog { width: min(46rem, calc(100% - 2rem)); }
+.lesson-workout-dialog > .library-search { display: grid; gap: .5rem; margin-block: 1.25rem .75rem; }
+.lesson-workout-dialog input[type="search"] { width: 100%; min-width: 0; }
+.lesson-workout-context, .lesson-workout-banner p { overflow-wrap: anywhere; }
+.lesson-workout-list { display: grid; gap: .5rem; min-width: 0; max-height: 18rem; overflow-y: auto; padding: .75rem; border: 1px solid var(--border); border-radius: .75rem; }
+.lesson-workout-list label { display: flex; align-items: center; gap: .75rem; min-height: 2.75rem; padding: .5rem; cursor: pointer; }
+.lesson-workout-list input { flex: 0 0 auto; width: 1.25rem; height: 1.25rem; }
+.lesson-workout-list span { display: grid; gap: .25rem; min-width: 0; overflow-wrap: anywhere; }
+.lesson-workout-list label:has(input:checked) { background: var(--highlight); border-radius: .5rem; }
+.lesson-workout-preview { margin-top: 1rem; }
+.lesson-workout-banner { padding: 1rem; margin-bottom: 1rem; background: var(--surface); border: 1px solid var(--border); border-radius: .75rem; }
+.lesson-workout-banner p { margin-block: .5rem .75rem; }
+.home-next-training { margin-block: 0 1.5rem; padding: 1.25rem; border-radius: var(--panel-radius); background: var(--surface); }
+.home-next-training h3 { margin: 0 0 1rem; }
+.home-next-training h4 { font-size: 1.35rem; margin: 0 0 .5rem; overflow-wrap: anywhere; }
+.home-next-training p { margin-block: .5rem; }
+.home-next-training-time { font-variant-numeric: tabular-nums; }
+.home-next-training dl { display: flex; flex-wrap: wrap; gap: .75rem 2rem; margin-block: 1rem; }
+.home-next-training dt { color: var(--muted); font-size: .875rem; }
+.home-next-training dd { margin: .25rem 0 0; overflow-wrap: anywhere; }
+.home-next-training-workout { font-weight: 600; }
+.home-next-training-actions { display: flex; flex-direction: column; gap: .5rem; margin-top: 1rem; }
+.home-next-training-actions > * { min-height: 2.75rem; display: flex; align-items: center; justify-content: center; text-align: center; }
+.home-next-training-details { min-width: 0; }
+.food-barcode-panel { margin-block: 1rem; padding: 1rem; border: 1px solid var(--border); border-radius: var(--panel-radius); }
+.food-barcode-panel h4 { margin: 0 0 .75rem; }
+.food-barcode-form { display: grid; gap: .75rem; align-items: end; }
+.food-barcode-form label { display: grid; gap: .4rem; min-width: 0; }
+.food-barcode-form input { width: 100%; min-width: 0; font-variant-numeric: tabular-nums; }
+#food-barcode-result { margin-block: 1rem; overflow-wrap: anywhere; }
+#food-barcode-result h5 { font-size: 1.1rem; margin: 0 0 .5rem; }
+.food-barcode-nutrients { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .75rem; }
+.food-barcode-nutrients dt { color: var(--muted); font-size: .875rem; }
+.food-barcode-nutrients dd { margin: .25rem 0 0; font-weight: 600; }
+.food-barcode-panel .food-barcode-confirm { display: flex; flex-direction: row; align-items: center; gap: .75rem; min-height: 2.75rem; margin-block: 1rem; font-weight: 400; }
+.food-barcode-panel .food-barcode-confirm input { flex: 0 0 auto; width: 1.25rem; height: 1.25rem; min-height: 1.25rem; accent-color: var(--accent-text); }
+.food-barcode-panel a, #food-selected-source a, .food-diary-row a { color: var(--accent-text); text-underline-offset: .2em; }
+#food-barcode-result > a { display: inline-flex; align-items: center; min-height: 2.75rem; }
+.food-barcode-panel button { min-height: 2.75rem; }
+.food-autocomplete { min-width: 0; }
+.food-autocomplete .food-search-action { color: var(--text); background: var(--surface); border: 1px solid var(--border); min-height: 2.75rem; white-space: normal; }
+#food-scan-start { gap: .5rem; }
+#food-scan-start svg { width: 1.25rem; height: 1.25rem; flex-shrink: 0; fill: none; stroke: currentColor; stroke-width: 2; stroke-linejoin: round; }
+.food-suggestions { display: grid; max-height: 18rem; overflow-y: auto; border: 1px solid var(--border); border-radius: var(--control-radius); background: var(--background); }
+.food-suggestion { display: flex; flex-direction: column; align-items: start; gap: .25rem; min-height: 2.75rem; width: 100%; padding: .65rem .75rem; border: 0; border-bottom: 1px solid var(--border); background: transparent; color: var(--text); font: inherit; text-align: left; overflow-wrap: anywhere; cursor: pointer; }
+.food-suggestion:last-child { border-bottom: 0; }
+.food-suggestion small { color: var(--muted); }
+.food-suggestion:hover, .food-suggestion.is-active { background: var(--highlight); }
+.food-barcode-panel > summary { min-height: 2.75rem; align-content: center; font-weight: 600; cursor: pointer; }
+.food-barcode-panel[open] > summary { margin-bottom: .75rem; }
+.food-scanner-dialog video { display: block; width: 100%; max-height: 45dvh; aspect-ratio: 4 / 3; object-fit: cover; border-radius: var(--panel-radius); background: #111; }
+.food-scanner-dialog input[type="file"] { width: 100%; min-height: 2.75rem; }
+#personal-food-dialog .session-dialog-close, .food-scanner-dialog .session-dialog-close { color: var(--text); background: transparent; border: 1px solid var(--border); }
+#personal-food-dialog .session-dialog-close:hover, .food-scanner-dialog .session-dialog-close:hover { background: var(--highlight); }
+#personal-food-dialog .secondary-button, .food-scanner-dialog .secondary-button { color: var(--text); background: var(--surface); border: 1px solid var(--border); }
+.club-form .personal-food-confirm { display: flex; flex-direction: row; align-items: center; gap: .75rem; min-height: 2.75rem; font-weight: 400; }
+.club-form .personal-food-confirm input { flex: 0 0 auto; width: 1.25rem; height: 1.25rem; min-height: 1.25rem; accent-color: var(--accent-text); }
+@media (min-width: 40rem) { .food-barcode-form { grid-template-columns: minmax(0, 1fr) auto; } }
+@media (min-width: 48rem) {
+    .home-next-training-body:has(.home-next-training-details) { display: grid; grid-template-columns: minmax(0, 1fr) minmax(12rem, 15rem); gap: 2rem; align-items: center; }
+    .home-next-training-actions { margin-top: 0; }
+}
 .club-form h2 { letter-spacing: -0.035em; }
 .club-empty { padding: 1.25rem 0; background: transparent; border-radius: 0; color: var(--muted); }
 @media (min-width: 801px) {

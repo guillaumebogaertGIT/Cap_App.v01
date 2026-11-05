@@ -1,0 +1,67 @@
+# Free, disposable test environment for Glenn. No local CAP data is imported.
+# Both resources must remain Free. The database expires after 30 days.
+services:
+  - type: web
+    name: cap-glenn-test
+    runtime: docker
+    plan: free
+    region: frankfurt
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /api/health
+    autoDeployTrigger: "off"
+    envVars:
+      - key: SPRING_PROFILES_ACTIVE
+        value: accounts,production
+      - key: SERVER_ADDRESS
+        value: 0.0.0.0
+      - key: SERVER_PORT
+        value: "8081"
+      - key: PORT
+        value: "8081"
+      - key: SERVER_FORWARD_HEADERS_STRATEGY
+        value: framework
+      - key: CAP_COOKIE_SECURE
+        value: "true"
+      # Spring resolves these placeholders; Render supplies the components.
+      - key: CAP_DATABASE_URL
+        value: jdbc:postgresql://${CAP_TEST_DB_HOST}:${CAP_TEST_DB_PORT}/${CAP_TEST_DB_NAME}
+      - key: CAP_TEST_DB_HOST
+        fromDatabase:
+          name: cap-glenn-test-db
+          property: host
+      - key: CAP_TEST_DB_PORT
+        fromDatabase:
+          name: cap-glenn-test-db
+          property: port
+      - key: CAP_TEST_DB_NAME
+        fromDatabase:
+          name: cap-glenn-test-db
+          property: database
+      - key: CAP_DATABASE_USER
+        fromDatabase:
+          name: cap-glenn-test-db
+          property: user
+      - key: CAP_DATABASE_PASSWORD
+        fromDatabase:
+          name: cap-glenn-test-db
+          property: password
+      - key: CAP_COACH_EMAIL
+        sync: false
+      - key: CAP_COACH_PASSWORD
+        sync: false
+      - key: CAP_ACCOUNTS_BOOTSTRAP_OWNER
+        value: "true"
+      - key: CAP_STRIPE_TEST_ENABLED
+        value: "false"
+      - key: CAP_TEST_PAID_BOOKINGS
+        value: "false"
+
+databases:
+  - name: cap-glenn-test-db
+    plan: free
+    region: frankfurt
+    postgresMajorVersion: "18"
+    databaseName: cap_glenn_test
+    user: cap_glenn_test
+    ipAllowList: []

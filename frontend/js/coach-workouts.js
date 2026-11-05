@@ -80,6 +80,7 @@ typeSelect.add(new Option('Kies een workout type', '')); typeSelect.required = t
 typeLabel.append(typeSelect);
 const confirmSave = document.createElement('button'); confirmSave.type = 'button'; confirmSave.className = 'primary-button'; confirmSave.textContent = 'Bewaren';
 const closeSave = document.createElement('button'); closeSave.type = 'button'; closeSave.className = 'secondary-button'; closeSave.textContent = 'Verder bewerken';
+const lessonSaveContext = document.createElement('p'); lessonSaveContext.className = 'sample-notice'; lessonSaveContext.hidden = true;
 closeSave.addEventListener('click', () => saveDialog.close());
 const destinationFieldset = document.querySelector('.workout-destination');
 const nameLabel = workoutForm.elements.namedItem('title').closest('label');
@@ -95,7 +96,7 @@ function requireWorkoutName() {
 }
 const descriptionLabel = workoutForm.elements.namedItem('description').closest('label');
 const categoryLabel = categorySelect.closest('label');
-saveDialog.append(saveHeading, typeLabel, destinationFieldset, categoryLabel, descriptionLabel, saveStatus, confirmSave, closeSave);
+saveDialog.append(saveHeading, lessonSaveContext, typeLabel, destinationFieldset, categoryLabel, descriptionLabel, saveStatus, confirmSave, closeSave);
 // Maintain form ownership after moving inputs into the dialog.
 saveDialog.querySelectorAll('input, select, textarea').forEach(input => input.setAttribute('form', workoutForm.id));
 document.body.append(saveDialog);
@@ -209,6 +210,12 @@ workoutChoices.forEach(([label, target, category, caption, path]) => {
 // change-type/category actions and save/cancel flows reset that step.
 
 function updateAssignmentOptions() {
+    const lessonContext = window.capLessonWorkout?.context;
+    if (lessonContext) destination.value = 'library';
+    destinationFieldset.hidden = Boolean(lessonContext);
+    lessonSaveContext.hidden = !lessonContext;
+    lessonSaveContext.textContent = lessonContext ? window.capLessonWorkout.description(lessonContext.ids) : '';
+    confirmSave.textContent = lessonContext ? 'Bewaren en toevoegen aan les' : 'Bewaren';
     athleteAgenda.box.hidden = !isAthleteDestination() || Boolean(editingWorkoutId);
     sessionAgenda.box.hidden = !linksSessions();
     document.querySelector('#workout-session-assignment').hidden = destination.value !== 'sessions';
@@ -268,6 +275,14 @@ document.addEventListener('cap:workout-for-sessions', event => {
     updateAssignmentOptions();
     sessionOptions.querySelectorAll('input').forEach(input => { input.checked = event.detail.includes(input.value); });
     showTypeChooser();
+});
+document.addEventListener('cap:new-lesson-workout', () => {
+    workoutForm.reset(); exerciseFields.replaceChildren(); setEditMode();
+    const context = window.capLessonWorkout.context;
+    athleteAgenda.reset(); sessionAgenda.reset(window.capClub.workoutTargets(context.ids)[0]?.date || clubToday());
+    categorySelect.value = window.capClub.workoutTargets(context.ids)[0]?.category || '';
+    destination.value = 'library';
+    updateAssignmentOptions(); showTypeChooser();
 });
 // Athlete assignment now opens Saved Workouts (handled by workouts-api.js).
 // Do not bind the retired Create Workout link: it no longer exists in the page.
@@ -591,6 +606,7 @@ workoutForm.addEventListener('submit', async (event) => {
             throw new Error(error.message || 'Opslaan mislukt. Controleer de gegevens en probeer opnieuw.');
         }
         const saved = await response.json();
+        const lessonContext = window.capLessonWorkout?.context;
         const wasAssignmentEdit = Boolean(assignmentEdit);
         let message = updating ? 'Workout bijgewerkt. Geschiedenis en sessieprogramma’s blijven behouden.' : 'Workout opgeslagen in Java.';
         if (weeklyCreate) message = `Workout bewaard bij Workouts deze week · ${window.capAgenda.range(athleteAgenda.value().date)}.`;
@@ -614,7 +630,11 @@ workoutForm.addEventListener('submit', async (event) => {
         showCategoryChooser(false);
         status.textContent = '';
         document.querySelector('#coach-workout-status').textContent = message;
-        window.location.hash = wasAssignmentEdit ? 'athletes' : 'saved-workouts';
+        if (lessonContext) {
+            await window.capLessonWorkout.created(saved, lessonContext.ids);
+        } else {
+            window.location.hash = wasAssignmentEdit ? 'athletes' : 'saved-workouts';
+        }
         document.dispatchEvent(new CustomEvent(wasAssignmentEdit ? 'cap:assignment-saved' : 'cap:workouts-saved'));
     } catch (error) {
         status.textContent = `${error.message} Je invoer blijft behouden. Bij een verbindingsfout: controleer eerst de bibliotheek voordat je opnieuw opslaat.`;

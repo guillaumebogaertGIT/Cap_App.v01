@@ -23,6 +23,11 @@ frontend/**
 !frontend/js/
 frontend/js/**
 !frontend/js/*.js
+!frontend/vendor/
+frontend/vendor/**
+!frontend/vendor/zxing-browser-0.2.1.min.js
+!frontend/vendor/LICENSE-zxing-browser.txt
+!frontend/vendor/LICENSE-zxing-library.txt
 !frontend/css/
 frontend/css/**
 !frontend/css/*.css

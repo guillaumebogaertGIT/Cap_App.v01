@@ -26,6 +26,9 @@ class StaffRequestAuthorization {
         if(path.startsWith("/api/measurements/athletes/"))return policy.allows(user,CLIENT_HEALTH);
         if(path.startsWith("/api/nutrition-targets"))return athlete && get || policy.allows(user,NUTRITION_MANAGE);
         if(path.startsWith("/api/food-diary"))return athlete || get && policy.allows(user,NUTRITION_MANAGE);
+        if(path.equals("/api/food-products/personal"))return athlete && get;
+        if(path.startsWith("/api/food-products/personal/"))return athlete && (method.equals("PUT")||method.equals("DELETE"));
+        if(path.startsWith("/api/food-products/"))return get && (athlete || policy.allows(user,NUTRITION_MANAGE));
         if(path.startsWith("/api/exercises"))return get?athlete || policy.allows(user,WORKOUT_VIEW):policy.allows(user,WORKOUT_TEMPLATE_MANAGE);
         if(path.startsWith("/api/workouts"))return get?athlete || policy.allows(user,WORKOUT_VIEW)
             :policy.allows(user,path.endsWith("/assignment")?WORKOUT_ASSIGN:WORKOUT_TEMPLATE_MANAGE);

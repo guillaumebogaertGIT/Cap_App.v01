@@ -4,7 +4,7 @@
     const catalog = window.capExercisePicker;
     const api = window.capExerciseCatalog;
     const definitionForm = $('exercise-definition-form');
-    const definitionFields = ['name', 'region', 'category', 'subcategory', 'instructions', 'notes'];
+    const definitionFields = ['name', 'region', 'category', 'subcategory', 'instructions', 'notes', 'videoUrl'];
     let editingId = null;
     let dirty = false;
     let saving = false;

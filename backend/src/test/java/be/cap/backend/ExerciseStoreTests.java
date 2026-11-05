@@ -81,4 +81,26 @@ class ExerciseStoreTests {
         assertEquals("keep", Files.readString(target.resolve("sentinel")));
         try (var files = Files.list(directory)) { assertEquals(1, files.count()); }
     }
+
+    @Test void videoLinksSurviveReloadAndArchivingAndCanBeRemoved() throws Exception {
+        String filename = directory.resolve("video.json").toString();
+        ExerciseStore store = new ExerciseStore(filename);
+        var exercise = store.create(new ExerciseStore.Exercise(null, "Video squat", "Lower Body", "Squat",
+            "", "", "", false, " https://example.com/watch?v=squat "));
+        store.archive(exercise.id(), true);
+        var reloaded = new ExerciseStore(filename);
+        assertEquals("https://example.com/watch?v=squat", reloaded.list().getLast().videoUrl());
+        reloaded.update(exercise.id(), input("Video squat"));
+        assertEquals("", new ExerciseStore(filename).list().getLast().videoUrl());
+    }
+
+    @Test void unsafeVideoLinksAreRejectedWithoutWriting() throws Exception {
+        Path file = directory.resolve("unsafe.json");
+        ExerciseStore store = new ExerciseStore(file.toString());
+        for (String url : new String[]{"javascript:alert(1)", "data:text/html,test", "/video", "https://user:pass@example.com", "https://", "https://example.com/" + "x".repeat(2000)}) {
+            assertEquals(HttpStatus.BAD_REQUEST, assertThrows(ResponseStatusException.class, () ->
+                store.create(new ExerciseStore.Exercise(null, "Video squat", "Lower Body", "Squat", "", "", "", false, url))).getStatusCode());
+        }
+        assertFalse(Files.exists(file));
+    }
 }

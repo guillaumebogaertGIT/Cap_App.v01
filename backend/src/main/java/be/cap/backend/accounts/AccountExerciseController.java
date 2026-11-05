@@ -16,7 +16,7 @@ class AccountExerciseController {
     private final AccountService accounts;
     AccountExerciseController(AccountExerciseService service,AccountService accounts) {this.service=service;this.accounts=accounts;}
     private ExerciseStore.Exercise definition(ExerciseController.ExerciseInput input) {
-        return new ExerciseStore.Exercise(null,input.name(),input.region(),input.category(),input.subcategory(),input.instructions(),input.notes(),false);
+        return new ExerciseStore.Exercise(null,input.name(),input.region(),input.category(),input.subcategory(),input.instructions(),input.notes(),false,input.videoUrl());
     }
     @GetMapping List<ExerciseStore.Exercise> list(java.security.Principal p) throws IOException {return service.list(accounts.account(p.getName()));}
     @PostMapping @ResponseStatus(HttpStatus.CREATED) ExerciseStore.Exercise create(java.security.Principal p,@RequestBody ExerciseController.ExerciseInput input) throws IOException {return service.save(null,definition(input),accounts.account(p.getName()));}

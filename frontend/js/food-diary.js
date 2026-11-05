@@ -44,7 +44,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if(window.capReal?.account.role==='COACH' && !window.capCan('NUTRITION_MANAGE'))return;
     const $ = id => document.getElementById(id);
     const math = window.capFoodMath;
-    const foods = window.capFoodDatabase.foods;
+    const foods = [...window.capFoodDatabase.foods];
     const athleteId = window.capReal?.account.id || 'preview-guillaume';
     const meals = [['breakfast', 'Ontbijt'], ['snack', 'Tussendoor'], ['lunch', 'Middagmaal'], ['dinner', 'Avondmaal'], ['bedtime', 'Voor slapen'], ['pre', 'Pre-workout'], ['post', 'Post-workout']];
     const metrics = [['calories', 'Calorieën', 'kcal'], ['proteinG', 'Eiwitten', 'g'], ['carbsG', 'Koolhydraten', 'g'], ['fatG', 'Vetten', 'g']];
@@ -64,6 +64,52 @@ document.addEventListener('DOMContentLoaded', () => {
     const canLog = () => window.capAccess.signedIn && previewRole === 'athlete';
     const node = (tag, text, cls) => { const item = document.createElement(tag); if (text != null) item.textContent = text; if (cls) item.className = cls; return item; };
     const product = () => foods.find(food => food.id === $('food-product').value);
+    function chooseFood(food) {
+        if (!canLog() || busy || !food?.complete) return false;
+        $('food-search').value = food.name; $('food-search').setCustomValidity(''); renderProducts();
+        $('food-product').value = food.id; $('food-amount').disabled = false; $('food-amount').value = ''; previewPortion();
+        document.dispatchEvent(new CustomEvent('cap:food-product-selected', { detail: { name: food.name, unit: food.unit } }));
+        $('food-amount').focus(); return true;
+    }
+    // External products remain separate from the bundled source; every diary entry is a portion snapshot.
+    window.capFoodDiary = {
+        searchProducts(query) {
+            if (!canLog()) return [];
+            const words = normalize(query).trim().split(/\s+/).filter(Boolean);
+            return foods.filter(food => (food.complete || food.source === 'personal') && words.every(word => normalize(food.name).includes(word)))
+                .sort((a,b) => a.name.localeCompare(b.name, 'nl-BE')).slice(0,8);
+        },
+        selectProduct(id) { return chooseFood(foods.find(food => food.id === id)); },
+        selectBarcodeProduct(value, selectNow = true) {
+            if (!canLog() || busy || !value.complete || !['g', 'ml'].includes(value.unit)) return false;
+            let code=value.barcode;
+            if(value.source==='personal') {
+                if(code.length===12)code='0'+code;
+                else if(code.length===14&&code.startsWith('0'))code=code.slice(1);
+            }
+            const food = { ...value, id: (value.source === 'personal' ? 'personal:' : 'off:') + code, baseAmount: 100,
+                name: (value.brand && !normalize(value.name).includes(normalize(value.brand)) ? `${value.name} — ${value.brand}` : value.name).slice(0, 120) };
+            const index = foods.findIndex(item => item.id === food.id);
+            if (index < 0) foods.push(food); else foods[index] = food;
+            if (selectNow) return chooseFood(food);
+            renderProducts(); return true;
+        },
+        syncPersonalProducts(values) {
+            if (!canLog() || busy) return;
+            const selected = $('food-product').value;
+            for (let index = foods.length - 1; index >= 0; index--) if (foods[index].id.startsWith('personal:')) foods.splice(index,1);
+            for (const value of values) {
+                if (!['g','ml'].includes(value.unit)) continue;
+                foods.push({ ...value, id:'personal:'+value.barcode, baseAmount:100,
+                    name:(value.brand&&!normalize(value.name).includes(normalize(value.brand))?`${value.name} — ${value.brand}`:value.name).slice(0,120) });
+            }
+            renderProducts();
+            if (foods.some(food=>food.id===selected&&food.complete)) $('food-product').value=selected;
+            else if (selected.startsWith('personal:')) { $('food-search').setCustomValidity('Kies een product uit de lijst.'); $('food-amount').disabled=true; }
+            previewPortion();
+            document.dispatchEvent(new CustomEvent('cap:food-catalogue-changed'));
+        }
+    };
     const coachAthlete = () => window.capNutritionTargets.selectedAthlete();
     if (real) $('food-diary-storage-note').textContent = 'Je dagboek wordt in je account bewaard. Je coach kan het bekijken.';
     const dayKey = (id, date) => `${id}/${date}`;
@@ -115,6 +161,17 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     function previewPortion() {
         const food = product();
+        let source = $('food-selected-source');
+        if (!source) { source = node('p', '', 'sample-notice'); source.id = 'food-selected-source'; $('food-product').closest('label').after(source); }
+        source.replaceChildren(); source.hidden = !(food?.id.startsWith('off:') || food?.id.startsWith('personal:'));
+        if (!source.hidden) {
+            source.append(document.createTextNode(`Voedingswaarden per 100 ${food.unit} · `));
+            if (food.id.startsWith('personal:')) source.append(document.createTextNode('Eigen etiket'));
+            else {
+                const link = node('a', 'Open Food Facts'); link.href = 'https://world.openfoodfacts.org/product/' + food.id.slice(4);
+                link.target = '_blank'; link.rel = 'noopener noreferrer'; source.append(link);
+            }
+        }
         $('food-unit').textContent = food ? `(${food.unit})` : '';
         try {
             const values = math.portion(food, $('food-amount').value);
@@ -183,6 +240,11 @@ document.addEventListener('DOMContentLoaded', () => {
             mealEntries.forEach(entry => {
                 const row = node('div', null, 'food-diary-row');
                 const description = node('div'); description.append(node('strong', entry.name), node('small', `${format(entry.amount)} ${entry.unit} · ${format(entry.calories)} kcal · E ${format(entry.proteinG)} / KH ${format(entry.carbsG)} / V ${format(entry.fatG)} g`));
+                if (/^off:[0-9]{8,14}$/.test(entry.foodId || '')) {
+                    const source = node('a', 'Bron: Open Food Facts'); source.href = 'https://world.openfoodfacts.org/product/' + entry.foodId.slice(4);
+                    source.target = '_blank'; source.rel = 'noopener noreferrer'; description.append(source);
+                }
+                if (/^personal:[0-9]{8,14}$/.test(entry.foodId || '')) description.append(node('small','Bron: eigen etiket'));
                 row.append(description);
                 if (prefix === 'athlete-food') {
                     const remove = node('button', 'Verwijderen', 'secondary-button'); remove.type = 'button';

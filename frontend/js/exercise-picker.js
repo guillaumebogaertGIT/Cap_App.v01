@@ -38,9 +38,12 @@
     };
     const dialog = node('dialog', null, 'club-dialog exercise-search-dialog');
     dialog.setAttribute('aria-labelledby', 'exercise-search-title');
-    const header = node('div', null, 'health-overview-heading');
+    const header = node('div', null, 'session-dialog-header');
     const heading = node('h2', 'Oefening kiezen'); heading.id = 'exercise-search-title';
-    const close = node('button', 'Sluiten', 'secondary-button'); close.type = 'button'; header.append(heading, close);
+    const close = node('button', null, 'secondary-button session-dialog-close');
+    close.type = 'button'; close.setAttribute('aria-label', 'Sluiten'); close.title = 'Sluiten';
+    close.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg>';
+    header.append(heading, close);
     const scope = node('p', '', 'sample-notice');
     const label = node('label', 'Zoek op naam, beweging of materiaal', 'library-search');
     const query = node('input'); query.type = 'search'; query.maxLength = 100; query.autocomplete = 'off'; query.spellcheck = false; label.append(query);

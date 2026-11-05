@@ -20,7 +20,12 @@ import tools.jackson.databind.json.JsonMapper;
 @org.springframework.context.annotation.Profile("!accounts")
 public class ExerciseStore {
     public record Exercise(String id, String name, String region, String category, String subcategory,
-                           String instructions, String notes, boolean archived) {}
+                           String instructions, String notes, boolean archived, String videoUrl) {
+        public Exercise(String id, String name, String region, String category, String subcategory,
+                        String instructions, String notes, boolean archived) {
+            this(id, name, region, category, subcategory, instructions, notes, archived, "");
+        }
+    }
 
     private final Path file;
     private final StateWriter<List<Exercise>> writer;
@@ -75,7 +80,7 @@ public class ExerciseStore {
         Exercise existing = find(id);
         if (existing.archived() == archived) return existing;
         Exercise exercise = new Exercise(id, existing.name(), existing.region(), existing.category(),
-            existing.subcategory(), existing.instructions(), existing.notes(), archived);
+            existing.subcategory(), existing.instructions(), existing.notes(), archived, existing.videoUrl());
         save(exercise);
         return exercise;
     }
@@ -95,7 +100,18 @@ public class ExerciseStore {
             throw invalid("Kies Upper body, Lower body of Full body.");
         }
         return new Exercise(id, name, input.region(), category, text(input.subcategory(), 100, "Beweging"),
-            text(input.instructions(), 4000, "Instructies"), text(input.notes(), 2000, "Notities"), archived);
+            text(input.instructions(), 4000, "Instructies"), text(input.notes(), 2000, "Notities"), archived, videoUrl(input.videoUrl()));
+    }
+
+    private String videoUrl(String value) {
+        String url = text(value, 2000, "Videolink");
+        if (url.isEmpty()) return "";
+        try {
+            var uri = new java.net.URI(url);
+            if (("https".equalsIgnoreCase(uri.getScheme()) || "http".equalsIgnoreCase(uri.getScheme()))
+                    && uri.getHost() != null && uri.getRawUserInfo() == null) return uri.toASCIIString();
+        } catch (java.net.URISyntaxException ignored) { }
+        throw invalid("Vul een volledige http- of https-link naar de video in.");
     }
 
     private String text(String value, int maximum, String label) {

@@ -35,10 +35,11 @@ class ExerciseApiTests {
         assertEquals(200, listed.statusCode());
         assertEquals(1078, mapper.readTree(listed.body()).size());
         String body = """
-            {"name":"CAP API Squat","region":"Lower Body","category":"Squat","instructions":"Brace"}
+            {"name":"CAP API Squat","region":"Lower Body","category":"Squat","instructions":"Brace","videoUrl":"https://example.com/squat"}
             """;
         var created = request("POST", "/api/exercises", body);
         assertEquals(201, created.statusCode());
+        assertEquals("https://example.com/squat", mapper.readTree(created.body()).get("videoUrl").asText());
         assertEquals("http://127.0.0.1:5500", created.headers().firstValue("Access-Control-Allow-Origin").orElseThrow());
         String id = mapper.readTree(created.body()).get("id").asText();
         var workout = request("POST", "/api/workouts", """

@@ -123,7 +123,7 @@
                 <p class="sample-notice" id="session-program-help">Sporters kunnen dit programma bekijken voor ze boeken. Na inschrijving verschijnt de sessie ook bij hun workouts.</p>
                 <div class="club-form-grid"><label>Datum<input name="date" type="date" required></label><label>Start<input name="start" type="time" required></label><label>Einde<input name="end" type="time" required></label><label>Coach<input name="coach" required maxlength="80"></label><label>Locatie<input name="location" required maxlength="120"></label><label>Max. deelnemers<input name="capacity" type="number" min="1" max="200" required value="8"></label><label>Wekelijks herhalen<select name="repeat"><option value="1">Eenmalig</option><option value="4">4 weken</option><option value="8">8 weken</option></select></label></div>
                 <p class="sample-notice">Wekelijkse herhalingen vallen op dezelfde weekdag als de gekozen datum. Elke herhaling is een losse les; bewerken geldt alleen voor die les.</p><p id="session-error" role="alert"></p><div class="editor-actions"><button class="primary-button" type="submit">Les bewaren</button><button class="secondary-button" type="submit" id="session-add-workout">Workout toevoegen</button></div>
-                <p class="sample-notice" id="session-workout-help">Workout toevoegen bewaart eerst de les. Daarna kun je een nieuwe workout maken of een opgeslagen workout aanpassen voor deze sessie.</p>
+                <p class="sample-notice" id="session-workout-help">Workout toevoegen bewaart eerst de les. Kies daarna een opgeslagen workout of maak een nieuwe voor deze les.</p>
             </form>
         </dialog>
         <dialog id="product-dialog" class="club-dialog" aria-labelledby="product-dialog-title">
@@ -227,6 +227,9 @@
         else card.append(element('p', 'Vrij trainen. Je reserveert een plek; je persoonlijke workout kies je zelf.', 'sample-notice'));
         if (coach() && (!real || window.capCan('CLASS_MANAGE'))) {
             actions.append(button('Bewerken', () => openSession(session)));
+            if (session.type !== 'Open gym' && (!real || window.capCan('WORKOUT_TEMPLATE_MANAGE'))) {
+                actions.append(button(session.workoutSnapshot ? 'Workout vervangen' : 'Workout toevoegen', () => window.capLessonWorkout.open([session.id])));
+            }
             actions.append(button('Les verwijderen', () => {
                 if (!window.confirm(`Weet je zeker dat je de sessie "${session.title}" op ${dateLabel(session.date)} om ${session.start} wilt verwijderen? Bijbehorende boekingen worden ook verwijderd.`)) return;
                 if (real) { mutateReal('/api/club/sessions/' + session.id, 'DELETE', undefined, 'Les verwijderd.'); return; }
@@ -463,7 +466,7 @@
                         await refreshReal('Les bewaard.'); $('session-dialog').close();
                         document.dispatchEvent(new CustomEvent('cap:session-saved', { detail: { date: values.date, id: created[0].id } }));
                         if (event.submitter?.id === 'session-add-workout') {
-                            location.hash = 'create-workout'; document.dispatchEvent(new CustomEvent('cap:workout-for-sessions', { detail: created.map(s => s.id) }));
+                            window.capLessonWorkout.open(created.map(s => s.id));
                         }
                     } catch (error) { $('session-error').textContent = error.message; }
                     finally { realBusy = false; }
@@ -493,8 +496,7 @@
                 $('session-dialog').close(); save(values.type === 'Privé' ? 'Privésessie bewaard voor de geselecteerde sporters.' : 'Les bewaard. De planning is bijgewerkt.');
                 document.dispatchEvent(new CustomEvent('cap:session-saved', { detail: { date: values.date, id: targetIds[0] } }));
                 if (event.submitter?.id === 'session-add-workout') {
-                    location.hash = 'create-workout';
-                    document.dispatchEvent(new CustomEvent('cap:workout-for-sessions', { detail: targetIds }));
+                    window.capLessonWorkout.open(targetIds);
                 }
             } else {
                 const product = { ...values, price: Number(values.price), available: values.available === 'true' };
@@ -514,6 +516,22 @@
     ['booking-filter', 'product-filter'].forEach((id) => $(id).addEventListener('change', render));
     document.addEventListener('cap:viewchange', render);
     window.capClub = {
+        athleteSessions() {
+            if (coach() || !window.capAccess.signedIn) return [];
+            return data.sessions.filter(session => visibleSession(session) && !session.cancelled
+                && !past({ ...session, start: session.end }) && bookingsFor(session).some(ownBooking))
+                .sort((a, b) => `${a.date}${a.start}`.localeCompare(`${b.date}${b.start}`))
+                .map(session => structuredClone(session));
+        },
+        async refreshSessions() { if (real) await refreshReal(); },
+        workoutTargets(ids) {
+            const eligible = new Set(this.sessions().map(session => session.id));
+            return ids.filter(id => eligible.has(id)).map(id => {
+                const session = data.sessions.find(item => item.id === id);
+                return { id, title: session.title, date: session.date, start: session.start,
+                    category: session.category || '', hasWorkout: Boolean(session.workoutSnapshot || session.program?.trim()) };
+            });
+        },
         calendarSessions() {
             return data.sessions.filter(session => visibleSession(session) && !session.cancelled)
                 .map(({ id, title, date, start, end, coach, category, type }) => ({ id, title, date, start, end, coach, category, type }));
@@ -556,11 +574,12 @@
             render();
         }
     };
+    document.addEventListener('cap:lesson-workout-added', event => announce(`“${event.detail.name}” toegevoegd aan de les. De planning is bijgewerkt.`));
     if (real) {
         const coachField = $('session-form').elements.namedItem('coach');
         const select = document.createElement('select'); select.name = 'coach';
         real.coaches.forEach(person => select.add(new Option(person.name, person.id))); coachField.replaceWith(select);
-        document.addEventListener('cap:viewchange', () => { if (['#planning', '#bookings', '#workouts', '#dashboard'].includes(location.hash)) refreshReal().catch(error => announce(error.message)); });
+        document.addEventListener('cap:viewchange', () => { if (['#planning', '#bookings', '#workouts'].includes(location.hash) || location.hash === '#dashboard' && coach()) refreshReal().catch(error => announce(error.message)); });
     }
     showCurrentView(false);
 })();

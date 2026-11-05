@@ -36,6 +36,7 @@ window.capWorkoutView = {
                     this.setTargets(e).forEach((set, i) => { const line = document.createElement('li'); line.textContent = 'Set ' + (i + 1) + ': ' + this.targetText(set); sets.append(line); });
                     item.append(sets);
                 }
+                window.capExerciseVideo.append(item, e.name);
                 if (onRemove) {
                     item.classList.add('review-exercise');
                     const remove = document.createElement('button');
