@@ -143,6 +143,7 @@ function showCurrentView(moveFocus = true) {
     sidebarNavigation.querySelector('[data-view-link="coach-health"]').textContent='Gezondheid sporters';
     const routeId = allowedViews.includes(requestedView)
         ? requestedView : 'dashboard';
+    document.querySelector('.welcome-bar').hidden = routeId !== 'dashboard';
     const moreIsActive = previewRole === 'coach' && moreViews.includes(routeId);
     moreNavigation.classList.toggle('has-active-page', moreIsActive);
     if (moreIsActive) moreNavigation.open = true;
