@@ -18,6 +18,7 @@
     <link rel="stylesheet" href="css/client-directory.css">
     <link rel="stylesheet" href="css/finance-overview.css">
     <link rel="stylesheet" href="css/invoices.css">
+    <link rel="stylesheet" href="css/athlete-home.css">
     <link rel="stylesheet" href="css/community.css">
     <link rel="stylesheet" href="css/auth.css">
     <script src="js/preview-storage.js" defer></script>
@@ -70,7 +71,7 @@
     <script src="js/food-personal-products.js" defer></script>
     <script src="js/food-scanner.js" defer></script>
     <script src="js/date-inputs.js" defer></script>
-    <script src="js/home-training.js" defer></script>
+    <script src="js/athlete-home.js" defer></script>
     <script src="js/owner-home.js" defer></script>
     <script src="js/dialog-close.js" defer></script>
 </head>
@@ -139,6 +140,10 @@
     <main>
         <div class="account-bar">
             <div class="account-tools">
+                <a id="header-settings" class="account-icon-button" href="#settings" data-view-link="settings" aria-label="Instellingen" title="Instellingen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+                    <path d="M9.67 4.14a2 2 0 0 1 3.66 0 2 2 0 0 0 2.82 1.16 2 2 0 0 1 2.59 2.59 2 2 0 0 0 1.16 2.82 2 2 0 0 1 0 3.66 2 2 0 0 0-1.16 2.82 2 2 0 0 1-2.59 2.59 2 2 0 0 0-2.82 1.16 2 2 0 0 1-3.66 0 2 2 0 0 0-2.82-1.16 2 2 0 0 1-2.59-2.59 2 2 0 0 0-1.16-2.82 2 2 0 0 1 0-3.66 2 2 0 0 0 1.16-2.82A2 2 0 0 1 6.85 5.3a2 2 0 0 0 2.82-1.16" transform="translate(.5 -.5)" />
+                    <circle cx="12" cy="12" r="3" />
+                </svg></a>
                 <a id="header-messages" class="account-icon-button" href="#messages" aria-label="Berichten" title="Berichten"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M21 4H3v13h5l4 4 4-4h5zM7 8h10M7 12h7"/></svg><span id="header-message-count" class="account-icon-count" hidden aria-hidden="true"></span></a>
                 <button id="header-notifications" class="account-icon-button" type="button" aria-label="Meldingen" title="Meldingen" aria-expanded="false" aria-controls="header-notification-panel"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4M12 2V1"/></svg><span id="header-notification-count" class="account-icon-count" hidden aria-hidden="true"></span></button>
             </div>
@@ -152,7 +157,6 @@
                 <div id="account-links" class="account-links" hidden>
                     <p class="account-preview-label">Voorbeeldaccount</p>
                     <button type="button" data-account="profile">Profiel</button>
-                    <a href="#settings">Instellingen</a>
                     <button type="button" data-account="notifications">Meldingen</button>
                     <button type="button" data-account="password">Wachtwoord</button>
                     <button type="button" data-account="messages">Berichten</button>

@@ -2,7 +2,7 @@
 .account-tools { display: flex; gap: .35rem; flex-shrink: 0; }
 .account-icon-button { position: relative; display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; padding: .55rem; box-sizing: border-box; border: 1px solid var(--border); border-radius: 50%; background: var(--surface); color: var(--text); cursor: pointer; text-decoration: none; }
 .account-icon-button svg { width: 22px; height: 22px; }
-.account-icon-button:hover,.account-icon-button[aria-expanded="true"] { background: var(--highlight); border-color: var(--accent-text); }
+.account-icon-button:hover,.account-icon-button[aria-expanded="true"],.account-icon-button[aria-current="page"] { background: var(--highlight); border-color: var(--accent-text); }
 .account-icon-count { position: absolute; top: -.3rem; right: -.3rem; min-width: 1.15rem; padding: .05rem .2rem; box-sizing: border-box; border-radius: 1rem; background: #ad350c; color: #fff; font-size: .7rem; font-weight: 700; text-align: center; }
 .header-notification-panel { position: absolute; top: calc(100% + .5rem); right: 0; z-index: 30; width: min(25rem,calc(100vw - 2rem)); box-sizing: border-box; max-height: min(70dvh,34rem); overflow-y: auto; background: var(--surface); border: 1px solid var(--border); border-radius: .8rem; padding: 1rem; box-shadow: 0 .5rem 1.5rem #0003; }
 .header-notification-heading { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }

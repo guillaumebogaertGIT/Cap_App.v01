@@ -14,12 +14,12 @@ public class SocialController {
     public record Attachment(String name,String data){}
     public record Input(UUID id,String content,Attachment attachment,String channel){}
     private static final Map<String,String> CHANNELS;
-    static {var channels=new LinkedHashMap<String,String>();channels.put("general","Algemeen");channels.put("hyrox","CAP HYROX");channels.put("hybrid","CAP Hybrid");channels.put("move","CAP Move");channels.put("lift-hit","CAP Lift & HIT");channels.put("open-gym","Open gym");CHANNELS=Collections.unmodifiableMap(channels);}
+    static {var channels=new LinkedHashMap<String,String>();channels.put("general","Announcements");channels.put("chat-room","Chat room");channels.put("hyrox","CAP HYROX");channels.put("hybrid","CAP Hybrid");channels.put("move","CAP Move");channels.put("lift-hit","CAP Lift & HIT");channels.put("open-gym","Open gym");CHANNELS=Collections.unmodifiableMap(channels);}
     private String channel(String value){String result=value==null?"general":value;if(!CHANNELS.containsKey(result))throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"Dit kanaal bestaat niet.");return result;}
     @GetMapping("/community/channels") public ResponseEntity<?> channels(Principal p){
         var user=actor(p);var counts=new HashMap<String,Long>();
         for(var row:jdbc.queryForList("SELECT m.channel,COUNT(*) AS unread FROM social_message m WHERE m.kind='community' AND m.deleted=FALSE AND m.author_id<>? AND NOT EXISTS(SELECT 1 FROM social_notification_read r WHERE r.message_id=m.id AND r.user_id=?) GROUP BY m.channel",user.id(),user.id()))counts.put((String)row.get("channel"),((Number)row.get("unread")).longValue());
-        return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(CHANNELS.entrySet().stream().map(entry->Map.of("id",entry.getKey(),"name",entry.getValue(),"unread",counts.getOrDefault(entry.getKey(),0L))).toList());
+        return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(CHANNELS.entrySet().stream().map(entry->Map.of("id",entry.getKey(),"name",entry.getValue(),"unread",counts.getOrDefault(entry.getKey(),0L),"canPost",!entry.getKey().equals("general")||user.role().equals("COACH"))).toList());
     }
     public record Privacy(Boolean discoverable){}
     public record Read(List<UUID> ids){}
@@ -144,6 +144,7 @@ public class SocialController {
     @GetMapping("/groups/{id}") public ResponseEntity<?> group(Principal p,@PathVariable UUID id){var user=actor(p);requireGroup(user,id);return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(messages("WHERE kind='group' AND session_id=?",id));}
     private Map<String,Object> post(AccountService.Account user,Input input,String kind,UUID recipient,UUID session){
         String channel=kind.equals("community")?channel(input.channel()):null;
+        if(kind.equals("community")&&channel.equals("general")&&!user.role().equals("COACH"))throw new ResponseStatusException(HttpStatus.FORBIDDEN,"Alleen coaches kunnen een announcement plaatsen.");
         if(input.id()==null||input.content()==null||(input.content().isBlank()&&input.attachment()==null)||input.content().length()>2000)throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"Schrijf een bericht of voeg een bestand toe (maximaal 2000 tekens).");
         jdbc.query("SELECT id FROM cap_user WHERE id=? FOR UPDATE",(r,i)->r.getObject(1),user.id());
         actor(()->user.email());

@@ -10,6 +10,24 @@ import be.cap.backend.accounts.billing.ComplimentaryMemberships;
 
 @TestPropertySource(properties="spring.datasource.url=jdbc:h2:mem:remaining-features;MODE=PostgreSQL;DB_CLOSE_DELAY=-1")
 class RemainingFeaturesTests extends AccountApiTests {
+    @Test void announcementsAreCoachOnlyAndChatRoomIsShared() throws Exception {
+        HttpClient owner=client();login(owner,"coach@example.test","Coach-test-password-123");
+        Person member=athlete(owner),coach=instructor();
+        for(String channel:List.of("general","chat-room")){
+            UUID id=UUID.randomUUID();
+            String body=json.writeValueAsString(Map.of("id",id,"content","Channel permission "+id,"channel",channel,"attachment",Map.of("name","room.txt","data",Base64.getEncoder().encodeToString("Room file".getBytes()))));
+            assertEquals(channel.equals("general")?403:200,request(member.client(),"POST","/api/social/community",body,csrf(member.client()),false).statusCode());
+            assertEquals(channel.equals("general")?0:1,jdbc.queryForObject("SELECT COUNT(*) FROM social_message WHERE id=?",Integer.class,id));
+            assertEquals(200,request(coach.client(),"POST","/api/social/community",body.replace(id.toString(),UUID.randomUUID().toString()),csrf(coach.client()),false).statusCode());
+            assertEquals(200,request(member.client(),"GET","/api/social/community?channel="+channel,null,null,false).statusCode());
+        }
+        var channels=json.readTree(request(member.client(),"GET","/api/social/community/channels",null,null,false).body());
+        for(var channel:channels){
+            if(channel.get("id").asText().equals("general")){assertEquals("Announcements",channel.get("name").asText());assertFalse(channel.get("canPost").asBoolean());}
+            if(channel.get("id").asText().equals("chat-room")){assertEquals("Chat room",channel.get("name").asText());assertTrue(channel.get("canPost").asBoolean());}
+        }
+    }
+
     @Test void invoiceArchiveIsPrivateRetrySafeAndDoesNotIssuePayments() throws Exception {
         var owner=client();login(owner,"coach@example.test","Coach-test-password-123");var person=athlete(owner);var teacher=instructor();UUID id=UUID.randomUUID();
         var input=new LinkedHashMap<String,Object>();input.put("id",id);input.put("clientId",person.id());input.put("customer","Invoice test customer");input.put("reference","TEST-"+id);input.put("date",LocalDate.now(ZoneId.of("Europe/Brussels")));input.put("description","Existing invoice archive");input.put("type","invoice");input.put("grossCents",12100);input.put("netCents",10000);input.put("status","open");input.put("filename","invoice.pdf");input.put("data",Base64.getEncoder().encodeToString("%PDF-1.7\nExisting document".getBytes()));
@@ -89,7 +107,7 @@ class RemainingFeaturesTests extends AccountApiTests {
         jdbc.update("INSERT INTO session_booking(session_id,athlete_id) VALUES(?,?)",session,sender.id());
         for(String path:List.of("/api/social/community","/api/social/direct/"+ownerId,"/api/social/groups/"+session)){
             UUID id=UUID.randomUUID();String content="Sender-only deletion "+id;
-            String input=json.writeValueAsString(Map.of("id",id,"content",content,"attachment",Map.of("name","message.txt","data",Base64.getEncoder().encodeToString("Shared file".getBytes()))));
+            String input=json.writeValueAsString(Map.of("id",id,"content",content,"channel","chat-room","attachment",Map.of("name","message.txt","data",Base64.getEncoder().encodeToString("Shared file".getBytes()))));
             assertEquals(200,request(sender.client(),"POST",path,input,csrf(sender.client()),false).statusCode());
             assertEquals(403,request(owner,"DELETE","/api/social/messages/"+id,null,csrf(owner),false).statusCode());
             assertEquals(403,request(other.client(),"DELETE","/api/social/messages/"+id,null,csrf(other.client()),false).statusCode());
@@ -153,7 +171,7 @@ class RemainingFeaturesTests extends AccountApiTests {
         for(var person:List.of(first,second,teacher)){
             var alerts=json.readTree(request(person.client(),"GET","/api/social/notifications",null,null,false).body());
             assertTrue(alerts.path("items").toString().contains("HYROX club announcement"));assertTrue(alerts.path("items").toString().contains("\"channel\":\"hyrox\""));
-            var channels=json.readTree(request(person.client(),"GET","/api/social/community/channels",null,null,false).body());assertEquals(6,channels.size());assertTrue(channels.toString().contains("Open gym"));
+            var channels=json.readTree(request(person.client(),"GET","/api/social/community/channels",null,null,false).body());assertEquals(7,channels.size());assertTrue(channels.toString().contains("Open gym"));
         }
         assertFalse(request(owner,"GET","/api/social/notifications",null,null,false).body().contains("HYROX club announcement"));
         assertTrue(request(owner,"GET","/api/social/notifications",null,null,false).body().contains("MOVE club announcement"));
