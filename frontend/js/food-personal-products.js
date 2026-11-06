@@ -1,4 +1,4 @@
-// Athlete-owned label data. Public products are never overwritten or uploaded.
+// Label data can be shared inside CAP or kept private. External providers are never modified.
 document.addEventListener('DOMContentLoaded',()=>{
     const real=window.capReal,$=id=>document.getElementById(id);
     const allowed=()=>Boolean(real)&&window.capAccess.signedIn;
@@ -7,8 +7,8 @@ document.addEventListener('DOMContentLoaded',()=>{
     $('food-barcode-result').after(button);
     const libraryStatus=document.createElement('p');libraryStatus.className='sample-notice';libraryStatus.setAttribute('role','status');libraryStatus.hidden=true;button.after(libraryStatus);
     const dialog=document.createElement('dialog');dialog.className='club-dialog';dialog.id='personal-food-dialog';dialog.setAttribute('aria-labelledby','personal-food-title');
-    dialog.innerHTML=`<div class="session-dialog-header"><h2 id="personal-food-title">Mijn product bewaren</h2><button type="button" class="secondary-button session-dialog-close" aria-label="Sluiten"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button></div>
-      <p>Bewaard in jouw eigen productlijst. Neem de gegevens over van je verpakking.</p>
+    dialog.innerHTML=`<div class="session-dialog-header"><h2 id="personal-food-title">Product bewaren</h2><button type="button" class="secondary-button session-dialog-close" aria-label="Sluiten"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button></div>
+      <p>Neem de gegevens over van je verpakking. Deel het product met CAP zodat anderen het ook kunnen opzoeken.</p>
       <form class="club-form"><label>Barcode<input name="barcode" readonly required></label>
       <div class="profile-fields"><label>Productnaam<input name="name" maxlength="120" required></label><label>Merk (optioneel)<input name="brand" maxlength="160"></label>
       <label>Waarden op het etiket voor<input name="baseAmount" type="number" min="0.001" max="100000" step="any" inputmode="decimal" value="100" required></label>
@@ -18,13 +18,15 @@ document.addEventListener('DOMContentLoaded',()=>{
       <label>Koolhydraten (g)<input name="carbsG" type="number" min="0" max="1000000" step="any" inputmode="decimal"></label>
       <label>Vetten (g)<input name="fatG" type="number" min="0" max="1000000" step="any" inputmode="decimal"></label></div>
       <p class="sample-notice">Bijvoorbeeld: een portie poeder van 30 g. Laat niet-vermelde waarden leeg; vul 0 alleen in als het etiket dat aangeeft. Met ontbrekende waarden wordt het product wel herkend, maar nog niet als calorieportie gelogd.</p>
+      <label class="personal-food-confirm"><input name="shared" type="checkbox" checked><span>Delen met iedereen bij CAP (communityproduct)</span></label>
+      <p class="sample-notice">Alleen productgegevens worden gedeeld, zonder jouw naam. Bestaande gedeelde barcodes worden niet overschreven. Vink delen uit om alleen voor jezelf te bewaren.</p>
       <label class="personal-food-confirm"><input name="confirmed" type="checkbox" required><span>Ik heb deze gegevens gecontroleerd op mijn verpakking.</span></label>
-      <p role="status" aria-live="polite"></p><div class="editor-actions"><button type="submit" class="primary-button">Bewaren in mijn producten</button><button type="button" class="secondary-button" data-delete hidden>Eigen product verwijderen</button></div></form>`;
+      <p role="status" aria-live="polite"></p><div class="editor-actions"><button type="submit" class="primary-button">Product bewaren</button><button type="button" class="secondary-button" data-delete hidden>Eigen product verwijderen</button></div></form>`;
     document.body.append(dialog);const form=dialog.querySelector('form'),status=dialog.querySelector('[role=status]'),remove=dialog.querySelector('[data-delete]');
     function setBusy(value){busy=value;dialog.querySelectorAll('button,input,select').forEach(control=>control.disabled=value);}
     function edit(value){
         if(!allowed()||busy||!value?.barcode)return;
-        original=value.source==='personal'?value:null;form.reset();
+        original=value.source==='personal'?value:null;form.reset();form.elements.shared.checked=!original&&value.source!=='community';
         form.elements.barcode.value=value.barcode;form.elements.name.value=value.name||'';form.elements.brand.value=value.brand||'';
         form.elements.unit.value=['g','ml'].includes(value.unit)?value.unit:'';
         for(const key of ['calories','proteinG','carbsG','fatG'])form.elements[key].value=value[key]??'';
@@ -41,10 +43,10 @@ document.addEventListener('DOMContentLoaded',()=>{
     document.addEventListener('cap:food-product-result',event=>{
         if(!allowed())return;
         current=event.detail.value||{barcode:event.detail.barcode};
-        button.textContent=current.source==='personal'?'Eigen product bewerken':'Bewaren als mijn product';button.hidden=false;
+        button.textContent=current.source==='personal'?'Eigen product bewerken':current.source==='community'?'Eigen versie bewaren':'Product toevoegen / delen';button.hidden=false;
     });
     function reset(){button.hidden=true;current=null;}
-    $('food-barcode').addEventListener('input',()=>{reset();const code=$('food-barcode').value.trim().replace(/[ -]/g,'');if(allowed()&&/^(?:[0-9]{8}|[0-9]{12,14})$/.test(code)){current={barcode:code};button.hidden=false;button.textContent='Eigen product toevoegen';}});document.addEventListener('cap:food-lookup-reset',reset);
+    $('food-barcode').addEventListener('input',()=>{reset();const code=$('food-barcode').value.trim().replace(/[ -]/g,'');if(allowed()&&/^(?:[0-9]{8}|[0-9]{12,14})$/.test(code)){current={barcode:code};button.hidden=false;button.textContent='Product toevoegen / delen';}});document.addEventListener('cap:food-lookup-reset',reset);
     dialog.querySelector('.session-dialog-close').addEventListener('click',()=>{if(!busy)dialog.close();});
     dialog.addEventListener('cancel',event=>{if(busy)event.preventDefault();});
     form.addEventListener('submit',async event=>{
@@ -53,11 +55,12 @@ document.addEventListener('DOMContentLoaded',()=>{
         for(const key of ['calories','proteinG','carbsG','fatG'])input[key]=form.elements[key].value.trim()===''?null:Number(form.elements[key].value);
         setBusy(true);status.textContent='Product bewaren…';
         try{
-            const saved=await real.request('/api/food-products/personal/'+form.elements.barcode.value,'PUT',input);
+            const shared=form.elements.shared.checked;
+            const saved=await real.request('/api/food-products/'+(shared?'community/':'personal/')+form.elements.barcode.value,'PUT',input);
             dialog.close();await refresh(true);
-            $('food-barcode-status').textContent=saved.complete?'Eigen product bewaard. Vul je hoeveelheid in.':'Eigen product bewaard. De barcode wordt voortaan herkend; vul ontbrekende voedingswaarden later aan.';
+            $('food-barcode-status').textContent=saved.source==='community'?'Product gedeeld met CAP. Iedereen kan het nu opzoeken en scannen.':saved.complete?'Eigen product bewaard. Vul je hoeveelheid in.':'Eigen product bewaard. De barcode wordt voortaan herkend; vul ontbrekende voedingswaarden later aan.';
             if(saved.complete)window.capFoodDiary.selectBarcodeProduct(saved);
-            current=saved;button.hidden=false;button.textContent='Eigen product bewerken';
+            current=saved;button.hidden=false;button.textContent=saved.source==='community'?'Eigen versie bewaren':'Eigen product bewerken';
         }catch(error){status.textContent=error.message;}
         finally{setBusy(false);}
     });

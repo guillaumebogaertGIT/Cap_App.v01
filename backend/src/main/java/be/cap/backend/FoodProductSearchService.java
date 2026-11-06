@@ -16,7 +16,9 @@ import tools.jackson.databind.json.JsonMapper;
 /** Name/brand discovery only; nutrition is fetched separately after selection. */
 @Service
 public class FoodProductSearchService {
-    public record Hit(String barcode, String name, String brand) {}
+    public record Hit(String barcode, String name, String brand,String source) {
+        public Hit(String barcode,String name,String brand){this(barcode,name,brand,"openfoodfacts");}
+    }
     public record Results(List<Hit> products, int page, boolean hasMore) {}
     record ProviderResponse(int status, String body) {}
     @FunctionalInterface interface Gateway { ProviderResponse fetch(String query, int page) throws IOException, InterruptedException; }
@@ -42,13 +44,49 @@ public class FoodProductSearchService {
         clock=Clock.systemUTC();
     }
     FoodProductSearchService(Gateway gateway,Clock clock){this.gateway=gateway;this.clock=clock;}
-    static String query(String raw) {
+    public static String query(String raw) {
         if(raw==null || raw.length()>120)throw invalid();
         String value=raw.toLowerCase(Locale.ROOT).replaceAll("[^\\p{L}\\p{N}\\p{M}\\s]"," ").trim().replaceAll("\\s+"," ");
         if(value.length()<2 || value.length()>80)throw invalid();
         return value;
     }
-    static String providerQuery(String normalized) { return "countries_tags:\"en:belgium\" AND "+normalized.replace(" "," AND "); }
+    // Store names need not occur in product names: search the retailer and its own brands.
+    private static final Map<String,List<String>> RETAILERS=Map.ofEntries(
+        Map.entry("lidl",List.of("lidl","milbona","lovilio","italiamo","deluxe")),
+        Map.entry("aldi",List.of("aldi","milsani")),
+        Map.entry("colruyt",List.of("colruyt","boni","everyday")),
+        Map.entry("okay",List.of("okay","boni","everyday")),
+        Map.entry("spar",List.of("spar","boni","everyday")),
+        Map.entry("delhaize",List.of("delhaize","365")),
+        Map.entry("carrefour",List.of("carrefour","simpl")),
+        Map.entry("albert heijn",List.of("albert heijn","ah")),
+        Map.entry("ah",List.of("albert heijn","ah")),
+        Map.entry("jumbo",List.of("jumbo")));
+    private static final Map<String,String> FOOD_TERMS=Map.ofEntries(
+        Map.entry("kaas","(kaas OR fromage OR cheese OR categories_tags:\"en:cheeses\")"),
+        Map.entry("melk","(melk OR lait OR milk)"),
+        Map.entry("brood","(brood OR pain OR bread)"),
+        Map.entry("kip","(kip OR poulet OR chicken)"),
+        Map.entry("yoghurt","(yoghurt OR yogurt OR yaourt)"),
+        Map.entry("eiwitpoeder","(eiwitpoeder OR proteine OR protein OR whey)"),
+        Map.entry("creatine","(creatine OR creatin OR kreatin)"));
+    static String providerQuery(String normalized) {
+        var terms=new ArrayList<String>();
+        var words=new ArrayList<>(List.of(normalized.split(" ")));
+        for(int i=0;i<words.size();i++) {
+            String token=words.get(i);
+            if(token.equals("albert")&&i+1<words.size()&&words.get(i+1).equals("heijn")){token="albert heijn";i++;}
+            List<String> brands=RETAILERS.get(token);
+            if(brands!=null){
+                var alternatives=new ArrayList<String>();
+                String store=token.equals("ah")?"albert-heijn":token.replace(' ','-');
+                alternatives.add("stores_tags:\""+store+"\"");
+                for(String brand:brands)alternatives.add("brands:\""+brand+"\"");
+                terms.add("("+String.join(" OR ",alternatives)+")");
+            }else terms.add(FOOD_TERMS.getOrDefault(token,token));
+        }
+        return "countries_tags:\"en:belgium\" AND "+String.join(" AND ",terms);
+    }
     private static ResponseStatusException invalid(){return new ResponseStatusException(HttpStatus.BAD_REQUEST,"Vul 2 tot 80 tekens van een productnaam of merk in.");}
     private ResponseStatusException unavailable(){return new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE,"Producten zoeken is tijdelijk niet beschikbaar. Probeer opnieuw of gebruik de barcode.");}
     private ResponseStatusException limited(){return new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS,"Er zijn veel zoekopdrachten. Wacht een minuut en probeer opnieuw.");}

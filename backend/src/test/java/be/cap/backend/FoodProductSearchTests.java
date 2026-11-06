@@ -25,7 +25,23 @@ class FoodProductSearchTests {
         assertEquals("Boni",found.products().getFirst().brand());assertTrue(found.hasMore());
         assertEquals(found,service.search("boni yoghurt",1));assertEquals(1,calls.get());
         assertEquals(2,service.search("boni yoghurt",2).page());assertEquals(2,calls.get());
-        assertEquals("countries_tags:\"en:belgium\" AND boni AND yoghurt",FoodProductSearchService.providerQuery("boni yoghurt"));
+        assertEquals("countries_tags:\"en:belgium\" AND boni AND (yoghurt OR yogurt OR yaourt)",FoodProductSearchService.providerQuery("boni yoghurt"));
+    }
+    @Test void retailerQueriesMatchStoreAndBrandsWithoutDroppingBelgianScope() {
+        String lidl=FoodProductSearchService.providerQuery("lidl kaas");
+        assertTrue(lidl.startsWith("countries_tags:\"en:belgium\" AND ("));
+        assertTrue(lidl.contains("stores_tags:\"lidl\""));
+        assertTrue(lidl.contains("brands:\"milbona\""));
+        assertTrue(lidl.endsWith("AND (kaas OR fromage OR cheese OR categories_tags:\"en:cheeses\")"));
+        for(String store:new String[]{"aldi","colruyt","okay","spar","delhaize","carrefour","albert heijn","ah","jumbo"}) {
+            String query=FoodProductSearchService.providerQuery(store+" melk");
+            assertTrue(query.contains("stores_tags:"),store);
+            assertTrue(query.endsWith("AND (melk OR lait OR milk)"),store);
+        }
+        assertTrue(FoodProductSearchService.providerQuery("aldi kaas").contains("brands:\"milsani\""));
+        assertTrue(FoodProductSearchService.providerQuery("colruyt brood").contains("brands:\"boni\""));
+        assertTrue(FoodProductSearchService.providerQuery("carrefour kip").contains("brands:\"simpl\""));
+        assertEquals(FoodProductSearchService.providerQuery("albert heijn melk"),FoodProductSearchService.providerQuery("ah melk"));
     }
     @Test void validatesQueriesPagesAndPreventsLuceneScopeInjection() {
         var calls=new AtomicInteger();

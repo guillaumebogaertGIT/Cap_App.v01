@@ -33,13 +33,13 @@ document.addEventListener('DOMContentLoaded', () => {
     function render(remote = []) {
         const local = api.searchProducts(input.value);
         const ids = new Set(local.map(food => food.id));
-        options = [...local.map(food => ({ ...food, local: true })), ...remote.filter(food => !ids.has('off:' + food.barcode) && !ids.has('personal:' + food.barcode))];
+        options = [...local.map(food => ({ ...food, local: true })), ...remote.filter(food => !ids.has('off:' + food.barcode) && !ids.has('personal:' + food.barcode) && !ids.has('community:' + food.barcode))];
         list.replaceChildren(); active = -1; input.removeAttribute('aria-activedescendant');
         options.forEach((food,index) => {
             const row = document.createElement('button'); row.type = 'button'; row.className = 'food-suggestion'; row.id = 'food-suggestion-' + index;
             row.setAttribute('role', 'option'); row.setAttribute('aria-selected', 'false'); row.tabIndex = -1;
             const name = document.createElement('strong'); name.textContent = food.name;
-            const source = document.createElement('small'); source.textContent = food.local ? (food.source === 'personal' ? 'Mijn product' : 'Bibliotheek') + ' · ' + (food.complete ? food.unit : 'waarden aanvullen') : [food.brand, 'Belgisch marktproduct'].filter(Boolean).join(' · ');
+            const source = document.createElement('small'); source.textContent = food.local ? (food.source === 'personal' ? 'Mijn product' : food.source === 'community' ? 'CAP-communityproduct' : 'Bibliotheek') + ' · ' + (food.complete ? food.unit : 'waarden aanvullen') : [food.brand, food.source==='community'?'CAP-communityproduct':'Belgisch marktproduct'].filter(Boolean).join(' · ');
             row.append(name,source); row.addEventListener('mousedown', event => event.preventDefault()); row.addEventListener('click', () => choose(food)); list.append(row);
         });
         const show = wantsOpen && allowed() && document.activeElement === input && options.length > 0;

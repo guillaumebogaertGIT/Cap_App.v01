@@ -34,6 +34,7 @@ class StaffRequestAuthorization {
         if(path.equals("/api/nutrition-targets/self"))return get||!athlete&&method.equals("PUT");
         if(path.startsWith("/api/nutrition-targets"))return athlete && get || policy.allows(user,NUTRITION_MANAGE);
         if(path.startsWith("/api/food-diary"))return true; // Principal ownership is enforced in the controller; cross-client reads keep their staff guard.
+        if(path.startsWith("/api/food-products/community/"))return method.equals("PUT")&&(athlete||policy.allows(user,NUTRITION_MANAGE));
         if(path.equals("/api/food-products/personal"))return get;
         if(path.startsWith("/api/food-products/personal/"))return method.equals("PUT")||method.equals("DELETE");
         if(path.startsWith("/api/food-products/"))return get;

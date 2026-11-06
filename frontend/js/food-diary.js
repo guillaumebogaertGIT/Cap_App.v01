@@ -86,7 +86,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if(code.length===12)code='0'+code;
                 else if(code.length===14&&code.startsWith('0'))code=code.slice(1);
             }
-            const food = { ...value, id: (value.source === 'personal' ? 'personal:' : 'off:') + code, baseAmount: 100,
+            const food = { ...value, id: (value.source === 'personal' ? 'personal:' : value.source === 'community' ? 'community:' : 'off:') + code, baseAmount: 100,
                 name: (value.brand && !normalize(value.name).includes(normalize(value.brand)) ? `${value.name} — ${value.brand}` : value.name).slice(0, 120) };
             const index = foods.findIndex(item => item.id === food.id);
             if (index < 0) foods.push(food); else foods[index] = food;
@@ -162,10 +162,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const food = product();
         let source = $('food-selected-source');
         if (!source) { source = node('p', '', 'sample-notice'); source.id = 'food-selected-source'; $('food-product').closest('label').after(source); }
-        source.replaceChildren(); source.hidden = !(food?.id.startsWith('off:') || food?.id.startsWith('personal:'));
+        source.replaceChildren(); source.hidden = !(food?.id.startsWith('off:') || food?.id.startsWith('personal:') || food?.id.startsWith('community:'));
         if (!source.hidden) {
             source.append(document.createTextNode(`Voedingswaarden per 100 ${food.unit} · `));
-            if (food.id.startsWith('personal:')) source.append(document.createTextNode('Eigen etiket'));
+            if (food.id.startsWith('community:')) source.append(document.createTextNode('CAP-community: etiket toegevoegd door een gebruiker. Controleer je verpakking.'));
+            else if (food.id.startsWith('personal:')) source.append(document.createTextNode('Eigen etiket'));
             else {
                 const link = node('a', 'Open Food Facts'); link.href = 'https://world.openfoodfacts.org/product/' + food.id.slice(4);
                 link.target = '_blank'; link.rel = 'noopener noreferrer'; source.append(link);
@@ -243,6 +244,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     const source = node('a', 'Bron: Open Food Facts'); source.href = 'https://world.openfoodfacts.org/product/' + entry.foodId.slice(4);
                     source.target = '_blank'; source.rel = 'noopener noreferrer'; description.append(source);
                 }
+                if (/^community:[0-9]{8,14}$/.test(entry.foodId || '')) description.append(node('small','Bron: CAP-community (etiket van een gebruiker)'));
                 if (/^personal:[0-9]{8,14}$/.test(entry.foodId || '')) description.append(node('small','Bron: eigen etiket'));
                 row.append(description);
                 if (prefix === 'athlete-food') {

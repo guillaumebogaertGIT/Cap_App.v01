@@ -25,24 +25,24 @@ public class PersonalFoodProductService {
         var account=accounts.account(principal.getName());
         return account;
     }
-    private String key(String raw) {
+    static String key(String raw) {
         String code=FoodProductService.validBarcode(raw);
         if(code.length()==12)return "0"+code;
         if(code.length()==14&&code.startsWith("0"))return code.substring(1);
         return code;
     }
-    private String text(String raw,int max,boolean required) {
+    private static String text(String raw,int max,boolean required) {
         String value=raw==null?"":raw.trim();
         if(value.length()>max || required&&value.isBlank())throw invalid();
         return value;
     }
-    private Double number(Double value,double factor,double max) {
+    private static Double number(Double value,double factor,double max) {
         if(value==null)return null;
         double normalized=value*factor;
         if(!Double.isFinite(value)||value<0||value>1000000||!Double.isFinite(normalized)||normalized>max)throw invalid();
         return normalized;
     }
-    private ResponseStatusException invalid(){return new ResponseStatusException(HttpStatus.BAD_REQUEST,"Controleer naam, eenheid, etiketportie en voedingswaarden. Laat onbekende waarden leeg.");}
+    private static ResponseStatusException invalid(){return new ResponseStatusException(HttpStatus.BAD_REQUEST,"Controleer naam, eenheid, etiketportie en voedingswaarden. Laat onbekende waarden leeg.");}
     @Transactional(readOnly=true)
     public List<FoodProductService.Product> list(Principal principal) {
         var user=owner(principal);
@@ -63,15 +63,7 @@ public class PersonalFoodProductService {
     }
     public FoodProductService.Product save(Principal principal,String raw,Input input) {
         var user=owner(principal);String barcode=key(raw);
-        if(input==null)throw invalid();
-        String name=text(input.name(),120,true),brand=text(input.brand(),160,false);
-        if(!List.of("g","ml").contains(input.unit()==null?"":input.unit()))throw invalid();
-        if(input.baseAmount()==null||!Double.isFinite(input.baseAmount())||input.baseAmount()<=0||input.baseAmount()>100000)throw invalid();
-        double factor=100/input.baseAmount();
-        Double calories=number(input.calories(),factor,1500),protein=number(input.proteinG(),factor,100),carbs=number(input.carbsG(),factor,100),fat=number(input.fatG(),factor,100);
-        boolean complete=calories!=null&&protein!=null&&carbs!=null&&fat!=null;
-        if(protein!=null&&carbs!=null&&fat!=null&&protein+carbs+fat>110)throw invalid();
-        var product=new FoodProductService.Product(barcode,name,brand,input.unit(),calories,protein,carbs,fat,complete,null,"personal");
+        var product=normalize(barcode,input,"personal");
         jdbc.queryForObject("SELECT id FROM cap_user WHERE id=? FOR UPDATE",UUID.class,user.id());
         boolean exists=jdbc.queryForObject("SELECT COUNT(*) FROM personal_food_product WHERE user_id=? AND barcode=?",Integer.class,user.id(),barcode)>0;
         if(exists)jdbc.update("UPDATE personal_food_product SET payload=?,updated_at=CURRENT_TIMESTAMP WHERE user_id=? AND barcode=?",mapper.writeValueAsString(product),user.id(),barcode);
@@ -88,4 +80,16 @@ public class PersonalFoodProductService {
         if(jdbc.update("DELETE FROM personal_food_product WHERE user_id=? AND barcode=?",user.id(),key(raw))==0)
             throw new ResponseStatusException(HttpStatus.NOT_FOUND,"Eigen product niet gevonden.");
     }
+    static FoodProductService.Product normalize(String barcode,Input input,String source) {
+        if(input==null)throw invalid();
+        String name=text(input.name(),120,true),brand=text(input.brand(),160,false);
+        if(!List.of("g","ml").contains(input.unit()==null?"":input.unit()))throw invalid();
+        if(input.baseAmount()==null||!Double.isFinite(input.baseAmount())||input.baseAmount()<=0||input.baseAmount()>100000)throw invalid();
+        double factor=100/input.baseAmount();
+        Double calories=number(input.calories(),factor,1500),protein=number(input.proteinG(),factor,100),carbs=number(input.carbsG(),factor,100),fat=number(input.fatG(),factor,100);
+        boolean complete=calories!=null&&protein!=null&&carbs!=null&&fat!=null;
+        if(protein!=null&&carbs!=null&&fat!=null&&protein+carbs+fat>110)throw invalid();
+        return new FoodProductService.Product(barcode,name,brand,input.unit(),calories,protein,carbs,fat,complete,null,source);
+    }
+
 }

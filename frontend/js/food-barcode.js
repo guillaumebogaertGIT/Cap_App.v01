@@ -28,6 +28,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const row = node('div'); row.append(node('dt', label), node('dd', format(amount) + (amount == null ? '' : ' ' + unit))); nutrients.append(row);
         }
         result.append(nutrients);
+        if (value.source === 'community') result.append(node('p','CAP-community: toegevoegd door een gebruiker. Controleer de waarden op je verpakking.','sample-notice'));
         if (value.source === 'personal') result.append(node('p','Eigen product · alleen in jouw account','sample-notice'));
         else {
             const source = node('a', 'Bekijk product op Open Food Facts');
