@@ -10,18 +10,26 @@
 
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/polish.css">
+    <link rel="stylesheet" href="css/owner-agenda.css">
+    <link rel="stylesheet" href="css/owner-home.css">
+    <link rel="stylesheet" href="css/coach-shifts.css">
+    <link rel="stylesheet" href="css/notifications.css">
+    <link rel="stylesheet" href="css/messages.css">
+    <link rel="stylesheet" href="css/community.css">
     <link rel="stylesheet" href="css/auth.css">
     <script src="js/preview-storage.js" defer></script>
     <script src="js/auth-preview.js" defer></script>
     <script src="js/staff-ui.js" defer></script>
     <script src="js/athlete-details.js" defer></script>
     <script src="js/navigation.js" defer></script>
+    <script src="js/owner-agenda.js" defer></script>
     <script src="js/workout-view.js" defer></script>
     <script src="js/exercise-catalog.js" defer></script>
     <script src="js/exercise-video.js" defer></script>
     <script src="js/assignment-agenda.js" defer></script>
     <script src="js/session-access.js" defer></script>
     <script src="js/club.js" defer></script>
+    <script src="js/coach-shifts.js" defer></script>
     <script src="js/planning-calendar.js" defer></script>
     <script src="js/exercise-data.js" defer></script>
     <script src="js/exercise-picker.js" defer></script>
@@ -31,9 +39,15 @@
     <script src="js/account-menu.js" defer></script>
     <script src="js/billing.js" defer></script>
     <script src="js/coach-membership.js" defer></script>
+    <script src="js/complimentary-memberships.js" defer></script>
     <script src="js/finance.js" defer></script>
     <script src="js/password.js" defer></script>
+    <script src="js/email-preferences.js" defer></script>
     <script src="js/colleagues.js" defer></script>
+    <script src="js/chat-attachments.js" defer></script>
+    <script src="js/community-channels.js" defer></script>
+    <script src="js/social.js" defer></script>
+    <script src="js/notifications.js" defer></script>
     <script src="js/backend-status.js" defer></script>
     <script src="js/workouts-api.js" defer></script>
     <script src="js/training.js" defer></script>
@@ -41,6 +55,8 @@
     <script src="js/coach-health.js" defer></script>
     <script src="js/nutrition-calculator.js" defer></script>
     <script src="js/nutrition.js" defer></script>
+    <script src="js/my-nutrition.js" defer></script>
+    <script src="js/health-navigation.js" defer></script>
     <script src="js/food-data.js" defer></script>
     <script src="js/food-diary.js" defer></script>
     <script src="js/food-barcode.js" defer></script>
@@ -49,6 +65,7 @@
     <script src="js/food-scanner.js" defer></script>
     <script src="js/date-inputs.js" defer></script>
     <script src="js/home-training.js" defer></script>
+    <script src="js/owner-home.js" defer></script>
     <script src="js/dialog-close.js" defer></script>
 </head>
 
@@ -92,7 +109,9 @@
             <a href="#colleagues" data-view-link="colleagues" data-coach-only hidden>Collega’s</a>
             <a href="#finance" data-view-link="finance" data-coach-only hidden>Financiën</a>
             <a href="#planning" data-view-link="planning">Planning</a>
+            <a href="#owner-agenda" data-view-link="owner-agenda" data-coach-only hidden>Taken &amp; agenda <span id="agenda-unread" hidden></span></a>
             <a href="#bookings" data-view-link="bookings">Boekingen</a>
+            <a href="#community" data-view-link="community">Community</a>
             <a href="#" data-coach-only>Basketball</a>
             <a href="#" data-coach-only>Recovery</a>
             <a href="#health" data-view-link="health" data-athlete-only>Gezondheid &amp; Progress</a>
@@ -113,6 +132,11 @@
 
     <main>
         <div class="account-bar">
+            <div class="account-tools">
+                <a id="header-messages" class="account-icon-button" href="#messages" aria-label="Berichten" title="Berichten"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M21 4H3v13h5l4 4 4-4h5zM7 8h10M7 12h7"/></svg><span id="header-message-count" class="account-icon-count" hidden aria-hidden="true"></span></a>
+                <button id="header-notifications" class="account-icon-button" type="button" aria-label="Meldingen" title="Meldingen" aria-expanded="false" aria-controls="header-notification-panel"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4M12 2V1"/></svg><span id="header-notification-count" class="account-icon-count" hidden aria-hidden="true"></span></button>
+            </div>
+            <section id="header-notification-panel" class="header-notification-panel" aria-labelledby="header-notification-title" hidden><div class="header-notification-heading"><h2 id="header-notification-title">Meldingen</h2><button id="header-notification-close" type="button" class="secondary-button" aria-label="Meldingen sluiten">×</button></div><p id="header-notification-status" role="status"></p><button id="header-notification-retry" type="button" class="secondary-button" hidden>Opnieuw laden</button><ul id="header-notification-list"></ul></section>
             <div class="account-menu">
                 <button id="account-toggle" class="account-toggle" type="button" aria-expanded="false" aria-controls="account-links">
                     <span class="account-avatar" aria-hidden="true">G</span>
@@ -158,6 +182,23 @@
             </div>
         </details>
 
+        <section id="owner-agenda" data-view aria-labelledby="owner-agenda-title" hidden>
+            <header class="dashboard-header"><div><h2 id="owner-agenda-title" tabindex="-1">Taken &amp; agenda</h2><p class="dashboard-intro">Samen overzicht houden. Plan een taak en vink af wat klaar is.</p></div><button id="agenda-add" class="primary-button" type="button">Taak toevoegen</button></header>
+            <p id="agenda-status" role="status"></p><button id="agenda-refresh" type="button" class="secondary-button">Vernieuwen</button>
+            <div class="owner-agenda-layout">
+                <div class="agenda-calendar-panel">
+                    <div class="agenda-toolbar"><button id="agenda-prev" type="button" class="secondary-button" aria-label="Vorige maand">←</button><h3 id="agenda-month"></h3><button id="agenda-next" type="button" class="secondary-button" aria-label="Volgende maand">→</button><button id="agenda-today" type="button" class="secondary-button">Vandaag</button></div>
+                    <div class="agenda-weekdays" aria-hidden="true"><span>Ma</span><span>Di</span><span>Wo</span><span>Do</span><span>Vr</span><span>Za</span><span>Zo</span></div>
+                    <div id="agenda-grid" class="agenda-grid" role="group" aria-labelledby="agenda-month"></div>
+                </div>
+                <div class="agenda-day-panel"><h3 id="agenda-day" tabindex="-1"></h3><label class="agenda-completed-filter"><input id="agenda-show-done" type="checkbox" checked> Afgeronde taken tonen</label><div id="agenda-tasks"></div></div>
+            </div>
+            <div class="agenda-notifications"><h3>Workoutmeldingen <span id="agenda-notification-count"></span></h3><p>Nieuwe voltooide workouts. Gelezen meldingen worden per admin bewaard.</p><ul id="agenda-notifications"></ul></div>
+            <dialog id="agenda-dialog" class="club-dialog" aria-labelledby="agenda-dialog-title">
+                <div class="session-dialog-header"><h2 id="agenda-dialog-title">Taak toevoegen</h2><button id="agenda-close" type="button" class="secondary-button session-dialog-close" aria-label="Sluiten"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button></div>
+                <form id="agenda-form" class="club-form"><label>Taak<input name="title" required maxlength="160"></label><label>Datum<input name="date" type="date" required min="1900-01-01" max="2200-12-31"></label><fieldset><legend>Verantwoordelijke</legend><div id="agenda-assignees"></div></fieldset><label>Notities (optioneel)<textarea name="notes" maxlength="2000" rows="3"></textarea></label><p id="agenda-form-status" role="status"></p><button class="primary-button" type="submit">Taak bewaren</button></form>
+            </dialog>
+        </section>
         <section id="coach" data-view aria-labelledby="coach-title" hidden>
             <header class="dashboard-header">
                 <div>
@@ -167,6 +208,15 @@
                 </div>
                 <img class="dashboard-wordmark" src="img/Stronger-Together.png" alt="Stronger Together">
             </header>
+            <div id="owner-home" hidden>
+                <div class="owner-home-toolbar"><p id="owner-home-date"></p><div class="owner-home-actions"><button id="owner-home-lesson" type="button" class="primary-button">Les toevoegen</button><button id="owner-home-refresh" type="button" class="secondary-button">Vernieuwen</button></div></div>
+                <p id="owner-home-feedback" role="status"></p>
+                <div class="owner-home-layout">
+                    <section class="owner-home-lessons" aria-labelledby="owner-home-lessons-title"><div class="owner-home-section-heading"><h3 id="owner-home-lessons-title">Sessies vandaag</h3><a href="#planning">Volledige planning</a></div><p id="owner-home-lessons-status" role="status"></p><div id="owner-home-lessons"></div></section>
+                    <section class="owner-home-tasks" aria-labelledby="owner-home-tasks-title"><div class="owner-home-section-heading"><h3 id="owner-home-tasks-title">Taken van vandaag</h3><button id="owner-home-task" type="button" class="primary-button owner-home-task-add" aria-label="Taak toevoegen voor vandaag" title="Taak toevoegen voor vandaag"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button></div><p id="owner-home-tasks-status" role="status"></p><p id="owner-home-task-summary"></p><div id="owner-home-tasks"></div><a class="owner-home-agenda-link" href="#owner-agenda">Open Taken &amp; agenda →</a></section>
+                    <section class="owner-home-completions" aria-labelledby="owner-home-completions-title"><div class="owner-home-section-heading"><h3 id="owner-home-completions-title">Recent getraind</h3><a href="#owner-agenda">Alle meldingen</a></div><p id="owner-home-completions-status" role="status"></p><ul id="owner-home-completions"></ul></section>
+                </div>
+            </div>
             <nav class="home-tiles" aria-label="Coachtaken">
                 <a class="home-tile" href="#planning">
                     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v16H4zM8 3v4m8-4v4M4 11h16"/></svg>

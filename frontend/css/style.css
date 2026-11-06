@@ -79,6 +79,10 @@
     background: var(--highlight);
     color: var(--text);
 }
+nav[aria-label="Gezondheidsweergave"] [aria-current="page"] {
+    background: var(--highlight);
+    border-color: var(--accent-text);
+}
 .club-toolbar, .club-quick-links, .club-actions {
     display: flex;
     flex-wrap: wrap;

@@ -27,7 +27,7 @@ public class LessonAccess {
     public void reserve(UUID owner,UUID session,Instant starts) {
         if (!enabled()) return;
         jdbc.queryForObject("SELECT id FROM cap_user WHERE id=? FOR UPDATE",UUID.class,owner);
-        boolean membership=orders.hasPrepaidAccess(owner,starts) || jdbc.query("""
+        boolean membership=ComplimentaryMemberships.access(jdbc,owner,starts) || orders.hasPrepaidAccess(owner,starts) || jdbc.query("""
             SELECT price_id FROM billing_subscription WHERE user_id=? AND status='active' AND payment_status='paid'
             AND period_start<=? AND period_end>? AND (term_end IS NULL OR term_end>?)
             """,(r,i)->r.getString("price_id"),owner,Timestamp.from(starts),Timestamp.from(starts),Timestamp.from(starts))

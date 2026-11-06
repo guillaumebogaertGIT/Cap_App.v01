@@ -1,0 +1,17 @@
+.account-bar { position: relative; align-items: center; gap: .65rem; }
+.account-tools { display: flex; gap: .35rem; flex-shrink: 0; }
+.account-icon-button { position: relative; display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; padding: .55rem; box-sizing: border-box; border: 1px solid var(--border); border-radius: 50%; background: var(--surface); color: var(--text); cursor: pointer; text-decoration: none; }
+.account-icon-button svg { width: 22px; height: 22px; }
+.account-icon-button:hover,.account-icon-button[aria-expanded="true"] { background: var(--highlight); border-color: var(--accent-text); }
+.account-icon-count { position: absolute; top: -.3rem; right: -.3rem; min-width: 1.15rem; padding: .05rem .2rem; box-sizing: border-box; border-radius: 1rem; background: #ad350c; color: #fff; font-size: .7rem; font-weight: 700; text-align: center; }
+.header-notification-panel { position: absolute; top: calc(100% + .5rem); right: 0; z-index: 30; width: min(25rem,calc(100vw - 2rem)); box-sizing: border-box; max-height: min(70dvh,34rem); overflow-y: auto; background: var(--surface); border: 1px solid var(--border); border-radius: .8rem; padding: 1rem; box-shadow: 0 .5rem 1.5rem #0003; }
+.header-notification-heading { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+.header-notification-heading h2 { margin: 0; font-size: 1.2rem; }
+.header-notification-heading button { min-width: 44px; min-height: 44px; }
+#header-notification-list { list-style: none; padding: 0; margin: .5rem 0 0; }
+#header-notification-list li { border-bottom: 1px solid var(--border); }
+.header-notification-item { display: block; width: 100%; padding: .8rem .25rem; border: 0; background: transparent; color: var(--text); text-align: start; font: inherit; cursor: pointer; }
+.header-notification-item:hover { background: var(--hover); }
+.header-notification-item span,.header-notification-item small { display: block; overflow-wrap: anywhere; }
+.header-notification-item small { color: var(--muted); margin-top: .3rem; }
+@media(max-width:600px) { .account-bar > .account-menu { min-width: 0; } .account-toggle > span:nth-child(2) { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } .account-toggle { gap: .4rem; } }

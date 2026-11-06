@@ -4,7 +4,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const panel = $('food-barcode-panel'), form = $('food-barcode-form'), input = $('food-barcode');
     const status = $('food-barcode-status'), result = $('food-barcode-result'), manual = $('food-barcode-manual');
     const submit = form.querySelector('button');
-    const allowed = () => window.capAccess.signedIn && previewRole === 'athlete' && Boolean(window.capFoodDiary);
+    const allowed = () => window.capAccess.signedIn && (previewRole === 'athlete'||location.hash==='#nutrition') && Boolean(window.capFoodDiary);
     const node = (tag, text, cls) => { const value = document.createElement(tag); if (text) value.textContent = text; if (cls) value.className = cls; return value; };
     const format = value => value == null ? 'Ontbreekt' : new Intl.NumberFormat('nl-BE', { maximumFractionDigits: 1 }).format(value);
     let generation = 0, controller = null;

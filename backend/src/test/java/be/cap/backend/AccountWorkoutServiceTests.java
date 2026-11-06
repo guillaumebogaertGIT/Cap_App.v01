@@ -16,6 +16,7 @@ class AccountWorkoutServiceTests {
     @org.springframework.test.context.DynamicPropertySource
     static void postgres(org.springframework.test.context.DynamicPropertyRegistry properties) { PostgresTestDatabase.configure(properties,"workouts"); }
     @Autowired AccountService accounts;
+    @Autowired org.springframework.jdbc.core.JdbcTemplate jdbc;
     @Autowired AccountWorkoutService workouts;
     @Autowired PlanningService planning;
     @Autowired AccountExerciseService exercises;
@@ -44,6 +45,7 @@ class AccountWorkoutServiceTests {
         assertEquals("Squat",finished.planned().exercises().getFirst().name());
         assertEquals(first.id().toString(),finished.athleteId());
         assertEquals(finished.id(),workouts.finish(completion(progress,50),progress.version(),first).id());
+        assertEquals(1,jdbc.queryForObject("SELECT COUNT(*) FROM owner_workout_event WHERE athlete_id=? AND session_id=?",Integer.class,first.id(),finished.id()));
         assertNull(workouts.active(first));assertEquals(1,workouts.history(first,null).size());
         assertEquals(50.0,workouts.records(first,null).getFirst().kg());assertTrue(workouts.records(other,null).isEmpty());
         assertThrows(ResponseStatusException.class,()->workouts.history(other,first.id().toString()));

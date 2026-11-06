@@ -211,7 +211,8 @@ class AccountApiTests {
         String id=java.util.UUID.randomUUID().toString();
         var input=new java.util.HashMap<String,Object>(java.util.Map.of("id",id,"date",day,"meal","breakfast","name","Test oats","amount",80,"unit","g","calories",300,"proteinG",12,"carbsG",45,"fatG",7));
         String body=json.writeValueAsString(input);
-        assertEquals(403,request(coach,"POST","/api/food-diary",body,csrf(coach),false).statusCode());
+        String coachEntry=body.replace(id,java.util.UUID.randomUUID().toString());
+        assertEquals(201,request(coach,"POST","/api/food-diary",coachEntry,csrf(coach),false).statusCode());
         assertEquals(403,request(owner,"POST","/api/food-diary",body,null,false).statusCode());
         assertEquals(201,request(owner,"POST","/api/food-diary",body,csrf(owner),false).statusCode());
         assertEquals(200,request(owner,"POST","/api/food-diary",body,csrf(owner),false).statusCode());
@@ -223,8 +224,8 @@ class AccountApiTests {
         assertEquals("[]",request(other,"GET","/api/food-diary?date="+day,null,null,false).body());
         assertEquals(404,request(other,"GET","/api/food-diary?date="+day+"&athleteId="+ownerId,null,null,false).statusCode());
         assertEquals(400,request(owner,"GET","/api/food-diary?date=invalid",null,null,false).statusCode());
-        assertEquals(400,request(coach,"GET","/api/food-diary?date="+day,null,null,false).statusCode());
-        assertEquals(403,request(coach,"DELETE","/api/food-diary/"+id,null,csrf(coach),false).statusCode());
+        assertEquals(200,request(coach,"GET","/api/food-diary?date="+day,null,null,false).statusCode());
+        assertEquals(404,request(coach,"DELETE","/api/food-diary/"+id,null,csrf(coach),false).statusCode());
         assertEquals(404,request(other,"DELETE","/api/food-diary/"+id,null,csrf(other),false).statusCode());
         input.put("id",java.util.UUID.randomUUID()); input.put("calories",-1);
         assertEquals(400,request(owner,"POST","/api/food-diary",json.writeValueAsString(input),csrf(owner),false).statusCode());

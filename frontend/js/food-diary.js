@@ -41,7 +41,6 @@
 })();
 
 document.addEventListener('DOMContentLoaded', () => {
-    if(window.capReal?.account.role==='COACH' && !window.capCan('NUTRITION_MANAGE'))return;
     const $ = id => document.getElementById(id);
     const math = window.capFoodMath;
     const foods = [...window.capFoodDatabase.foods];
@@ -61,7 +60,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const today = () => new Intl.DateTimeFormat('sv-SE', { timeZone: 'Europe/Brussels' }).format(new Date());
     const format = value => new Intl.NumberFormat('nl-BE', { maximumFractionDigits: 1 }).format(value);
     const normalize = value => String(value || '').normalize('NFD').replace(/\p{Diacritic}/gu, '').toLocaleLowerCase('nl-BE');
-    const canLog = () => window.capAccess.signedIn && previewRole === 'athlete';
+    const canLog = () => window.capAccess.signedIn && (previewRole === 'athlete'||location.hash==='#nutrition');
     const node = (tag, text, cls) => { const item = document.createElement(tag); if (text != null) item.textContent = text; if (cls) item.className = cls; return item; };
     const product = () => foods.find(food => food.id === $('food-product').value);
     function chooseFood(food) {
@@ -115,7 +114,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const dayKey = (id, date) => `${id}/${date}`;
     async function refreshDiary() {
         if (!real || !window.capAccess.signedIn || busy) return;
-        const prefix = previewRole === 'coach' ? 'coach-food' : 'athlete-food';
+        const prefix = location.hash === '#coach-nutrition' ? 'coach-food' : 'athlete-food';
         const id = prefix === 'coach-food' ? coachAthlete()?.id : athleteId;
         const date = $(prefix + '-date').value;
         const version = ++loadVersion;

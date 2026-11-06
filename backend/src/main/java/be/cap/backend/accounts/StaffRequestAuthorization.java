@@ -12,6 +12,11 @@ class StaffRequestAuthorization {
     StaffRequestAuthorization(StaffPolicy policy){this.policy=policy;}
     boolean allowed(AccountService.Account user,String method,String path) {
         boolean get=method.equals("GET"),athlete=user.role().equals("ATHLETE");
+        if(path.startsWith("/api/social/"))return athlete||java.util.Set.of("OWNER","MANAGER","INSTRUCTOR").contains(policy.role(user));
+        if(path.equals("/api/email-preferences"))return get||method.equals("PUT");
+        if(path.equals("/api/complimentary-memberships")||path.startsWith("/api/complimentary-memberships/"))return get&&athlete||policy.role(user).equals("OWNER");
+        if(path.equals("/api/coach-shifts")||path.startsWith("/api/coach-shifts/"))return get?java.util.Set.of("OWNER","MANAGER","INSTRUCTOR").contains(policy.role(user)):policy.role(user).equals("OWNER");
+        if(path.equals("/api/owner-agenda")||path.startsWith("/api/owner-agenda/"))return policy.role(user).equals("OWNER");
         if(path.equals("/api/accounts/me") || path.equals("/api/accounts/password") || path.startsWith("/api/accounts/profile")
             || path.equals("/api/measurements"))return true;
         if(path.equals("/api/accounts/invitations"))return policy.allows(user,CLIENT_SCOPE_MANAGE);
@@ -24,11 +29,12 @@ class StaffRequestAuthorization {
         if(path.startsWith("/api/coaches"))return (get || path.equals("/api/coaches") && method.equals("POST")
             || path.matches("/api/coaches/[^/]+/active") && method.equals("PUT")) && policy.allows(user,get?CLASS_VIEW:STAFF_MANAGE);
         if(path.startsWith("/api/measurements/athletes/"))return policy.allows(user,CLIENT_HEALTH);
+        if(path.equals("/api/nutrition-targets/self"))return get||!athlete&&method.equals("PUT");
         if(path.startsWith("/api/nutrition-targets"))return athlete && get || policy.allows(user,NUTRITION_MANAGE);
-        if(path.startsWith("/api/food-diary"))return athlete || get && policy.allows(user,NUTRITION_MANAGE);
-        if(path.equals("/api/food-products/personal"))return athlete && get;
-        if(path.startsWith("/api/food-products/personal/"))return athlete && (method.equals("PUT")||method.equals("DELETE"));
-        if(path.startsWith("/api/food-products/"))return get && (athlete || policy.allows(user,NUTRITION_MANAGE));
+        if(path.startsWith("/api/food-diary"))return true; // Principal ownership is enforced in the controller; cross-client reads keep their staff guard.
+        if(path.equals("/api/food-products/personal"))return get;
+        if(path.startsWith("/api/food-products/personal/"))return method.equals("PUT")||method.equals("DELETE");
+        if(path.startsWith("/api/food-products/"))return get;
         if(path.startsWith("/api/exercises"))return get?athlete || policy.allows(user,WORKOUT_VIEW):policy.allows(user,WORKOUT_TEMPLATE_MANAGE);
         if(path.startsWith("/api/workouts"))return get?athlete || policy.allows(user,WORKOUT_VIEW)
             :policy.allows(user,path.endsWith("/assignment")?WORKOUT_ASSIGN:WORKOUT_TEMPLATE_MANAGE);

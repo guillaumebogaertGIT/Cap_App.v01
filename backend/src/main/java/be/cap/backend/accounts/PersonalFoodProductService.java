@@ -23,7 +23,6 @@ public class PersonalFoodProductService {
     private AccountService.Account owner(Principal principal) {
         if(principal==null)throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
         var account=accounts.account(principal.getName());
-        if(!account.role().equals("ATHLETE"))throw new ResponseStatusException(HttpStatus.FORBIDDEN);
         return account;
     }
     private String key(String raw) {

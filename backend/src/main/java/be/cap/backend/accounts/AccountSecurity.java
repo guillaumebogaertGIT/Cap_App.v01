@@ -35,6 +35,7 @@ class AccountSecurity {
                 .dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
                 .requestMatchers(HttpMethod.GET, "/accounts/**", "/app/**").permitAll()
                 .requestMatchers("/api/health", "/api/accounts/csrf", "/api/accounts/accept", "/api/accounts/login").permitAll()
+                .requestMatchers("/api/accounts/recovery", "/api/accounts/recovery/confirm").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/billing/webhook").permitAll()
                 .requestMatchers("/api/**").access((authentication, context) -> {
                     var current=authentication.get();

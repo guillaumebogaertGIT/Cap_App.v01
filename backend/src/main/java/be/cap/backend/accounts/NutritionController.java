@@ -63,13 +63,24 @@ public class NutritionController {
     public Plan save(Principal principal, @PathVariable UUID athleteId, @RequestBody Input input) {
         var coach = accounts.account(principal.getName());
         new StaffPolicy(jdbc).require(coach,StaffPolicy.Permission.NUTRITION_MANAGE);
+        return savePlan(athleteId,input,coach,false);
+    }
+    @GetMapping("/self")
+    public ResponseEntity<Plan> self(Principal principal){var user=accounts.account(principal.getName());var plan=read(user.id());return plan==null?ResponseEntity.noContent().build():ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(plan);}
+    @PutMapping("/self")
+    public Plan saveSelf(Principal principal,@RequestBody Input input){
+        var user=accounts.account(principal.getName());
+        if(!user.role().equals("COACH"))throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+        return savePlan(user.id(),input,user,true);
+    }
+    private Plan savePlan(UUID athleteId,Input input,AccountService.Account coach,boolean self){
         if (input.targets() == null) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Vul alle vijf dagdoelen in.");
         var t = input.targets();
         valid(t.calories(), 1); valid(t.proteinG(), 0); valid(t.carbsG(), 0); valid(t.fatG(), 0); valid(t.waterMl(), 0);
         if (!Set.of("handmatig", "berekend", "berekend en aangepast").contains(input.origin() == null ? "" : input.origin()))
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Kies handmatige of berekende dagdoelen.");
         // Lock the athlete before update/insert so two coaches cannot race the first save.
-        var people = jdbc.query("SELECT id FROM cap_user WHERE id=? AND role='ATHLETE' FOR UPDATE",
+        var people = jdbc.query("SELECT id FROM cap_user WHERE id=?"+(self?"":" AND role='ATHLETE'")+" FOR UPDATE",
             (row, index) -> row.getObject(1), athleteId);
         if (people.isEmpty()) throw missing();
         var savedAt = Timestamp.from(Instant.now());

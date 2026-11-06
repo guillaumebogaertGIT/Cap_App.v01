@@ -539,6 +539,27 @@
         planSession(date) {
             if (coach() && date >= today()) openSession(undefined, date);
         },
+        renderUpcomingSessions(container, limit = 4, date = today()) {
+            const expanded = new Set([...container.querySelectorAll('.club-card[open]')].map(card => card.dataset.sessionId));
+            const moreOpen = container.querySelector('.owner-home-more-sessions')?.open || false;
+            const sessions = data.sessions.filter(session => visibleSession(session) && !session.cancelled && session.date === date && !past(session))
+                .sort((a, b) => `${a.date}${a.start}`.localeCompare(`${b.date}${b.start}`) || a.id.localeCompare(b.id));
+            container.replaceChildren();
+            const append = (session, target) => {
+                const card = sessionCard(session);card.dataset.sessionId = session.id;card.open = expanded.has(session.id);
+                card.querySelector('.slot-title').append(element('small', dateLabel(session.date)));
+                target.append(card);
+            };
+            sessions.slice(0, limit).forEach(session => append(session, container));
+            if (sessions.length > limit) {
+                const more = element('details', undefined, 'owner-home-more-sessions');more.open = moreOpen;
+                more.append(element('summary', `Meer sessies (${sessions.length - limit})`));
+                const list = element('div', undefined, 'owner-home-more-session-list');
+                sessions.slice(limit).forEach(session => append(session, list));more.append(list);container.append(more);
+            }
+            if (!sessions.length) container.append(element('p', 'Geen aankomende sessies meer vandaag.', 'club-empty'));
+            return sessions.length;
+        },
         renderCalendarDay(date, container, expandedId) {
             container.replaceChildren();
             const sessions = data.sessions.filter(session => visibleSession(session) && session.date === date && !session.cancelled)

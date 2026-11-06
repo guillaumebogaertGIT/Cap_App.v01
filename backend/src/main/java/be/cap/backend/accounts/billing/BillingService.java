@@ -235,6 +235,15 @@ public class BillingService {
         return summary(user);
     }
     public Summary summary(Account user) {
+        var base=paidSummary(user);
+        if(user.role().equals("COACH")||base.membershipAccess()||!ComplimentaryMemberships.access(jdbc,user.id(),Instant.now()))return base;
+        var day=LocalDate.now(ZoneId.of("Europe/Brussels"));
+        var gifts=jdbc.queryForList("SELECT * FROM complimentary_membership WHERE athlete_id=? AND revoked=FALSE AND starts_on<=? AND ends_on>=? ORDER BY ends_on DESC LIMIT 1",user.id(),day,day);
+        if(gifts.isEmpty())return base;
+        var gift=gifts.getFirst();var start=((java.sql.Date)gift.get("starts_on")).toLocalDate().atStartOfDay(ZoneId.of("Europe/Brussels")).toInstant();var end=((java.sql.Date)gift.get("ends_on")).toLocalDate().plusDays(1).atStartOfDay(ZoneId.of("Europe/Brussels")).toInstant();
+        return new Summary(base.configured(),base.testMode(),catalog.require((String)gift.get("offer_code")).name()+" · Toegekend door CAP",0,"EUR","active",true,start,end,base.cancelAtPeriodEnd(),base.cancelAt(),base.canceledAt(),base.syncedAt(),base.hasCustomer(),base.offers(),base.credits(),end,base.canCancel());
+    }
+    private Summary paidSummary(Account user) {
         // Coaching access comes from the COACH role, never a paid or expiring subscription.
         if ("COACH".equals(user.role())) return new Summary(false,true,"Coach — onbeperkte toegang",0,"EUR","coach",true,
             null,null,false,null,null,null,false,List.of(),0,null,false);

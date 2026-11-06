@@ -28,8 +28,8 @@ class PersonalFoodProductTests extends AccountApiTests {
             {"name":"Protein powder","brand":"Test","unit":"g","baseAmount":30,"calories":120,"proteinG":24,"carbsG":3,"fatG":1.5}
             """;
         assertEquals(403,request(first,"PUT",path,label,null,false).statusCode());
-        assertEquals(403,request(coach,"PUT",path,label,csrf(coach),false).statusCode());
-        assertEquals(403,request(coach,"GET","/api/food-products/personal",null,null,false).statusCode());
+        assertEquals(200,request(coach,"PUT",path,label,csrf(coach),false).statusCode());
+        assertTrue(request(coach,"GET","/api/food-products/personal",null,null,false).body().contains("Protein powder"));
         var saved=request(first,"PUT",path,label,csrf(first),false);assertEquals(200,saved.statusCode());
         assertEquals(80,json.readTree(saved.body()).path("proteinG").asDouble(),.0001);
         assertEquals("personal",json.readTree(saved.body()).path("source").asText());

@@ -1,7 +1,7 @@
 // Athlete-owned label data. Public products are never overwritten or uploaded.
 document.addEventListener('DOMContentLoaded',()=>{
     const real=window.capReal,$=id=>document.getElementById(id);
-    const allowed=()=>real?.account.role==='ATHLETE'&&window.capAccess.signedIn;
+    const allowed=()=>Boolean(real)&&window.capAccess.signedIn;
     let version=0,loading=false,busy=false,current=null,original=null;
     const button=document.createElement('button');button.type='button';button.className='secondary-button';button.hidden=true;
     $('food-barcode-result').after(button);

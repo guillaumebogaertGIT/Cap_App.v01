@@ -19,7 +19,7 @@ document.addEventListener('DOMContentLoaded', () => {
     input.setAttribute('aria-controls', list.id); input.setAttribute('aria-expanded', 'false'); input.setAttribute('aria-describedby', status.id);
     input.placeholder = 'Bijv. yoghurt, Boni of brood';
     document.querySelector('.food-portion-layout').after($('food-barcode-panel'));
-    const allowed = () => window.capAccess.signedIn && previewRole === 'athlete' && location.hash === '#nutrition';
+    const allowed = () => window.capAccess.signedIn && location.hash === '#nutrition';
     const cache = new Map();
     let generation = 0, controller = null, timer = null, lastRemoteAt = 0, options = [], active = -1, wantsOpen = false;
     function cancel() { ++generation; clearTimeout(timer); controller?.abort(); controller = null; search.disabled=false;more.disabled=false; }

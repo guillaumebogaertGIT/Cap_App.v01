@@ -4,7 +4,7 @@ const sidebar = document.querySelector('.sidebar');
 const sidebarToggle = document.querySelector('.sidebar-toggle');
 const mobileLayout = window.matchMedia('(max-width: 800px)');
 const originalSidebarLinks = Array.from(sidebarNavigation.children);
-const coachSidebarOrder = ['dashboard', 'planning', 'bookings', 'create-workout', 'athletes', 'coach-nutrition'];
+const coachSidebarOrder = ['dashboard', 'planning', 'bookings', 'create-workout', 'athletes', 'coach-nutrition', 'health'];
 const moreViews = ['colleagues', 'finance', 'saved-workouts', 'exercises'];
 const moreLinks = moreViews.map(view => originalSidebarLinks.find(link => link.dataset.viewLink === view));
 const moreNavigation = document.createElement('details');
@@ -82,6 +82,8 @@ function syncHomeShortcuts(allowedViews) {
     const descriptions={colleagues:'Het team en contactgegevens',finance:'Betalingen en financieel overzicht',settings:'Jouw voorkeuren en instellingen',health:'Jouw metingen en vooruitgang',
         ...(instructor?{planning:'Jouw lessen en lesmomenten',athletes:'Sporters die aan jou gekoppeld zijn','saved-workouts':'Bekijk trainingen en wijs ze toe'}:{})};
     const icons={
+        community:'M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 3a4 4 0 1 0 0 8 4 4 0 0 0 0-8m8 1a4 4 0 0 1 0 7m5 10v-2a4 4 0 0 0-3-4',
+        messages:'M21 4H3v13h5l4 4 4-4h5zM7 8h10M7 12h7',
         colleagues:'M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 3a4 4 0 1 0 0 8 4 4 0 0 0 0-8m8 1a4 4 0 0 1 0 7m5 10v-2a4 4 0 0 0-3-4',
         finance:'M4 20h16M6 16v-5m6 5V5m6 11V8',
         health:'M3 12h4l3-7 4 14 3-7h4',
@@ -107,6 +109,32 @@ function syncHomeShortcuts(allowedViews) {
         }
     }
 }
+function syncSidebarIcons() {
+    const fallback = {
+        dashboard: 'm3 10 9-7 9 7v10H3zM9 20v-7h6v7',
+        'owner-agenda': 'M9 5H5v16h14V5h-4M9 3h6v4H9zM8 12l2 2 5-5M8 18h8'
+    };
+    for (const link of sidebarNavigation.querySelectorAll('a[data-view-link]')) {
+        if (link.classList.contains('settings-link') || link.querySelector('.sidebar-nav-icon')) continue;
+        const route = link.dataset.viewLink;
+        const source = document.querySelector(`.home-tiles a[href="#${route}"] svg`);
+        const icon = source ? source.cloneNode(true) : document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        if (!source) {
+            const path = document.createElementNS(icon.namespaceURI, 'path');
+            path.setAttribute('d', fallback[route] || 'M4 4h16v16H4zM8 8h8m-8 4h8m-8 4h5');
+            icon.append(path);
+        }
+        // The agenda has its own task icon instead of the generic shortcut fallback.
+        if (route === 'owner-agenda') {
+            const path = document.createElementNS(icon.namespaceURI, 'path');
+            path.setAttribute('d', fallback[route]); icon.replaceChildren(path);
+        }
+        icon.removeAttribute('id');
+        for (const [name, value] of Object.entries({viewBox:'0 0 24 24',fill:'none',stroke:'currentColor','stroke-width':'1.8','stroke-linecap':'round','stroke-linejoin':'round','aria-hidden':'true',focusable:'false'})) icon.setAttribute(name,value);
+        icon.classList.add('sidebar-nav-icon');
+        link.classList.add('sidebar-with-icon');link.prepend(icon);
+    }
+}
 function showCurrentView(moveFocus = true) {
     // Coach tasks follow the agreed order; sporters retain their original navigation.
     const coachLinks = coachSidebarOrder.map(view => originalSidebarLinks.find(link => link.dataset.viewLink === view));
@@ -128,8 +156,8 @@ function showCurrentView(moveFocus = true) {
         const routes = {'create-workout':'WORKOUT_TEMPLATE_MANAGE','saved-workouts':'WORKOUT_VIEW','exercises':'WORKOUT_TEMPLATE_MANAGE',
             athletes:'WORKOUT_ASSIGN','coach-health':'CLIENT_HEALTH','coach-nutrition':'NUTRITION_MANAGE',planning:'CLASS_VIEW',
             bookings:'CLASS_MANAGE',training:'WORKOUT_VIEW',colleagues:'CLASS_VIEW',finance:'FINANCE_VIEW','staff-notes':'NOTE_VIEW'};
-        allowedViews = ['dashboard','settings','health',...Object.keys(routes).filter(route=>window.capCan(routes[route]))];
-        if(window.capReal.staffRole==='FINANCE')allowedViews=['dashboard','settings','finance'];
+        allowedViews = ['dashboard','settings','health','nutrition',...Object.keys(routes).filter(route=>window.capCan(routes[route]))];
+        if(window.capReal.staffRole==='FINANCE')allowedViews=['dashboard','settings','finance','nutrition'];
         const instructor=window.capReal.staffRole==='INSTRUCTOR';
         sidebarNavigation.querySelector('[data-view-link="planning"]').textContent=instructor?'Mijn uurrooster / Lessen':'Planning';
         sidebarNavigation.querySelector('[data-view-link="saved-workouts"]').textContent=instructor?'Workouts':'Opgeslagen workouts';
@@ -137,9 +165,16 @@ function showCurrentView(moveFocus = true) {
         document.querySelectorAll('#coach .home-tile').forEach(link=>{link.hidden=!allowedViews.includes(link.hash.slice(1));});
     }
     const adminBottom=previewRole==='coach'&&['OWNER','MANAGER'].includes(window.capReal?.staffRole);
+    const ownerAgendaAllowed = previewRole === 'coach' && (window.capReal ? window.capReal.staffRole === 'OWNER' : true);
+    if (ownerAgendaAllowed) allowedViews.push('owner-agenda');
+    if(previewRole==='coach'&&!allowedViews.includes('nutrition'))allowedViews.push('nutrition');
+    const socialAllowed=!window.capReal||window.capReal.account.role==='ATHLETE'||['OWNER','MANAGER','INSTRUCTOR'].includes(window.capReal.staffRole);
+    if(socialAllowed)allowedViews.push('community','messages');
+    const ownNutritionLink=sidebarNavigation.querySelector('[data-view-link="nutrition"]');
+    ownNutritionLink.textContent='Voeding';
     document.querySelector('.mobile-bottom-nav').classList.toggle('has-admin-tabs',adminBottom);
     if(adminBottom)allowedViews.push('more');
-    sidebarNavigation.querySelector('[data-view-link="health"]').textContent=previewRole==='coach'?'Mijn gezondheid':'Gezondheid & Progress';
+    sidebarNavigation.querySelector('[data-view-link="health"]').textContent='Gezondheid & Progress';
     sidebarNavigation.querySelector('[data-view-link="coach-health"]').textContent='Gezondheid sporters';
     const routeId = allowedViews.includes(requestedView)
         ? requestedView : 'dashboard';
@@ -151,6 +186,10 @@ function showCurrentView(moveFocus = true) {
     document.body.classList.toggle('is-workout-editor', viewId === 'create-workout');
 
     sidebarNavigation.querySelectorAll('a').forEach((link) => {
+        if(link.dataset.viewLink==='coach-health'){link.hidden=true;return;}
+        if(['community','messages'].includes(link.dataset.viewLink)){link.hidden=!socialAllowed;return;}
+        if(link.dataset.viewLink==='nutrition'){link.hidden=previewRole==='coach'&&allowedViews.includes('coach-nutrition');return;}
+        if(link.dataset.viewLink === 'owner-agenda'){link.hidden = !ownerAgendaAllowed;return;}
         if(window.capReal && previewRole==='coach'){link.hidden=!allowedViews.includes(link.dataset.viewLink);return;}
         if (link.dataset.viewLink === 'finance') {
             link.hidden = !allowedViews.includes('finance');
@@ -164,6 +203,7 @@ function showCurrentView(moveFocus = true) {
     });
 
     syncHomeShortcuts(allowedViews);
+    syncSidebarIcons();
     document.querySelectorAll('[data-view]').forEach((view) => {
         view.hidden = view.id !== viewId;
     });
@@ -181,7 +221,9 @@ function showCurrentView(moveFocus = true) {
     }
 
     document.querySelectorAll('[data-view-link]').forEach((link) => {
-        const isActive = link.dataset.viewLink === routeId;
+        const isActive = link.dataset.viewLink === routeId || (previewRole==='coach'&&link.closest('#sidebar-navigation')&&(
+            (link.dataset.viewLink==='health'&&routeId==='coach-health') ||
+            (link.dataset.viewLink==='coach-nutrition'&&routeId==='nutrition'&&allowedViews.includes('coach-nutrition'))));
         link.classList.toggle('active', isActive);
         if (isActive) {
             link.setAttribute('aria-current', 'page');

@@ -1,0 +1,10 @@
+.coach-shifts-panel { margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--border); }
+.coach-shifts-heading { display: flex; gap: .75rem; justify-content: space-between; align-items: center; flex-wrap: wrap; }
+.coach-shifts-heading h3 { margin: 0; }
+.coach-shift-row { padding-block: .75rem; border-bottom: 1px solid var(--border); }
+.coach-shift-row h4 { margin: 0 0 .3rem; }
+.coach-shift-row p { margin: .3rem 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+.coach-shift-actions { display: flex; flex-wrap: wrap; gap: .5rem; }
+.coach-shift-actions button,.coach-shifts-heading button { min-height: 44px; }
+.calendar-shift-count { color: var(--accent-text); font-size: .75rem; }
+#coach-shift-dialog textarea { width: 100%; box-sizing: border-box; }

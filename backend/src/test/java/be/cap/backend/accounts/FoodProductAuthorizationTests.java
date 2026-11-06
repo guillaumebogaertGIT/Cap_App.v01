@@ -15,7 +15,7 @@ class FoodProductAuthorizationTests {
         String path="/api/food-products/3017620422003";
         assertTrue(requests.allowed(athlete,"GET",path));
         assertFalse(requests.allowed(athlete,"POST",path));
-        assertFalse(requests.allowed(coach,"GET",path));
+        assertTrue(requests.allowed(coach,"GET",path));
         when(policy.allows(coach,NUTRITION_MANAGE)).thenReturn(true);
         assertTrue(requests.allowed(coach,"GET",path));
         assertFalse(requests.allowed(coach,"PUT",path));

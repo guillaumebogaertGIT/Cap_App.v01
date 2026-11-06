@@ -36,24 +36,27 @@
             byDate.get(session.date).push(session);
         });
         const count = sessions.filter(session => monthOf(session.date) === month).length;
-        $('planning-calendar-summary').textContent = `${count} ${count === 1 ? 'sessie' : 'sessies'} deze maand · Kies een dag om de lessen te bekijken.`;
+        $('planning-calendar-summary').textContent = `${count} ${count === 1 ? 'sessie' : 'sessies'} deze maand · Kies een dag om ${window.capCoachShifts?.allowed()?'lessen en werkuren':'de lessen'} te bekijken.`;
         const grid = $('planning-calendar-grid'); grid.replaceChildren();
         const offset = (asDate(month).getUTCDay() + 6) % 7;
         const first = shift(month, -offset);
+        window.capCoachShifts?.load(first,shift(first,41));
         // Six complete Monday–Sunday weeks keep month navigation visually stable.
         for (let index = 0; index < 42; index++) {
             const date = shift(first, index);
             const entries = byDate.get(date) || [];
+            const workingHours=window.capCoachShifts?.onDate(date)||[];
             const cell = node('div', null, 'planning-calendar-day');
             cell.classList.toggle('is-other-month', monthOf(date) !== month);
             cell.classList.toggle('is-selected', date === selected);
             const choose = node('button', null, 'calendar-day-select'); choose.type = 'button';
             choose.dataset.calendarDate = date;
             choose.setAttribute('aria-pressed', String(date === selected));
-            choose.setAttribute('aria-label', `${fullDate(date)}: ${entries.length} sessies bekijken`);
+            choose.setAttribute('aria-label', `${fullDate(date)}: ${entries.length} sessies${workingHours.length?`, ${workingHours.length} ${workingHours.length===1?'werkblok':'werkblokken'}`:''} bekijken`);
             if (date === current) choose.setAttribute('aria-current', 'date');
             choose.append(node('span', String(asDate(date).getUTCDate()), 'calendar-day-number'));
             if (entries.length) choose.append(node('span', `${entries.length} ${entries.length === 1 ? 'sessie' : 'sessies'}`, 'calendar-day-count'));
+            if(workingHours.length)choose.append(node('span',`${workingHours.length} werk${workingHours.length===1?'blok':'blokken'}`,'calendar-shift-count'));
             choose.addEventListener('click', () => selectDay(date));
             choose.addEventListener('keydown', event => {
                 const amount = { ArrowLeft: -1, ArrowRight: 1, ArrowUp: -7, ArrowDown: 7 }[event.key];
@@ -67,12 +70,15 @@
         $('calendar-day-add').hidden = previewRole !== 'coach' || selected < current;
         $('new-session').disabled = selected < current;
         club.renderCalendarDay(selected, $('calendar-day-sessions'), expandedId);
+        window.capCoachShifts?.renderDay(selected);
     }
     function changeMonth(amount) {
         const date = asDate(month); date.setUTCMonth(date.getUTCMonth() + amount);
         month = iso(date); selected = month === monthOf(today()) ? today() : month; expandedId = null;
         render();
     }
+    document.addEventListener('cap:coach-shifts-changed',render);
+    document.addEventListener('cap:coach-shift-saved',event=>{selected=event.detail.date;month=monthOf(selected);render();$('calendar-day-title').focus();});
     $('calendar-previous-month').addEventListener('click', () => changeMonth(-1));
     $('calendar-next-month').addEventListener('click', () => changeMonth(1));
     $('calendar-current-month').addEventListener('click', () => { month = monthOf(today()); selected = today(); expandedId = null; render(); });

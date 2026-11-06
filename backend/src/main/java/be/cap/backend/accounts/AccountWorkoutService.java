@@ -17,6 +17,7 @@ import tools.jackson.databind.json.JsonMapper;
 @Transactional(rollbackFor = Exception.class)
 public class AccountWorkoutService {
     private final JdbcTemplate jdbc;
+    @org.springframework.beans.factory.annotation.Autowired(required=false) private CapEmail email;
     private final JsonMapper mapper = JsonMapper.builder().build();
     public AccountWorkoutService(JdbcTemplate jdbc) { this.jdbc = jdbc; }
     private StaffPolicy policy(){return new StaffPolicy(jdbc);}
@@ -94,6 +95,11 @@ public class AccountWorkoutService {
         if(!previousAssignments.contains(entry.assignmentId())) {
             jdbc.update("INSERT INTO assignment_attribution(assignment_id,workout_id,client_id,assigned_by,assigned_at) VALUES(?,?,?,?,CURRENT_TIMESTAMP)",entry.assignmentId(),id,UUID.fromString(athleteId),user.id());
             policy().audit(user,"WORKOUT_ASSIGN",entry.assignmentId(),athleteId);
+            UUID recipient=UUID.fromString(athleteId);
+            if(email!=null&&email.enabled&&EmailPreferences.wants(jdbc,recipient,true)){
+                var addresses=jdbc.query("SELECT email FROM cap_user WHERE id=? AND active=TRUE",(r,i)->r.getString(1),recipient);
+                if(!addresses.isEmpty())email.queue("assignment:"+entry.assignmentId(),addresses.getFirst(),"CAP · Nieuwe workout","Er staat een nieuwe workout voor je klaar. Bekijk je actuele planning: "+email.publicUrl+"/app/index.html#workouts",java.time.Instant.now().plusSeconds(86400));
+            }
         }
         return assigned;
     }
@@ -163,6 +169,8 @@ public class AccountWorkoutService {
         if(version!=draft.version()) throw new ResponseStatusException(HttpStatus.CONFLICT,"Deze training is op een ander scherm gewijzigd. Vernieuw de pagina.");
         var trusted=new TrainingStore.Completion(draft.id(),draft.planned().id(),draft.startedAt(),java.time.Instant.now().toString(),input.exercises(),draft.assignmentId());
         var finished=training.finish(trusted,draft.planned());
+        jdbc.update("INSERT INTO owner_workout_event(id,athlete_id,session_id,workout_name,completed_at) VALUES(?,?,?,?,?)",
+            UUID.randomUUID(),user.id(),finished.id(),finished.planned().name(),java.sql.Timestamp.from(finished.finishedAt()));
         jdbc.update("DELETE FROM training_draft WHERE athlete_id=?",user.id());
         return finished;
     }

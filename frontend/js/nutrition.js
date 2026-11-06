@@ -1,6 +1,5 @@
 // Browser-local coach drafts/targets; athlete preview always represents Guillaume.
 document.addEventListener('DOMContentLoaded', () => {
-    if(window.capReal?.account.role==='COACH' && !window.capCan('NUTRITION_MANAGE'))return;
     const $ = id => document.getElementById(id);
     const calculator = window.capNutritionCalculator;
     const form = $('nutrition-calculator-form');
@@ -9,7 +8,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const raw = form => Object.fromEntries(new FormData(form));
     const format = value => new Intl.NumberFormat('nl-BE', { maximumFractionDigits: 1 }).format(value);
     const stamp = value => window.capDateTime.dateTime(value);
-    const canEdit = () => window.capAccess.signedIn && previewRole === 'coach';
+    const canEdit = () => window.capAccess.signedIn && previewRole === 'coach' && location.hash==='#coach-nutrition' && (!window.capReal||window.capCan('NUTRITION_MANAGE'));
     const node = (tag, text) => { const element = document.createElement(tag); if (text != null) element.textContent = text; return element; };
     const targetLabels = [['calories', 'Calorieën', 'kcal'], ['proteinG', 'Eiwitten', 'g'], ['carbsG', 'Koolhydraten', 'g'], ['fatG', 'Vetten', 'g'], ['waterMl', 'Water', 'ml']];
     const defaults = { sex: '', age: '', weightKg: '', heightCm: '', activity: '', calorieGoal: 'maintenance', strategy: 'standard', goalKg: '', scaling: 'standard', bodyFatBand: '', muscularity: 'average' };
@@ -39,6 +38,11 @@ document.addEventListener('DOMContentLoaded', () => {
     let stale = false;
     const selected = () => roster.find(athlete => athlete.id === selectedId);
     window.capNutritionTargets = {
+        setPreviewOwn(plan) {
+            if(real)return;
+            plans.set('preview-guillaume',{...plan,savedAt:new Date().toISOString()});renderAthlete();
+            document.dispatchEvent(new CustomEvent('cap:nutrition-targets-changed'));
+        },
         get(athleteId) {
             const plan = plans.get(athleteId);
             return window.capAccess.signedIn && plan ? { ...plan, targets: { ...plan.targets } } : null;
@@ -141,7 +145,7 @@ document.addEventListener('DOMContentLoaded', () => {
         planVersions.set(id, version);
         const draftVersion = draftVersions.get(id) || 0;
         try {
-            const path = '/api/nutrition-targets' + (real.account.role === 'COACH' ? '?athleteId=' + encodeURIComponent(id) : '');
+            const path = real.account.role==='COACH'&&id===real.account.id?'/api/nutrition-targets/self':'/api/nutrition-targets' + (real.account.role === 'COACH' ? '?athleteId=' + encodeURIComponent(id) : '');
             const plan = await real.request(path);
             if (planVersions.get(id) !== version) return;
             if (plan) plans.set(id, plan); else plans.delete(id);
@@ -160,13 +164,13 @@ document.addEventListener('DOMContentLoaded', () => {
     function refreshVisiblePlan() {
         if (!real || !window.capAccess.signedIn) return;
         if (location.hash === '#coach-nutrition' && canEdit() && selectedId) refreshPlan(selectedId, true);
-        if (location.hash === '#nutrition' && previewRole === 'athlete') refreshPlan(real.account.id);
+        if (location.hash === '#nutrition') refreshPlan(real.account.id);
     }
     function renderAthlete() {
         const container = $('athlete-nutrition-targets'); container.replaceChildren();
         const plan = plans.get(window.capReal?.account.id || 'preview-guillaume');
-        if (real && previewRole === 'athlete' && !loadedPlans.has(real.account.id)) { $('athlete-nutrition-status').textContent = 'Dagdoelen laden...'; return; }
-        $('athlete-nutrition-status').textContent = plan ? `Van je coach · bijgewerkt ${stamp(plan.savedAt)}` : 'Je coach heeft nog geen dagdoelen voor je bewaard.';
+        if (real && location.hash==='#nutrition' && !loadedPlans.has(real.account.id)) { $('athlete-nutrition-status').textContent = 'Dagdoelen laden...'; return; }
+        $('athlete-nutrition-status').textContent = plan ? `${previewRole==='coach'?'Mijn dagdoelen':'Van je coach'} · bijgewerkt ${stamp(plan.savedAt)}` : previewRole==='coach'?'Je hebt nog geen eigen dagdoelen bewaard.':'Je coach heeft nog geen dagdoelen voor je bewaard.';
         $('athlete-nutrition-energy-note').textContent = plan ? energyNote(plan.targets) : '';
         if (!plan) return;
         targetLabels.forEach(([key, label, unit]) => {
@@ -268,5 +272,5 @@ document.addEventListener('DOMContentLoaded', () => {
         window.addEventListener('focus', refreshVisiblePlan);
     }
     renderPicker(); loadAthlete(); renderAthlete();
-    if (real && previewRole === 'athlete') refreshPlan(real.account.id);
+    if (real && location.hash==='#nutrition') refreshPlan(real.account.id);
 });

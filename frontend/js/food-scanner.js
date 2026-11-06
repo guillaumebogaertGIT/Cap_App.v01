@@ -1,7 +1,7 @@
 // Decode on the device; only the resulting numeric product code goes to CAP.
 document.addEventListener('DOMContentLoaded',()=>{
     const launch=document.getElementById('food-scan-start');
-    const allowed=()=>window.capAccess.signedIn&&previewRole==='athlete'&&location.hash==='#nutrition';
+    const allowed=()=>window.capAccess.signedIn&&location.hash==='#nutrition';
     const dialog=document.createElement('dialog');dialog.className='club-dialog food-scanner-dialog';dialog.id='food-scanner-dialog';dialog.setAttribute('aria-labelledby','food-scanner-title');
     dialog.innerHTML=`<div class="session-dialog-header"><h2 id="food-scanner-title">Barcode scannen</h2><button type="button" class="secondary-button session-dialog-close" aria-label="Sluiten"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button></div>
       <p>Houd de streepjescode goed verlicht en recht voor de camera. Er wordt niets gelogd voordat je het product en de portie kiest.</p>

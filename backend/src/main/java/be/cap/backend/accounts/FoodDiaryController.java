@@ -59,13 +59,14 @@ public class FoodDiaryController {
     @Transactional(readOnly = true)
     public ResponseEntity<List<Entry>> get(Principal principal, @RequestParam LocalDate date, @RequestParam(required = false) UUID athleteId) {
         var user = accounts.account(principal.getName());
-        if(user.role().equals("COACH"))new StaffPolicy(jdbc).require(user,StaffPolicy.Permission.NUTRITION_MANAGE);
+        if(user.role().equals("COACH") && (athleteId==null||athleteId.equals(user.id())))athleteId=user.id();
+        else if(user.role().equals("COACH"))new StaffPolicy(jdbc).require(user,StaffPolicy.Permission.NUTRITION_MANAGE);
         if (user.role().equals("ATHLETE")) {
             if (athleteId != null && !athleteId.equals(user.id())) throw new ResponseStatusException(HttpStatus.NOT_FOUND);
             athleteId = user.id();
         }
         if (athleteId == null) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Kies eerst een sporter.");
-        if (jdbc.queryForObject("SELECT COUNT(*) FROM cap_user WHERE id=? AND role='ATHLETE'", Long.class, athleteId) == 0)
+        if (!athleteId.equals(user.id()) && jdbc.queryForObject("SELECT COUNT(*) FROM cap_user WHERE id=? AND role='ATHLETE'", Long.class, athleteId) == 0)
             throw new ResponseStatusException(HttpStatus.NOT_FOUND);
         var entries = jdbc.query("SELECT payload FROM food_diary_entry WHERE athlete_id=? AND entry_date=? ORDER BY saved_at,id",
             (row, index) -> json.readValue(row.getString(1), Entry.class), athleteId, date);
@@ -74,7 +75,6 @@ public class FoodDiaryController {
     @PostMapping
     public ResponseEntity<Entry> add(Principal principal, @RequestBody Entry entry) {
         var user = accounts.account(principal.getName());
-        if (!user.role().equals("ATHLETE")) throw new ResponseStatusException(HttpStatus.FORBIDDEN);
         valid(entry);
         // Serialize additions per owner, including duplicate retry checks.
         jdbc.queryForObject("SELECT id FROM cap_user WHERE id=? FOR UPDATE", UUID.class, user.id());
@@ -93,7 +93,6 @@ public class FoodDiaryController {
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(Principal principal, @PathVariable UUID id) {
         var user = accounts.account(principal.getName());
-        if (!user.role().equals("ATHLETE")) throw new ResponseStatusException(HttpStatus.FORBIDDEN);
         if (jdbc.update("DELETE FROM food_diary_entry WHERE id=? AND athlete_id=?", id, user.id()) == 0)
             throw new ResponseStatusException(HttpStatus.NOT_FOUND);
         return ResponseEntity.noContent().build();
