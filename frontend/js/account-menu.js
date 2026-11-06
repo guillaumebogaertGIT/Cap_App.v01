@@ -37,10 +37,6 @@
     document.addEventListener('pointerdown', (event) => {
         if (!menu.contains(event.target)) closeMenu();
     });
-    links.querySelector('a').addEventListener('click', () => {
-        closeMenu();
-        if (window.location.hash === '#settings') document.querySelector('#settings-title').focus();
-    });
     links.querySelectorAll('[data-account]').forEach((button) => {
         button.addEventListener('click', () => {
             if (button.dataset.account === 'password' && window.capOpenPassword) {
