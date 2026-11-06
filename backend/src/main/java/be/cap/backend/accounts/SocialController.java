@@ -40,6 +40,12 @@ public class SocialController {
         if(rows.isEmpty()||rows.getFirst()==null)return ResponseEntity.notFound().build();
         return ResponseEntity.ok().contentType(MediaType.IMAGE_JPEG).cacheControl(CacheControl.noStore()).header("X-Content-Type-Options","nosniff").body(rows.getFirst());
     }
+    @GetMapping("/community/authors/{id}/photo") public ResponseEntity<byte[]> communityPhoto(Principal p,@PathVariable UUID id){
+        actor(p);
+        var rows=jdbc.query("SELECT p.photo FROM account_profile p JOIN cap_user u ON u.id=p.user_id WHERE p.user_id=? AND u.active=TRUE AND EXISTS(SELECT 1 FROM social_message m WHERE m.author_id=p.user_id AND m.kind='community' AND m.deleted=FALSE)",(row,index)->row.getBytes(1),id);
+        if(rows.isEmpty()||rows.getFirst()==null)return ResponseEntity.notFound().build();
+        return ResponseEntity.ok().contentType(MediaType.IMAGE_JPEG).cacheControl(CacheControl.noStore()).header("X-Content-Type-Options","nosniff").body(rows.getFirst());
+    }
     @GetMapping("/inbox") public ResponseEntity<?> inbox(Principal p){
         var user=actor(p);var threads=new ArrayList<Map<String,Object>>();
         for(var row:jdbc.queryForList("SELECT id,display_name FROM cap_user WHERE active=TRUE AND id<>? ORDER BY display_name",user.id()))if(direct(user.id(),(UUID)row.get("id")))threads.add(thread(user.id(),(UUID)row.get("id"),"direct",(String)row.get("display_name")));
@@ -68,7 +74,7 @@ public class SocialController {
         if(jdbc.queryForObject("SELECT COUNT(*) FROM club_session WHERE id=? AND coach_id=?",Integer.class,session,user.id())>0)return;
         if(jdbc.queryForObject("SELECT COUNT(*) FROM session_booking WHERE session_id=? AND athlete_id=? AND cancelled=FALSE",Integer.class,session,user.id())==0)throw new ResponseStatusException(HttpStatus.FORBIDDEN);
     }
-    private List<Map<String,Object>> messages(String where,Object...args){return jdbc.queryForList("SELECT * FROM (SELECT m.id,m.author_id AS author,u.display_name AS name,m.content,m.created_at AS created,m.deleted,a.filename,a.size_bytes AS size FROM social_message m JOIN cap_user u ON u.id=m.author_id LEFT JOIN social_attachment a ON a.message_id=m.id "+where+" ORDER BY m.created_at DESC,m.id DESC LIMIT 100) recent ORDER BY created,id",args);}
+    private List<Map<String,Object>> messages(String where,Object...args){return jdbc.queryForList("SELECT * FROM (SELECT m.id,m.author_id AS author,u.display_name AS name,m.content,m.created_at AS created,m.deleted,a.filename,a.size_bytes AS size,CASE WHEN m.kind='community' AND m.deleted=FALSE AND u.active=TRUE AND EXISTS(SELECT 1 FROM account_profile p WHERE p.user_id=m.author_id AND p.photo IS NOT NULL) THEN '/api/social/community/authors/' || CAST(m.author_id AS VARCHAR) || '/photo' ELSE NULL END AS photo_url FROM social_message m JOIN cap_user u ON u.id=m.author_id LEFT JOIN social_attachment a ON a.message_id=m.id "+where+" ORDER BY m.created_at DESC,m.id DESC LIMIT 100) recent ORDER BY created,id",args);}
     @GetMapping("/attachments/{id}") public ResponseEntity<byte[]> attachment(Principal p,@PathVariable UUID id){
         var user=actor(p);var rows=jdbc.queryForList("SELECT * FROM social_message WHERE id=? AND deleted=FALSE",id);
         if(rows.isEmpty()||!canRead(user,rows.getFirst()))throw new ResponseStatusException(HttpStatus.NOT_FOUND);
@@ -138,7 +144,7 @@ public class SocialController {
     @GetMapping("/groups/{id}") public ResponseEntity<?> group(Principal p,@PathVariable UUID id){var user=actor(p);requireGroup(user,id);return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(messages("WHERE kind='group' AND session_id=?",id));}
     private Map<String,Object> post(AccountService.Account user,Input input,String kind,UUID recipient,UUID session){
         String channel=kind.equals("community")?channel(input.channel()):null;
-        if(input.id()==null||input.content()==null||(input.content().isBlank()&&input.attachment()==null)||input.content().length()>2000||kind.equals("community")&&input.attachment()!=null)throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"Schrijf een bericht of voeg een bestand toe (maximaal 2000 tekens).");
+        if(input.id()==null||input.content()==null||(input.content().isBlank()&&input.attachment()==null)||input.content().length()>2000)throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"Schrijf een bericht of voeg een bestand toe (maximaal 2000 tekens).");
         jdbc.query("SELECT id FROM cap_user WHERE id=? FOR UPDATE",(r,i)->r.getObject(1),user.id());
         actor(()->user.email());
         if(kind.equals("direct"))requireDirect(user.id(),recipient);if(kind.equals("group"))requireGroup(user,session);

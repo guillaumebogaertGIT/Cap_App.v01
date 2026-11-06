@@ -30,5 +30,9 @@
 .community-composer button { min-height: 44px; }
 .community-composer small { display: block; font-size: .75rem; color: var(--muted); margin-top: .35rem; }
 .community-channel-close { display: none; }
+.community-composer .message-attach { width: 44px; min-width: 44px; height: 44px; display: inline-flex; align-items: center; justify-content: center; padding: .5rem; }
+.community-composer > .message-pending-file { display: flex; margin-bottom: .5rem; }
+.community-composer > .message-pending-file[hidden] { display: none; }
+.community-conversation.is-file-drop { outline: 2px dashed var(--accent-text); outline-offset: -5px; background: var(--highlight); }
 @media(max-width:899px) { .community-workspace.channels-open .community-channels { display: flex; position: absolute; z-index: 5; inset: 0 auto 0 0; width: min(18rem,calc(100% - 4rem)); border-right: 1px solid var(--border); background: var(--surface); } .community-channel-close { display: block; min-height: 44px; margin-bottom: .75rem; } .community-post .message-avatar { width: 32px; height: 32px; flex-basis: 32px; font-size: .75rem; } }
 @media(min-width:900px) { .community-workspace { flex-direction: row; } .community-channels { display: flex; width: 14rem; flex-shrink: 0; border-right: 1px solid var(--border); } .community-channel-head { grid-template-columns: minmax(0,1fr) auto; } .community-channel-head [data-refresh] { grid-column: 2; } .community-channel-head [data-channel-toggle] { display: none; } }

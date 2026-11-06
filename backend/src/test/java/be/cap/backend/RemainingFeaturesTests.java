@@ -10,6 +10,29 @@ import be.cap.backend.accounts.billing.ComplimentaryMemberships;
 
 @TestPropertySource(properties="spring.datasource.url=jdbc:h2:mem:remaining-features;MODE=PostgreSQL;DB_CLOSE_DELAY=-1")
 class RemainingFeaturesTests extends AccountApiTests {
+    @Test void communityAuthorPhotosAreAvailableOnlyForVisibleAuthors() throws Exception {
+        var owner=client();login(owner,"coach@example.test","Coach-test-password-123");var member=athlete(owner);var author=athlete(owner);UUID id=UUID.randomUUID();
+        jdbc.update("INSERT INTO account_profile(user_id,values_json,photo) VALUES(?,'{}',?)",author.id(),new byte[]{1,2,3});
+        String photo="/api/social/community/authors/"+author.id()+"/photo";
+        assertEquals(404,request(member.client(),"GET",photo,null,null,false).statusCode());
+        assertEquals(200,request(author.client(),"POST","/api/social/community",json.writeValueAsString(Map.of("id",id,"content","Community author photo","channel","hyrox")),csrf(author.client()),false).statusCode());
+        assertTrue(request(member.client(),"GET","/api/social/community?channel=hyrox",null,null,false).body().contains(photo));
+        var response=request(member.client(),"GET",photo,null,null,false);assertEquals(200,response.statusCode());assertTrue(response.headers().firstValue("Content-Type").orElseThrow().contains("image/jpeg"));assertTrue(response.headers().firstValue("Cache-Control").orElseThrow().contains("no-store"));
+        assertEquals(401,request(client(),"GET",photo,null,null,false).statusCode());
+        jdbc.update("UPDATE cap_user SET active=FALSE WHERE id=?",author.id());assertEquals(404,request(member.client(),"GET",photo,null,null,false).statusCode());jdbc.update("UPDATE cap_user SET active=TRUE WHERE id=?",author.id());
+        assertEquals(204,request(owner,"DELETE","/api/social/messages/"+id,null,csrf(owner),false).statusCode());assertEquals(404,request(member.client(),"GET",photo,null,null,false).statusCode());
+    }
+    @Test void communityFilesAreSharedAndNotifyOtherMembers() throws Exception {
+        var owner=client();login(owner,"coach@example.test","Coach-test-password-123");var athlete=athlete(owner);UUID id=UUID.randomUUID();
+        String body=json.writeValueAsString(Map.of("id",id,"content","","channel","hyrox","attachment",Map.of("name","schema.pdf","data",Base64.getEncoder().encodeToString("%PDF-1.7\nCommunity file".getBytes()))));
+        assertEquals(200,request(owner,"POST","/api/social/community",body,csrf(owner),false).statusCode());
+        assertEquals(200,request(athlete.client(),"GET","/api/social/attachments/"+id,null,null,false).statusCode());
+        assertTrue(request(athlete.client(),"GET","/api/social/community?channel=hyrox",null,null,false).body().contains("schema.pdf"));
+        assertTrue(request(athlete.client(),"GET","/api/social/notifications",null,null,false).body().contains(id.toString()));
+        assertEquals(401,request(client(),"GET","/api/social/attachments/"+id,null,null,false).statusCode());
+        assertEquals(204,request(owner,"DELETE","/api/social/messages/"+id,null,csrf(owner),false).statusCode());
+        assertEquals(404,request(athlete.client(),"GET","/api/social/attachments/"+id,null,null,false).statusCode());
+    }
     @Test void chatContactPhotosFollowConversationAccess() throws Exception {
         var owner=client();login(owner,"coach@example.test","Coach-test-password-123");var first=athlete(owner);var second=athlete(owner);
         UUID coach=jdbc.queryForObject("SELECT id FROM cap_user WHERE email='coach@example.test'",UUID.class);
