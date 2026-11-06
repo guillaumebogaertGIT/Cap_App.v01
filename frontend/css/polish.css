@@ -699,18 +699,18 @@ body.is-workout-editor > main { max-width: none; }
     --panel-radius: 0.7rem;
 }
 :root[data-theme="light"] {
-    --background: #edf3f8;
+    --background: #f5f5f3;
     --surface: #ffffff;
-    --sidebar: #e1ecf5;
-    --text: #192e42;
-    --muted: #4d6173;
-    --border: #c3d2df;
-    --hover: #e1edf5;
-    --highlight: #fff0d4;
-    --highlight-border: #d3a04e;
-    --accent-text: #884800;
-    --brand-teal: #006a70;
-    --nav-surface: #ffe0a3;
+    --sidebar: #eceeeb;
+    --text: #232a2e;
+    --muted: #5c656a;
+    --border: #d5d9d6;
+    --hover: #e9ede9;
+    --highlight: #fff1db;
+    --highlight-border: #cda568;
+    --accent-text: #8b4c00;
+    --brand-teal: #28645c;
+    --nav-surface: #ffe7c3;
     --action: #f5a623;
     --action-hover: #e99916;
 }

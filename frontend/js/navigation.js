@@ -110,10 +110,26 @@ function syncHomeShortcuts(allowedViews) {
     }
 }
 function syncSidebarIcons() {
+    // Explicit route icons avoid inheriting an unrelated Home-tile fallback.
     const fallback = {
         dashboard: 'm3 10 9-7 9 7v10H3zM9 20v-7h6v7',
-        'owner-agenda': 'M9 5H5v16h14V5h-4M9 3h6v4H9zM8 12l2 2 5-5M8 18h8'
+        planning: 'M4 5h16v16H4zM8 3v4m8-4v4M4 10h16M8 14h2m4 0h2m-8 4h2',
+        bookings: 'M4 5h16v16H4zM8 3v4m8-4v4M4 10h16M8 16l3 3 5-5',
+        'owner-agenda': 'M9 5H5v16h14V5h-4M9 3h6v4H9zM8 12l2 2 5-5M8 18h8',
+        workouts: 'M8 5H5v16h14V5h-3M8 3h8v4H8zM8 12h8m-8 4h5',
+        'create-workout': 'M3 7v10m3-12v14M6 12h8m0-7v10m3-8v6m-2 7h6m-3-3v6',
+        'saved-workouts': 'M3 7V4h7l2 3h9v14H3zM14 11h4v7l-2-1-2 1z',
+        exercises: 'M3 8v8m3-11v14m0-7h12m0-7v14m3-11v8',
+        athletes: 'M9 3a3 3 0 1 0 0 6 3 3 0 0 0 0-6M3 21v-3a6 6 0 0 1 12 0v3m1-17a3 3 0 0 1 0 6m2 4a5 5 0 0 1 3 4v3',
+        colleagues: 'M4 5h16v16H4zM9 3h6v4H9zM12 10a2 2 0 1 0 0 4 2 2 0 0 0 0-4m-4 9a4 4 0 0 1 8 0',
+        finance: 'M18 5a7 7 0 1 0 0 14M3 10h12M3 14h10',
+        health: 'M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8L12 21l8.8-8.6a5.5 5.5 0 0 0 0-7.8M3 12h5l2-4 3 8 2-4h6',
+        nutrition: 'M4 3v5a3 3 0 0 0 6 0V3M7 3v18M19 3c-3 2-4 5-4 9h4m0-9v18',
+        community: 'M3 3h14v11H9l-4 4v-4H3zM17 7h4v12h-3v3l-4-3h-3v-5',
+        shop: 'M4 7h16l1 14H3zM8 7V6a4 4 0 0 1 8 0v1'
     };
+    fallback['coach-health']=fallback.health;fallback['coach-nutrition']=fallback.nutrition;
+
     for (const link of sidebarNavigation.querySelectorAll('a[data-view-link]')) {
         if (link.classList.contains('settings-link') || link.querySelector('.sidebar-nav-icon')) continue;
         const route = link.dataset.viewLink;
@@ -124,8 +140,8 @@ function syncSidebarIcons() {
             path.setAttribute('d', fallback[route] || 'M4 4h16v16H4zM8 8h8m-8 4h8m-8 4h5');
             icon.append(path);
         }
-        // The agenda has its own task icon instead of the generic shortcut fallback.
-        if (route === 'owner-agenda') {
+        // Prefer the page symbol over a generic or unrelated Home-tile icon.
+        if (fallback[route]) {
             const path = document.createElementNS(icon.namespaceURI, 'path');
             path.setAttribute('d', fallback[route]); icon.replaceChildren(path);
         }
@@ -149,7 +165,7 @@ function showCurrentView(moveFocus = true) {
     const requestedView = window.location.hash.slice(1);
     let allowedViews = previewRole === 'coach' ? ['dashboard', 'settings', 'create-workout', 'saved-workouts', 'exercises', 'athletes', 'coach-health', 'coach-nutrition', 'planning', 'bookings', 'training'] : ['dashboard', 'workouts', 'health', 'nutrition', 'settings', 'planning', 'bookings', 'shop', 'training'];
     document.querySelector('[data-account="payment"]').hidden = previewRole === 'coach';
-    if (previewRole === 'coach' && window.capReal?.permissions?.reviewFinance) allowedViews.push('finance');
+    if (previewRole === 'coach' && (!window.capReal||window.capReal.permissions?.reviewFinance)) allowedViews.push('finance');
     if (previewRole === 'coach') allowedViews.push('colleagues');
     if (previewRole === 'coach') allowedViews.push('health');
     if (window.capReal && previewRole === 'coach') {
@@ -161,7 +177,7 @@ function showCurrentView(moveFocus = true) {
         const instructor=window.capReal.staffRole==='INSTRUCTOR';
         sidebarNavigation.querySelector('[data-view-link="planning"]').textContent=instructor?'Mijn uurrooster / Lessen':'Planning';
         sidebarNavigation.querySelector('[data-view-link="saved-workouts"]').textContent=instructor?'Workouts':'Opgeslagen workouts';
-        sidebarNavigation.querySelector('[data-view-link="athletes"]').textContent=instructor?'Mijn klanten':'Sporters';
+        sidebarNavigation.querySelector('[data-view-link="athletes"]').textContent=instructor?'Mijn klanten':'Klanten';
         document.querySelectorAll('#coach .home-tile').forEach(link=>{link.hidden=!allowedViews.includes(link.hash.slice(1));});
     }
     const adminBottom=previewRole==='coach'&&['OWNER','MANAGER'].includes(window.capReal?.staffRole);

@@ -15,6 +15,7 @@
 .message-thread-copy { flex: 1; min-width: 0; }
 .message-avatar { position: relative; overflow: hidden; }
 .message-avatar img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; border-radius: inherit; }
+.message-avatar img.chat-cap-logo { object-fit: contain; padding: 3px; filter: var(--logo-filter); }
 .message-thread-copy strong,.message-thread-copy small { display: block; }
 .message-thread-copy small { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--muted); margin-top: .2rem; }
 .message-thread-meta { display: grid; justify-items: end; gap: .4rem; flex-shrink: 0; font-size: .75rem; color: var(--muted); }

@@ -12,6 +12,7 @@ class StaffRequestAuthorization {
     StaffRequestAuthorization(StaffPolicy policy){this.policy=policy;}
     boolean allowed(AccountService.Account user,String method,String path) {
         boolean get=method.equals("GET"),athlete=user.role().equals("ATHLETE");
+        if(path.equals("/api/client-directory")||path.startsWith("/api/client-directory/"))return get?policy.allows(user,FINANCE_VIEW):method.equals("PUT")&&policy.role(user).equals("OWNER");
         if(path.startsWith("/api/social/"))return athlete||java.util.Set.of("OWNER","MANAGER","INSTRUCTOR").contains(policy.role(user));
         if(path.equals("/api/email-preferences"))return get||method.equals("PUT");
         if(path.equals("/api/complimentary-memberships")||path.startsWith("/api/complimentary-memberships/"))return get&&athlete||policy.role(user).equals("OWNER");
@@ -20,7 +21,7 @@ class StaffRequestAuthorization {
         if(path.equals("/api/accounts/me") || path.equals("/api/accounts/password") || path.startsWith("/api/accounts/profile")
             || path.equals("/api/measurements"))return true;
         if(path.equals("/api/accounts/invitations"))return policy.allows(user,CLIENT_SCOPE_MANAGE);
-        if(path.equals("/api/finance"))return get && policy.allows(user,FINANCE_VIEW);
+        if(path.equals("/api/finance")||path.equals("/api/finance/overview"))return get && policy.allows(user,FINANCE_VIEW);
         if(path.equals("/api/billing/athletes") || path.startsWith("/api/billing/athletes/"))return get && policy.allows(user,FINANCE_VIEW);
         if(path.equals("/api/billing"))return get;
         if(path.matches("/api/billing/(checkout|portal|cancel|reconcile)"))return athlete && method.equals("POST");

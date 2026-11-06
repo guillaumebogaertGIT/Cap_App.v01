@@ -159,5 +159,16 @@ public class SocialController {
     @PostMapping("/direct/{id}") @Transactional public Map<String,Object> postDirect(Principal p,@PathVariable UUID id,@RequestBody Input input){return post(actor(p),input,"direct",id,null);}
     @PostMapping("/groups/{id}") @Transactional public Map<String,Object> postGroup(Principal p,@PathVariable UUID id,@RequestBody Input input){return post(actor(p),input,"group",null,id);}
     @DeleteMapping("/messages/{id}") @ResponseStatus(HttpStatus.NO_CONTENT) @Transactional
-    public void delete(Principal p,@PathVariable UUID id){var user=actor(p);var rows=jdbc.queryForList("SELECT * FROM social_message WHERE id=? FOR UPDATE",id);if(rows.isEmpty())throw new ResponseStatusException(HttpStatus.NOT_FOUND);var row=rows.getFirst();if(row.get("kind").equals("direct")&&!row.get("author_id").equals(user.id())&&!row.get("recipient_id").equals(user.id()))throw new ResponseStatusException(HttpStatus.FORBIDDEN);if(!row.get("author_id").equals(user.id())&&!policy.role(user).equals("OWNER"))throw new ResponseStatusException(HttpStatus.FORBIDDEN);if(!policy.role(user).equals("OWNER")){if(row.get("kind").equals("direct"))requireDirect(user.id(),(UUID)row.get("recipient_id"));if(row.get("kind").equals("group"))requireGroup(user,(UUID)row.get("session_id"));}jdbc.update("DELETE FROM social_attachment WHERE message_id=?",id);jdbc.update("UPDATE social_message SET content='',deleted=TRUE WHERE id=?",id);policy.audit(user,"SOCIAL_DELETE",id.toString(),(String)row.get("kind"));}
+    public void delete(Principal p,@PathVariable UUID id){
+        var user=actor(p);var rows=jdbc.queryForList("SELECT * FROM social_message WHERE id=? FOR UPDATE",id);
+        if(rows.isEmpty())throw new ResponseStatusException(HttpStatus.NOT_FOUND);var row=rows.getFirst();
+        if(!row.get("author_id").equals(user.id()))throw new ResponseStatusException(HttpStatus.FORBIDDEN);
+        var created=((java.sql.Timestamp)row.get("created_at")).toInstant();
+        if(!created.isAfter(java.time.Instant.now().minusSeconds(1800)))throw new ResponseStatusException(HttpStatus.FORBIDDEN,"Je kunt een bericht alleen binnen 30 minuten verwijderen.");
+        if(row.get("kind").equals("direct"))requireDirect(user.id(),(UUID)row.get("recipient_id"));
+        if(row.get("kind").equals("group"))requireGroup(user,(UUID)row.get("session_id"));
+        jdbc.update("DELETE FROM social_attachment WHERE message_id=?",id);
+        jdbc.update("UPDATE social_message SET content='',deleted=TRUE WHERE id=?",id);
+        policy.audit(user,"SOCIAL_DELETE",id.toString(),(String)row.get("kind"));
+    }
 }

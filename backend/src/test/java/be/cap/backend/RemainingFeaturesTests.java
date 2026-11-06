@@ -10,6 +10,71 @@ import be.cap.backend.accounts.billing.ComplimentaryMemberships;
 
 @TestPropertySource(properties="spring.datasource.url=jdbc:h2:mem:remaining-features;MODE=PostgreSQL;DB_CLOSE_DELAY=-1")
 class RemainingFeaturesTests extends AccountApiTests {
+    @Test void financeOverviewUsesMembershipsAndDistinctRecordedAttendance() throws Exception {
+        var owner=client();login(owner,"coach@example.test","Coach-test-password-123");var teacher=instructor();
+        assertEquals(401,request(client(),"GET","/api/finance/overview",null,null,false).statusCode());
+        assertEquals(403,request(teacher.client(),"GET","/api/finance/overview",null,null,false).statusCode());
+        var before=json.readTree(request(owner,"GET","/api/finance/overview",null,null,false).body());var person=athlete(owner);
+        assertEquals(403,request(person.client(),"GET","/api/finance/overview",null,null,false).statusCode());
+        var after=json.readTree(request(owner,"GET","/api/finance/overview",null,null,false).body());assertEquals(before.path("newClients").path("value").asLong()+1,after.path("newClients").path("value").asLong());assertEquals(before.path("activeClients").asLong(),after.path("activeClients").asLong());
+        var day=LocalDate.now(ZoneId.of("Europe/Brussels"));UUID gift=UUID.randomUUID();
+        assertEquals(200,request(owner,"PUT","/api/complimentary-memberships/"+gift,json.writeValueAsString(Map.of("athleteId",person.id(),"offer","full_1m","start",day,"end",day.plusDays(10),"reason","Overview fixture")),csrf(owner),false).statusCode());
+        UUID coach=jdbc.queryForObject("SELECT id FROM cap_user WHERE email='coach@example.test'",UUID.class);var sessions=new ArrayList<UUID>();
+        for(int i=0;i<2;i++){UUID session=UUID.randomUUID();sessions.add(session);jdbc.update("INSERT INTO club_session(id,title,session_date,start_time,end_time,coach_id,location,capacity,session_type,category,program) VALUES(?,'Overview attendance',?,'00:00','00:01',?,'Test',8,'Groep','Strength','')",session,day,coach);jdbc.update("INSERT INTO session_booking(session_id,athlete_id,attendance) VALUES(?,?,'Aanwezig')",session,person.id());}
+        after=json.readTree(request(owner,"GET","/api/finance/overview",null,null,false).body());assertEquals(before.path("activeClients").asLong()+1,after.path("activeClients").asLong());assertEquals(before.path("participants").path("value").asLong()+1,after.path("participants").path("value").asLong());
+        jdbc.update("UPDATE session_booking SET cancelled=TRUE WHERE athlete_id=?",person.id());
+        after=json.readTree(request(owner,"GET","/api/finance/overview",null,null,false).body());assertEquals(before.path("participants").path("value").asLong(),after.path("participants").path("value").asLong());
+        jdbc.update("UPDATE cap_user SET active=FALSE WHERE id=?",person.id());after=json.readTree(request(owner,"GET","/api/finance/overview",null,null,false).body());assertEquals(before.path("activeClients").asLong(),after.path("activeClients").asLong());
+        assertTrue(Instant.parse(after.path("previousStart").asText()).isBefore(Instant.parse(after.path("previousEnd").asText())));assertFalse(after.path("billingEnabled").asBoolean());
+    }
+    @Test void clientDirectoryTariffsAreExplicitVersionedAndOwnerOnly() throws Exception {
+        var owner=client();login(owner,"coach@example.test","Coach-test-password-123");var client=athlete(owner);var teacher=instructor();
+        assertEquals(401,request(client(),"GET","/api/client-directory",null,null,false).statusCode());
+        assertEquals(403,request(client.client(),"GET","/api/client-directory",null,null,false).statusCode());
+        assertEquals(403,request(teacher.client(),"GET","/api/client-directory",null,null,false).statusCode());
+        var list=request(owner,"GET","/api/client-directory",null,null,false);assertEquals(200,list.statusCode());
+        var target=json.readTree(list.body()).valueStream().filter(row->row.path("id").asText().equals(client.id().toString())).findFirst().orElseThrow();assertTrue(target.path("cents").isNull());assertEquals(0,target.path("version").asInt());
+        String path="/api/client-directory/"+client.id()+"/tariff",input="{\"cents\":72500,\"period\":\"year\",\"version\":0}";
+        assertEquals(403,request(owner,"PUT",path,input,null,false).statusCode());
+        assertEquals(403,request(teacher.client(),"PUT",path,input,csrf(teacher.client()),false).statusCode());
+        assertEquals(204,request(owner,"PUT",path,input,csrf(owner),false).statusCode());
+        assertEquals(409,request(owner,"PUT",path,input,csrf(owner),false).statusCode());
+        target=json.readTree(request(owner,"GET","/api/client-directory",null,null,false).body()).valueStream().filter(row->row.path("id").asText().equals(client.id().toString())).findFirst().orElseThrow();assertEquals(72500,target.path("cents").asInt());assertEquals("year",target.path("period").asText());
+        assertEquals(204,request(owner,"PUT",path,"{\"cents\":0,\"period\":\"total\",\"version\":1}",csrf(owner),false).statusCode());
+        assertEquals(400,request(owner,"PUT",path,"{\"cents\":-1,\"period\":\"month\",\"version\":2}",csrf(owner),false).statusCode());
+        assertEquals(400,request(owner,"PUT",path,"{\"cents\":10,\"period\":\"wrong\",\"version\":2}",csrf(owner),false).statusCode());
+        assertEquals(404,request(owner,"PUT","/api/client-directory/"+UUID.randomUUID()+"/tariff",input,csrf(owner),false).statusCode());
+        assertEquals(0,jdbc.queryForObject("SELECT COUNT(*) FROM billing_account WHERE user_id=?",Integer.class,client.id()));
+        assertEquals(2,jdbc.queryForObject("SELECT COUNT(*) FROM staff_audit WHERE target_id=? AND action='CLIENT_TARIFF_SET'",Integer.class,client.id().toString()));
+    }
+    @Test void senderDeletionExpiresAfterThirtyMinutesAndKeepsAttachment() throws Exception {
+        var owner=client();login(owner,"coach@example.test","Coach-test-password-123");
+        for(int minutes:List.of(29,30,31)){
+            UUID id=UUID.randomUUID();String input=json.writeValueAsString(Map.of("id",id,"content","Deletion window","attachment",Map.of("name","window.txt","data",Base64.getEncoder().encodeToString("Keep this file".getBytes()))));
+            assertEquals(200,request(owner,"POST","/api/social/community",input,csrf(owner),false).statusCode());
+            jdbc.update("UPDATE social_message SET created_at=? WHERE id=?",java.sql.Timestamp.from(Instant.now().minusSeconds(minutes*60L)),id);
+            assertEquals(minutes<30?204:403,request(owner,"DELETE","/api/social/messages/"+id,null,csrf(owner),false).statusCode());
+            assertEquals(minutes<30?0:1,jdbc.queryForObject("SELECT COUNT(*) FROM social_attachment WHERE message_id=?",Integer.class,id));
+            assertEquals(minutes<30,jdbc.queryForObject("SELECT deleted FROM social_message WHERE id=?",Boolean.class,id));
+        }
+    }
+    @Test void onlySenderCanDeleteEvenWhenOtherUserIsOwner() throws Exception {
+        var owner=client();login(owner,"coach@example.test","Coach-test-password-123");var sender=athlete(owner);var other=athlete(owner);
+        UUID ownerId=jdbc.queryForObject("SELECT id FROM cap_user WHERE email='coach@example.test'",UUID.class),session=UUID.randomUUID();
+        jdbc.update("INSERT INTO club_session(id,title,session_date,start_time,end_time,coach_id,location,capacity,session_type,category,program) VALUES(?,'Sender deletion test','2090-02-10','10:00','11:00',?,'Test',8,'Groep','Strength','')",session,ownerId);
+        jdbc.update("INSERT INTO session_booking(session_id,athlete_id) VALUES(?,?)",session,sender.id());
+        for(String path:List.of("/api/social/community","/api/social/direct/"+ownerId,"/api/social/groups/"+session)){
+            UUID id=UUID.randomUUID();String content="Sender-only deletion "+id;
+            String input=json.writeValueAsString(Map.of("id",id,"content",content,"attachment",Map.of("name","message.txt","data",Base64.getEncoder().encodeToString("Shared file".getBytes()))));
+            assertEquals(200,request(sender.client(),"POST",path,input,csrf(sender.client()),false).statusCode());
+            assertEquals(403,request(owner,"DELETE","/api/social/messages/"+id,null,csrf(owner),false).statusCode());
+            assertEquals(403,request(other.client(),"DELETE","/api/social/messages/"+id,null,csrf(other.client()),false).statusCode());
+            assertEquals(1,jdbc.queryForObject("SELECT COUNT(*) FROM social_attachment WHERE message_id=?",Integer.class,id));
+            assertEquals(204,request(sender.client(),"DELETE","/api/social/messages/"+id,null,csrf(sender.client()),false).statusCode());
+            assertEquals(0,jdbc.queryForObject("SELECT COUNT(*) FROM social_attachment WHERE message_id=?",Integer.class,id));
+            assertTrue(jdbc.queryForObject("SELECT deleted FROM social_message WHERE id=?",Boolean.class,id));
+        }
+    }
     @Test void communityAuthorPhotosAreAvailableOnlyForVisibleAuthors() throws Exception {
         var owner=client();login(owner,"coach@example.test","Coach-test-password-123");var member=athlete(owner);var author=athlete(owner);UUID id=UUID.randomUUID();
         jdbc.update("INSERT INTO account_profile(user_id,values_json,photo) VALUES(?,'{}',?)",author.id(),new byte[]{1,2,3});
@@ -20,7 +85,7 @@ class RemainingFeaturesTests extends AccountApiTests {
         var response=request(member.client(),"GET",photo,null,null,false);assertEquals(200,response.statusCode());assertTrue(response.headers().firstValue("Content-Type").orElseThrow().contains("image/jpeg"));assertTrue(response.headers().firstValue("Cache-Control").orElseThrow().contains("no-store"));
         assertEquals(401,request(client(),"GET",photo,null,null,false).statusCode());
         jdbc.update("UPDATE cap_user SET active=FALSE WHERE id=?",author.id());assertEquals(404,request(member.client(),"GET",photo,null,null,false).statusCode());jdbc.update("UPDATE cap_user SET active=TRUE WHERE id=?",author.id());
-        assertEquals(204,request(owner,"DELETE","/api/social/messages/"+id,null,csrf(owner),false).statusCode());assertEquals(404,request(member.client(),"GET",photo,null,null,false).statusCode());
+        assertEquals(403,request(owner,"DELETE","/api/social/messages/"+id,null,csrf(owner),false).statusCode());assertEquals(204,request(author.client(),"DELETE","/api/social/messages/"+id,null,csrf(author.client()),false).statusCode());assertEquals(404,request(member.client(),"GET",photo,null,null,false).statusCode());
     }
     @Test void communityFilesAreSharedAndNotifyOtherMembers() throws Exception {
         var owner=client();login(owner,"coach@example.test","Coach-test-password-123");var athlete=athlete(owner);UUID id=UUID.randomUUID();

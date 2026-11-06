@@ -1,0 +1,24 @@
+.client-directory-toolbar { display: flex; flex-wrap: wrap; align-items: end; gap: .75rem; margin-block: 1rem; }
+.client-directory-toolbar label { display: grid; gap: .35rem; flex: 1 1 11rem; font-size: .85rem; font-weight: 600; }
+.client-directory-toolbar input,.client-directory-toolbar select { width: 100%; min-width: 0; min-height: 44px; padding: .65rem; border: 1px solid var(--border); border-radius: .5rem; color: var(--text); background: var(--surface); font: inherit; }
+.client-table-wrap { border: 1px solid var(--border); border-radius: .8rem; overflow: hidden; background: var(--surface); }
+.client-table { width: 100%; border-collapse: collapse; font-size: .9rem; }
+.client-table caption { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+.client-directory-toolbar .client-mobile-sort { display: none; }
+.client-table th { text-align: left; background: var(--hover); font-weight: 600; }
+.client-table th,.client-table td { padding: .75rem; border-bottom: 1px solid var(--border); vertical-align: middle; overflow-wrap: anywhere; }
+.client-table th button { color: var(--text); font: inherit; font-weight: 600; background: transparent; border: 0; padding: .25rem 0; min-height: 44px; cursor: pointer; text-align: left; }
+.client-table th[aria-sort="ascending"] button::after { content: ' ↑'; }
+.client-table th[aria-sort="descending"] button::after { content: ' ↓'; }
+.client-table tbody tr:last-child td { border-bottom: 0; }
+.client-table tbody tr:hover { background: var(--hover); }
+.client-table small { display: block; margin-top: .25rem; color: var(--muted); }
+.client-name { padding: .3rem 0; min-height: 44px; color: var(--text); background: transparent; border: 0; font: inherit; font-weight: 600; text-align: left; cursor: pointer; text-decoration: underline; text-underline-offset: .2rem; }
+.client-name:disabled { text-decoration: none; cursor: default; }
+.client-status { display: inline-block; justify-self: start; padding: .25rem .5rem; border-radius: .4rem; font-size: .8rem; }
+.client-status.is-active { color: #17613c; background: #e2f3e9; }
+.client-status.is-inactive { color: #5d5550; background: #edeae6; }
+.client-management { margin-top: 1.5rem; }
+.client-management > summary { min-height: 44px; align-content: center; cursor: pointer; font-weight: 600; color: var(--accent-text); }
+@media(max-width:600px) { .client-directory-toolbar { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); } .client-directory-toolbar > label:first-child { grid-column: 1 / -1; } .client-directory-toolbar .client-mobile-sort { order: 3; } .client-directory-toolbar > button { order: 4; min-height: 44px; } }
+@media(max-width:1050px) { .client-directory-toolbar .client-mobile-sort { display: grid; } .client-table thead { display: none; } .client-table,.client-table tbody,.client-table tr { display: block; } .client-table tr { padding: .75rem; } .client-table tr + tr { border-top: 1px solid var(--border); } .client-table td { display: grid; grid-template-columns: minmax(6rem,.8fr) minmax(0,1.2fr); gap: .3rem .75rem; padding: .35rem 0; border: 0; } .client-table td::before { content: attr(data-label); color: var(--muted); font-size: .8rem; align-self: center; } .client-table td small { grid-column: 2; margin-top: 0; } }
