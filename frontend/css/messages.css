@@ -13,6 +13,8 @@
 .message-thread[aria-current="true"] { background: var(--highlight); }
 .message-avatar { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; flex: 0 0 40px; border-radius: 50%; background: var(--highlight); color: var(--accent-text); font-weight: 600; font-size: .85rem; }
 .message-thread-copy { flex: 1; min-width: 0; }
+.message-avatar { position: relative; overflow: hidden; }
+.message-avatar img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; border-radius: inherit; }
 .message-thread-copy strong,.message-thread-copy small { display: block; }
 .message-thread-copy small { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--muted); margin-top: .2rem; }
 .message-thread-meta { display: grid; justify-items: end; gap: .4rem; flex-shrink: 0; font-size: .75rem; color: var(--muted); }

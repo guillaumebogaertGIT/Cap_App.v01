@@ -10,6 +10,20 @@ import be.cap.backend.accounts.billing.ComplimentaryMemberships;
 
 @TestPropertySource(properties="spring.datasource.url=jdbc:h2:mem:remaining-features;MODE=PostgreSQL;DB_CLOSE_DELAY=-1")
 class RemainingFeaturesTests extends AccountApiTests {
+    @Test void chatContactPhotosFollowConversationAccess() throws Exception {
+        var owner=client();login(owner,"coach@example.test","Coach-test-password-123");var first=athlete(owner);var second=athlete(owner);
+        UUID coach=jdbc.queryForObject("SELECT id FROM cap_user WHERE email='coach@example.test'",UUID.class);
+        jdbc.update("INSERT INTO account_profile(user_id,values_json,photo) VALUES(?,'{}',?) ON CONFLICT(user_id) DO UPDATE SET photo=EXCLUDED.photo",coach,new byte[]{1,2,3});
+        String path="/api/social/contacts/"+coach+"/photo";
+        assertEquals(200,request(first.client(),"GET",path,null,null,false).statusCode());
+        assertTrue(request(first.client(),"GET","/api/social/inbox",null,null,false).body().contains(path));
+        assertEquals(401,request(client(),"GET",path,null,null,false).statusCode());
+        jdbc.update("INSERT INTO account_profile(user_id,values_json,photo) VALUES(?,'{}',?)",second.id(),new byte[]{4,5,6});
+        assertEquals(404,request(first.client(),"GET","/api/social/contacts/"+second.id()+"/photo",null,null,false).statusCode());
+        jdbc.update("UPDATE cap_user SET active=FALSE WHERE id=?",coach);
+        try{assertEquals(404,request(first.client(),"GET",path,null,null,false).statusCode());}
+        finally{jdbc.update("UPDATE cap_user SET active=TRUE WHERE id=?",coach);}
+    }
     @Test void communityChannelsSeparatePostsAndNotifyEveryoneWithoutSubscriptions() throws Exception {
         var owner=client();login(owner,"coach@example.test","Coach-test-password-123");var first=athlete(owner);var second=athlete(owner);var teacher=instructor();
         UUID general=UUID.randomUUID(),hyrox=UUID.randomUUID(),move=UUID.randomUUID();

@@ -31,7 +31,14 @@ public class SocialController {
         Long unread=jdbc.queryForObject("SELECT COUNT(*) FROM social_message m WHERE "+unreadWhere+" AND m.deleted=FALSE AND NOT EXISTS(SELECT 1 FROM social_notification_read r WHERE r.message_id=m.id AND r.user_id=?)",Long.class,id,user,user);
         var value=new LinkedHashMap<String,Object>();value.put("id",id);value.put("kind",kind);value.put("name",name);value.put("unread",unread);
         value.put("preview",last.isEmpty()?"Start een gesprek":Boolean.TRUE.equals(last.getFirst().get("deleted"))?"Bericht verwijderd.":(last.getFirst().get("content").toString().isBlank()?"Bestand":last.getFirst().get("content")));
-        value.put("updated",last.isEmpty()?null:last.getFirst().get("created_at"));return value;
+        value.put("updated",last.isEmpty()?null:last.getFirst().get("created_at"));
+        if(kind.equals("direct")&&jdbc.queryForObject("SELECT COUNT(*) FROM account_profile WHERE user_id=? AND photo IS NOT NULL",Integer.class,id)>0)value.put("photoUrl","/api/social/contacts/"+id+"/photo");return value;
+    }
+    @GetMapping("/contacts/{id}/photo") public ResponseEntity<byte[]> contactPhoto(Principal p,@PathVariable UUID id){
+        var user=actor(p);if(!direct(user.id(),id))throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+        var rows=jdbc.query("SELECT photo FROM account_profile WHERE user_id=?",(row,index)->row.getBytes(1),id);
+        if(rows.isEmpty()||rows.getFirst()==null)return ResponseEntity.notFound().build();
+        return ResponseEntity.ok().contentType(MediaType.IMAGE_JPEG).cacheControl(CacheControl.noStore()).header("X-Content-Type-Options","nosniff").body(rows.getFirst());
     }
     @GetMapping("/inbox") public ResponseEntity<?> inbox(Principal p){
         var user=actor(p);var threads=new ArrayList<Map<String,Object>>();
