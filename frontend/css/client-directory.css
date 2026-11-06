@@ -1,12 +1,17 @@
 .client-directory-toolbar { display: flex; flex-wrap: wrap; align-items: end; gap: .75rem; margin-block: 1rem; }
 .client-directory-toolbar label { display: grid; gap: .35rem; flex: 1 1 11rem; font-size: .85rem; font-weight: 600; }
 .client-directory-toolbar input,.client-directory-toolbar select { width: 100%; min-width: 0; min-height: 44px; padding: .65rem; border: 1px solid var(--border); border-radius: .5rem; color: var(--text); background: var(--surface); font: inherit; }
-.client-table-wrap { border: 1px solid var(--border); border-radius: .8rem; overflow: hidden; background: var(--surface); }
+.client-table-wrap { border: 1px solid var(--border); border-radius: .8rem; overflow-x: auto; background: var(--surface); }
 .client-table { width: 100%; border-collapse: collapse; font-size: .9rem; }
 .client-table caption { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
 .client-directory-toolbar .client-mobile-sort { display: none; }
 .client-table th { text-align: left; background: var(--hover); font-weight: 600; }
-.client-table th,.client-table td { padding: .75rem; border-bottom: 1px solid var(--border); vertical-align: middle; overflow-wrap: anywhere; }
+.client-table th,.client-table td { padding: .75rem; border-bottom: 1px solid var(--border); vertical-align: middle; overflow-wrap: normal; word-break: normal; }
+.client-table th,.client-table th button { white-space: nowrap; }
+.client-table td:nth-child(2),.client-table td:nth-child(4),.client-table td:nth-child(6) { white-space: nowrap; }
+.client-table td:last-child button { white-space: nowrap; }
+.client-table td:first-child { min-width: 9rem; }
+.client-table td:nth-child(3) { min-width: 12rem; }
 .client-table th button { color: var(--text); font: inherit; font-weight: 600; background: transparent; border: 0; padding: .25rem 0; min-height: 44px; cursor: pointer; text-align: left; }
 .client-table th[aria-sort="ascending"] button::after { content: ' ↑'; }
 .client-table th[aria-sort="descending"] button::after { content: ' ↓'; }

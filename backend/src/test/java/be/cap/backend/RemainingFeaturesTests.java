@@ -10,6 +10,30 @@ import be.cap.backend.accounts.billing.ComplimentaryMemberships;
 
 @TestPropertySource(properties="spring.datasource.url=jdbc:h2:mem:remaining-features;MODE=PostgreSQL;DB_CLOSE_DELAY=-1")
 class RemainingFeaturesTests extends AccountApiTests {
+    @Test void invoiceArchiveIsPrivateRetrySafeAndDoesNotIssuePayments() throws Exception {
+        var owner=client();login(owner,"coach@example.test","Coach-test-password-123");var person=athlete(owner);var teacher=instructor();UUID id=UUID.randomUUID();
+        var input=new LinkedHashMap<String,Object>();input.put("id",id);input.put("clientId",person.id());input.put("customer","Invoice test customer");input.put("reference","TEST-"+id);input.put("date",LocalDate.now(ZoneId.of("Europe/Brussels")));input.put("description","Existing invoice archive");input.put("type","invoice");input.put("grossCents",12100);input.put("netCents",10000);input.put("status","open");input.put("filename","invoice.pdf");input.put("data",Base64.getEncoder().encodeToString("%PDF-1.7\nExisting document".getBytes()));
+        String body=json.writeValueAsString(input),path="/api/invoices",month=YearMonth.now(ZoneId.of("Europe/Brussels")).toString();
+        assertEquals(401,request(client(),"GET",path,null,null,false).statusCode());assertEquals(403,request(person.client(),"GET",path,null,null,false).statusCode());assertEquals(403,request(teacher.client(),"GET",path,null,null,false).statusCode());
+        assertEquals(403,request(owner,"POST",path,body,null,false).statusCode());assertEquals(403,request(teacher.client(),"POST",path,body,csrf(teacher.client()),false).statusCode());
+        assertEquals(201,request(owner,"POST",path,body,csrf(owner),false).statusCode());assertEquals(201,request(owner,"POST",path,body,csrf(owner),false).statusCode());
+        var list=request(owner,"GET",path+"?month="+month,null,null,false);assertEquals(200,list.statusCode());assertTrue(list.body().contains("Existing invoice archive"));assertFalse(list.body().contains(input.get("data").toString()));
+        var file=request(owner,"GET",path+"/"+id+"/file",null,null,false);assertEquals(200,file.statusCode());assertTrue(file.body().startsWith("%PDF-"));assertTrue(file.headers().firstValue("Content-Disposition").orElseThrow().startsWith("attachment;"));assertTrue(file.headers().firstValue("Cache-Control").orElseThrow().contains("no-store"));
+        assertEquals(403,request(person.client(),"GET",path+"/"+id+"/file",null,null,false).statusCode());assertEquals(401,request(client(),"GET",path+"/"+id+"/file",null,null,false).statusCode());
+        input.put("id",UUID.randomUUID());assertEquals(409,request(owner,"POST",path,json.writeValueAsString(input),csrf(owner),false).statusCode());
+        input.put("reference","BAD-"+id);input.put("netCents",Long.MIN_VALUE);assertEquals(400,request(owner,"POST",path,json.writeValueAsString(input),csrf(owner),false).statusCode());input.put("netCents",10000);input.put("data",Base64.getEncoder().encodeToString("Not a PDF".getBytes()));assertEquals(400,request(owner,"POST",path,json.writeValueAsString(input),csrf(owner),false).statusCode());
+        assertEquals(204,request(owner,"PUT",path+"/"+id+"/status","{\"status\":\"paid\",\"version\":1}",csrf(owner),false).statusCode());assertEquals(409,request(owner,"PUT",path+"/"+id+"/status","{\"status\":\"open\",\"version\":1}",csrf(owner),false).statusCode());
+        assertEquals(file.body(),request(owner,"GET",path+"/"+id+"/file",null,null,false).body());
+        assertEquals(400,request(owner,"GET",path+"?month=invalid",null,null,false).statusCode());assertEquals(403,request(owner,"DELETE",path+"/"+id,null,csrf(owner),false).statusCode());
+        assertEquals(0,jdbc.queryForObject("SELECT COUNT(*) FROM billing_account WHERE user_id=?",Integer.class,person.id()));assertEquals(1,jdbc.queryForObject("SELECT COUNT(*) FROM invoice_archive WHERE id=?",Integer.class,id));
+        input.put("id",UUID.randomUUID());input.put("reference","CREDIT-"+id);input.put("type","credit_note");input.put("grossCents",-2500);input.put("netCents",-2000);input.put("data",Base64.getEncoder().encodeToString("%PDF-1.7\nExisting credit note".getBytes()));
+        assertEquals(201,request(owner,"POST",path,json.writeValueAsString(input),csrf(owner),false).statusCode());
+        assertEquals(-2500,jdbc.queryForObject("SELECT gross_cents FROM invoice_archive WHERE id=?",Integer.class,input.get("id")));
+        input.put("id",UUID.randomUUID());input.put("reference","BAD-CREDIT-"+id);input.put("grossCents",2500);assertEquals(400,request(owner,"POST",path,json.writeValueAsString(input),csrf(owner),false).statusCode());
+        jdbc.update("UPDATE cap_user SET staff_role='FINANCE' WHERE id=?",teacher.id());
+        assertEquals(200,request(teacher.client(),"GET",path+"?month="+month,null,null,false).statusCode());assertEquals(200,request(teacher.client(),"GET",path+"/"+id+"/file",null,null,false).statusCode());
+        assertEquals(403,request(teacher.client(),"PUT",path+"/"+id+"/status","{\"status\":\"open\",\"version\":2}",csrf(teacher.client()),false).statusCode());assertEquals(403,request(teacher.client(),"POST",path,body,csrf(teacher.client()),false).statusCode());
+    }
     @Test void financeOverviewUsesMembershipsAndDistinctRecordedAttendance() throws Exception {
         var owner=client();login(owner,"coach@example.test","Coach-test-password-123");var teacher=instructor();
         assertEquals(401,request(client(),"GET","/api/finance/overview",null,null,false).statusCode());

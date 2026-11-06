@@ -192,10 +192,11 @@ function showCurrentView(moveFocus = true) {
     if(adminBottom)allowedViews.push('more');
     sidebarNavigation.querySelector('[data-view-link="health"]').textContent='Gezondheid & Progress';
     sidebarNavigation.querySelector('[data-view-link="coach-health"]').textContent='Gezondheid sporters';
+    if(allowedViews.includes('finance'))allowedViews.push('invoices');
     const routeId = allowedViews.includes(requestedView)
         ? requestedView : 'dashboard';
     document.querySelector('.welcome-bar').hidden = routeId !== 'dashboard';
-    const moreIsActive = previewRole === 'coach' && moreViews.includes(routeId);
+    const moreIsActive = previewRole === 'coach' && (moreViews.includes(routeId)||routeId==='invoices');
     moreNavigation.classList.toggle('has-active-page', moreIsActive);
     if (moreIsActive) moreNavigation.open = true;
     const viewId = previewRole === 'coach' && routeId === 'dashboard' ? (window.capReal?.staffRole==='FINANCE'?'finance-home':'coach') : routeId;
@@ -239,7 +240,8 @@ function showCurrentView(moveFocus = true) {
     document.querySelectorAll('[data-view-link]').forEach((link) => {
         const isActive = link.dataset.viewLink === routeId || (previewRole==='coach'&&link.closest('#sidebar-navigation')&&(
             (link.dataset.viewLink==='health'&&routeId==='coach-health') ||
-            (link.dataset.viewLink==='coach-nutrition'&&routeId==='nutrition'&&allowedViews.includes('coach-nutrition'))));
+            (link.dataset.viewLink==='coach-nutrition'&&routeId==='nutrition'&&allowedViews.includes('coach-nutrition')) ||
+            (link.dataset.viewLink==='finance'&&routeId==='invoices')));
         link.classList.toggle('active', isActive);
         if (isActive) {
             link.setAttribute('aria-current', 'page');
