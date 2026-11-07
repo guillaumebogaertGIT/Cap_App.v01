@@ -63,10 +63,11 @@ public class AiCoachController {
             if(failure instanceof InterruptedException)Thread.currentThread().interrupt();
             jdbc.update("UPDATE ai_coach_request SET state='failed' WHERE id=?",input.id());
             String code=failure instanceof AiCoachFailure known?known.code():failure instanceof java.net.http.HttpTimeoutException?"provider_timeout":"provider_connection";
-            LOG.warn("AI request {} failed: {}",input.id(),code);
+            String diagnostic=failure instanceof AiCoachFailure known?known.diagnostic():code;
+            LOG.warn("AI request {} failed: {}",input.id(),diagnostic);
             String message=failure instanceof AiCoachFailure known?known.userMessage():code.equals("provider_timeout")?"De AI-dienst antwoordde niet op tijd.":"De verbinding met de AI-dienst is mislukt.";
             if(code.equals("draft_invalid"))message="Het AI-workoutconcept kon niet veilig worden verwerkt.";
-            throw error(HttpStatus.SERVICE_UNAVAILABLE,message+" Geen automatische herhaling; de budgetreservering blijft behouden. Referentie: "+input.id()+" ("+code+").");
+            throw error(HttpStatus.SERVICE_UNAVAILABLE,message+" Geen automatische herhaling; de budgetreservering blijft behouden. Referentie: "+input.id()+" ("+diagnostic+").");
         }
     }
 }

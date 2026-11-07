@@ -3,8 +3,11 @@ package be.cap.backend.accounts;
 /** Fixed diagnostic codes only: never include provider bodies, keys or chat text. */
 public class AiCoachFailure extends Exception {
     private final String code;
-    public AiCoachFailure(String code){super(code);this.code=code;}
+    private final String detail;
+    public AiCoachFailure(String code){this(code,"");}
+    public AiCoachFailure(String code,String detail){super(code);this.code=code;this.detail=detail;}
     public String code(){return code;}
+    public String diagnostic(){return code+(detail.isEmpty()?"":"/"+detail);}
     public String userMessage(){return switch(code){
         case "provider_quota" -> "De AI-dienst meldt dat het API-tegoed of de bestedingslimiet is bereikt.";
         case "provider_key" -> "De AI-dienst accepteert de ingestelde API-sleutel niet.";

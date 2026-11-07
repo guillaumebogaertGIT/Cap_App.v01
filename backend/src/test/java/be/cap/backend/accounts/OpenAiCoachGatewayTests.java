@@ -12,6 +12,8 @@ class OpenAiCoachGatewayTests {
         assertEquals("provider_request",gateway.providerFailure(400,"private provider details").code());
         assertEquals("provider_key",gateway.providerFailure(401,"secret").code());
         assertFalse(gateway.providerFailure(400,"private provider details").userMessage().contains("private"));
+        assertEquals("provider_request/http400/invalid_json_schema/text.format.schema",gateway.providerFailure(400,"{\"error\":{\"code\":\"invalid_json_schema\",\"param\":\"text.format.schema\",\"message\":\"private input\"}}").diagnostic());
+        assertEquals("provider_request/http400",gateway.providerFailure(400,"{\"error\":{\"code\":\"private input\",\"param\":\"secret-key\"}}").diagnostic());
     }
     @Test void draftSchemaUsesOnlyCatalogAndKeepsPrivacyAndTokenCaps(){
         var payload=new OpenAiCoachGateway("secret").draftPayload(List.of(new AiCoachGateway.Turn("user","Full body")),List.of("Squat","Push-up"));

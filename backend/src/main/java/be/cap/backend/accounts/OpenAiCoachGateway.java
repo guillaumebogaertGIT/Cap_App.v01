@@ -45,9 +45,13 @@ public class OpenAiCoachGateway implements AiCoachGateway {
     }
     public String draft(List<Turn> turns,List<String> exercises) throws Exception {return request(draftPayload(turns,exercises));}
     AiCoachFailure providerFailure(int status,String body){
-        String code="";try{code=mapper.readTree(body).path("error").path("code").asText();}catch(Exception ignored){}
+        String code="",param="";try{var error=mapper.readTree(body).path("error");code=error.path("code").asText();param=error.path("param").asText();}catch(Exception ignored){}
         if(code.equals("insufficient_quota"))return new AiCoachFailure("provider_quota");
-        return new AiCoachFailure(switch(status){case 401,403->"provider_key";case 429->"provider_rate";case 400,404,422->"provider_request";default->"provider_unavailable";});
+        // Only fixed, known API metadata is retained; never copy an error message or arbitrary input value.
+        String detail="http"+status;
+        if(Set.of("model_not_found","invalid_json_schema","unsupported_parameter","unsupported_value","invalid_parameter","invalid_value","unknown_parameter").contains(code))detail+="/"+code;
+        if(Set.of("model","text.format","text.format.schema","text.format.type","reasoning","reasoning.effort","max_output_tokens","service_tier","input","store").contains(param))detail+="/"+param;
+        return new AiCoachFailure(switch(status){case 401,403->"provider_key";case 429->"provider_rate";case 400,404,422->"provider_request";default->"provider_unavailable";},detail);
     }
     private String request(Map<String,Object> payload) throws Exception {
         String body=mapper.writeValueAsString(payload);
