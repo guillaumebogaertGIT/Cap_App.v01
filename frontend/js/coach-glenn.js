@@ -7,6 +7,17 @@
         ['pain','Wat als ik pijn voel?','Stop met een oefening die pijn veroorzaakt en vertel je coach wat je voelt. Deze voorbeeldchat kan geen blessure beoordelen of veilige vervangende oefening kiezen. Vraag bij aanhoudende of zorgwekkende klachten advies aan een zorgverlener.']
     ];
     const node=(tag,text,cls)=>{const el=document.createElement(tag);if(text)el.textContent=text;if(cls)el.className=cls;return el;};
+    // Render a small, safe text format. Provider HTML is always plain text.
+    function formattedAnswer(text){
+        const content=node('div',null,'coach-glenn-response');let paragraph=null,list=null;
+        function inline(el,value){for(const part of value.split(/(\*\*[^*]+\*\*)/g))el.append(part.startsWith('**')&&part.endsWith('**')?node('strong',part.slice(2,-2)):document.createTextNode(part));}
+        for(const raw of String(text).split(/\r?\n/)){
+            const line=raw.trim();if(!line){paragraph=null;list=null;continue;}
+            const item=line.match(/^(?:([-*•])|\d+[.)])\s+(.+)$/);
+            if(item){const tag=item[1]?'ul':'ol';if(!list||list.tagName.toLowerCase()!==tag){list=node(tag);content.append(list);}const li=node('li');inline(li,item[2]);list.append(li);paragraph=null;}
+            else{list=null;if(!paragraph){paragraph=node('p');content.append(paragraph);}else paragraph.append(document.createElement('br'));inline(paragraph,line.replace(/^#{1,4}\s+/,''));}
+        }return content;
+    }
     const eligible=()=>Boolean(window.capAccess?.signedIn)&&(window.capReal?['ATHLETE','COACH'].includes(window.capReal.account.role):['athlete','coach'].includes(previewRole));
     let launcher,panel,log,input,context,identity='',notice,mode,taskMode,modeLabel,consentLabel,consent,send,available=false,loading=false,busy=false,history=[],chatGeneration=0;
     function close(focus=true){if(!panel)return;panel.hidden=true;launcher.setAttribute('aria-expanded','false');if(focus&&!launcher.hidden)launcher.focus();}
@@ -17,12 +28,12 @@
         if(available){
             if(!consent.checked){consent.reportValidity();consent.focus();return;}
             busy=true;send.disabled=true;const userKey=identity,generation=chatGeneration;
-            const asked=node('p',question,'coach-glenn-question'),reply=node('div',null,'coach-glenn-answer');reply.setAttribute('role','status');reply.textContent='AI antwoordt…';log.append(asked,reply);log.scrollTop=log.scrollHeight;
+            const asked=node('p',question,'coach-glenn-question'),reply=node('div',null,'coach-glenn-answer');reply.setAttribute('role','status');reply.textContent='Glenn antwoordt…';log.append(asked,reply);log.scrollTop=log.scrollHeight;
             try{
                 let recent=history.slice(-6);while(recent.length&&new TextEncoder().encode(recent.map(t=>t.content).join('')+question).length>8000)recent=recent.slice(2);
                 const result=await window.capReal.request('/api/ai-coach','POST',{id:crypto.randomUUID(),message:question,history:recent,consent:true,mode:taskMode.value});
                 if(!eligible()||identity!==userKey||generation!==chatGeneration)return;
-                reply.replaceChildren(node('strong','AI Coach Glenn'),node('p',result.answer));history=[...recent,{role:'user',content:question},{role:'assistant',content:result.answer}];
+                reply.replaceChildren(node('strong','Glenn · AI-assistent','coach-glenn-sender'),formattedAnswer(result.answer));history=[...recent,{role:'user',content:question},{role:'assistant',content:result.answer}];
                 if(result.workout){
                     const draft=result.workout;reply.append(node('strong',draft.name),node('small','AI-concept · nog niet bewaard'));
                     const list=node('ul');for(const exercise of draft.exercises)list.append(node('li',`${exercise.name} · ${exercise.sets} × ${exercise.reps} · ${exercise.restSeconds}s rust`));reply.append(list);

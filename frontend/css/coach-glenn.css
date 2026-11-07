@@ -9,10 +9,13 @@
 .coach-glenn-notice { padding: .35rem 1rem .6rem; margin: 0; background: var(--highlight); font-size: .75rem; line-height: 1.5; }
 .coach-glenn-context { margin: .25rem 1rem; font-size: .75rem; color: var(--muted); overflow-wrap: anywhere; }
 .coach-glenn-chat-log { min-height: 8rem; max-height: none; flex: 1 1 auto; overflow-y: auto; overscroll-behavior: contain; padding: .75rem 1rem; display: flex; flex-direction: column; gap: .65rem; }
-.coach-glenn-question { align-self: flex-end; margin: 0; padding: .65rem; max-width: 90%; background: var(--highlight); border-radius: .75rem .75rem 0 .75rem; overflow-wrap: anywhere; font-size: .875rem; }
-.coach-glenn-answer { padding: .75rem; background: var(--hover); border-radius: .75rem .75rem .75rem 0; font-size: .875rem; overflow-wrap: anywhere; }
-.coach-glenn-answer strong { font-size: .75rem; color: var(--muted); }
-.coach-glenn-answer p { margin: .35rem 0 0; line-height: 1.5; }
+.coach-glenn-question { align-self: flex-end; margin: .4rem 0 0; padding: .75rem 1rem; max-width: 85%; background: var(--action); color: #171717; border-radius: .85rem .85rem .2rem .85rem; overflow-wrap: anywhere; font-size: .875rem; line-height: 1.6; white-space: pre-wrap; }
+.coach-glenn-answer { align-self: flex-start; max-width: 100%; box-sizing: border-box; padding: 1rem; background: color-mix(in srgb,var(--surface) 94%,var(--text)); color: var(--text); border-radius: .2rem .85rem .85rem .85rem; font-size: .875rem; overflow-wrap: anywhere; line-height: 1.65; margin-bottom: .6rem; }
+.coach-glenn-answer .coach-glenn-sender { display:block; font-size: .75rem; color: var(--muted); margin-bottom: .6rem; }
+.coach-glenn-answer p { margin: 0; line-height: 1.65; }
+.coach-glenn-response > * + * { margin-top: .85rem; }
+.coach-glenn-response ul,.coach-glenn-response ol { padding-inline-start: 1.3rem; margin-bottom: 0; }
+.coach-glenn-response li + li { margin-top: .5rem; }
 .coach-glenn-quick { display: flex; overflow-x: auto; flex-shrink: 0; gap: .5rem; padding: .5rem 1rem; }
 .coach-glenn-quick button { flex: 0 0 11rem; min-height: 44px; white-space: normal; text-align: left; font-size: .75rem; padding: .5rem; }
 .coach-glenn-chat-form { padding: .5rem 1rem; display: flex; align-items: end; gap: .5rem; }
