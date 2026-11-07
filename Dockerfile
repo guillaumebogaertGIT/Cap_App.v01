@@ -18,4 +18,5 @@ COPY --from=build --chown=10001:10001 /build/health/ health/
 USER 10001:10001
 EXPOSE 8081
 HEALTHCHECK --interval=20s --timeout=5s --start-period=45s --retries=3 CMD ["java", "-cp", "/opt/cap/health", "Healthcheck"]
-ENTRYPOINT ["java", "-XX:MaxRAMPercentage=70", "-jar", "/opt/cap/app.jar"]
+# Favor startup latency on the small free instance over peak JIT throughput.
+ENTRYPOINT ["java", "-XX:MaxRAMPercentage=70", "-XX:TieredStopAtLevel=1", "-XX:ActiveProcessorCount=1", "-jar", "/opt/cap/app.jar"]
