@@ -5,6 +5,14 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
 class OpenAiCoachGatewayTests {
+    @Test void providerErrorsUseSafeCodesWithoutLeakingResponseText(){
+        var gateway=new OpenAiCoachGateway("private-key");
+        assertEquals("provider_quota",gateway.providerFailure(429,"{\"error\":{\"code\":\"insufficient_quota\",\"message\":\"private chat\"}}").code());
+        assertEquals("provider_rate",gateway.providerFailure(429,"not JSON").code());
+        assertEquals("provider_request",gateway.providerFailure(400,"private provider details").code());
+        assertEquals("provider_key",gateway.providerFailure(401,"secret").code());
+        assertFalse(gateway.providerFailure(400,"private provider details").userMessage().contains("private"));
+    }
     @Test void draftSchemaUsesOnlyCatalogAndKeepsPrivacyAndTokenCaps(){
         var payload=new OpenAiCoachGateway("secret").draftPayload(List.of(new AiCoachGateway.Turn("user","Full body")),List.of("Squat","Push-up"));
         assertEquals(1800,payload.get("max_output_tokens"));assertEquals(false,payload.get("store"));assertFalse(payload.containsKey("tools"));

@@ -44,6 +44,11 @@ public class OpenAiCoachGateway implements AiCoachGateway {
         payload.put("max_output_tokens",1800);payload.put("text",Map.of("format",Map.of("type","json_schema","name","cap_workout_draft","strict",true,"schema",schema)));return payload;
     }
     public String draft(List<Turn> turns,List<String> exercises) throws Exception {return request(draftPayload(turns,exercises));}
+    AiCoachFailure providerFailure(int status,String body){
+        String code="";try{code=mapper.readTree(body).path("error").path("code").asText();}catch(Exception ignored){}
+        if(code.equals("insufficient_quota"))return new AiCoachFailure("provider_quota");
+        return new AiCoachFailure(switch(status){case 401,403->"provider_key";case 429->"provider_rate";case 400,404,422->"provider_request";default->"provider_unavailable";});
+    }
     private String request(Map<String,Object> payload) throws Exception {
         String body=mapper.writeValueAsString(payload);
         // Conservative fixed-cent reservation still covers this bounded text-only request.
@@ -55,9 +60,10 @@ public class OpenAiCoachGateway implements AiCoachGateway {
         var response=client.send(request,HttpResponse.BodyHandlers.ofInputStream());
         try(var stream=response.body()){
             byte[] bytes=stream.readNBytes(65537);
-            if(response.statusCode()!=200||bytes.length>65536)throw new IllegalStateException("AI unavailable");
+            if(response.statusCode()!=200)throw providerFailure(response.statusCode(),new String(bytes,StandardCharsets.UTF_8));
+            if(bytes.length>65536)throw new AiCoachFailure("provider_response_size");
             var root=mapper.readTree(new String(bytes,StandardCharsets.UTF_8));
-            if(!root.path("status").asText().equals("completed"))throw new IllegalStateException("AI incomplete");
+            if(!root.path("status").asText().equals("completed"))throw new AiCoachFailure("provider_incomplete");
             var output=new StringBuilder();
             for(var item:root.path("output"))if(item.path("type").asText().equals("message"))for(var part:item.path("content")){
                 String type=part.path("type").asText();

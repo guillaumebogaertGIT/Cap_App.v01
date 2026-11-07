@@ -14,6 +14,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 @RestController @Profile("accounts") @RequestMapping("/api/ai-coach")
 public class AiCoachController {
+    private static final org.slf4j.Logger LOG=org.slf4j.LoggerFactory.getLogger(AiCoachController.class);
     public record Input(UUID id,String message,List<AiCoachGateway.Turn> history,boolean consent,String mode) {}
     private final StaffPolicy policy;private final AiWorkoutDrafts drafts;
     private final JdbcTemplate jdbc;private final AccountService accounts;private final AiCoachGateway gateway;private final TransactionTemplate transaction;
@@ -53,13 +54,19 @@ public class AiCoachController {
             jdbc.update("INSERT INTO ai_coach_request(id,user_id,state) VALUES(?,?,'reserved')",input.id(),user.id());
         });
         try{
-            Map<String,Object> result=workout?drafts.validate(gateway.draft(List.copyOf(turns),candidates),candidates):Map.of("answer",gateway.answer(List.copyOf(turns)));
+            Map<String,Object> result;
+            if(workout){String output=gateway.draft(List.copyOf(turns),candidates);try{result=drafts.validate(output,candidates);}catch(Exception invalid){throw new AiCoachFailure("draft_invalid");}}
+            else result=Map.of("answer",gateway.answer(List.copyOf(turns)));
             jdbc.update("UPDATE ai_coach_request SET state='completed' WHERE id=?",input.id());
             return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(result);
         }catch(Exception failure){
             if(failure instanceof InterruptedException)Thread.currentThread().interrupt();
             jdbc.update("UPDATE ai_coach_request SET state='failed' WHERE id=?",input.id());
-            throw error(HttpStatus.SERVICE_UNAVAILABLE,"AI kon niet antwoorden. Je vraag wordt niet automatisch opnieuw verstuurd; de budgetreservering blijft behouden.");
+            String code=failure instanceof AiCoachFailure known?known.code():failure instanceof java.net.http.HttpTimeoutException?"provider_timeout":"provider_connection";
+            LOG.warn("AI request {} failed: {}",input.id(),code);
+            String message=failure instanceof AiCoachFailure known?known.userMessage():code.equals("provider_timeout")?"De AI-dienst antwoordde niet op tijd.":"De verbinding met de AI-dienst is mislukt.";
+            if(code.equals("draft_invalid"))message="Het AI-workoutconcept kon niet veilig worden verwerkt.";
+            throw error(HttpStatus.SERVICE_UNAVAILABLE,message+" Geen automatische herhaling; de budgetreservering blijft behouden. Referentie: "+input.id()+" ("+code+").");
         }
     }
 }
