@@ -5,6 +5,12 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
 class OpenAiCoachGatewayTests {
+    @Test void draftSchemaUsesOnlyCatalogAndKeepsPrivacyAndTokenCaps(){
+        var payload=new OpenAiCoachGateway("secret").draftPayload(List.of(new AiCoachGateway.Turn("user","Full body")),List.of("Squat","Push-up"));
+        assertEquals(1800,payload.get("max_output_tokens"));assertEquals(false,payload.get("store"));assertFalse(payload.containsKey("tools"));
+        String schema=payload.get("text").toString();assertTrue(schema.contains("json_schema"));assertTrue(schema.contains("Squat"));assertTrue(schema.contains("additionalProperties=false"));
+        assertTrue(payload.get("instructions").toString().contains("Unknown/unconfirmed"));assertFalse(payload.toString().contains("secret"));
+    }
     @Test void requestPinsModelTokenCapNoStorageNoToolsAndNoKeyInPayload(){
         var gateway=new OpenAiCoachGateway("test-key-never-send");
         var payload=gateway.payload(List.of(new AiCoachGateway.Turn("user","Hello")));

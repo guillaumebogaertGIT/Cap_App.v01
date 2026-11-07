@@ -13,6 +13,24 @@ import static org.mockito.Mockito.*;
 class AiCoachTests extends AccountApiTests {
     @MockitoBean AiCoachGateway gateway;
     @BeforeEach void cleanAiLedger(){jdbc.update("DELETE FROM ai_coach_request");jdbc.update("UPDATE ai_coach_budget SET reserved_cents=0 WHERE id=1");}
+    @Test void workoutDraftValidatesCatalogAndNeverSavesIt() throws Exception {
+        var owner=client();login(owner,"coach@example.test","Coach-test-password-123");when(gateway.configured()).thenReturn(true);
+        String storedBefore=jdbc.queryForObject("SELECT payload FROM workout_state WHERE id=1",String.class);
+        assertTrue(json.readTree(request(owner,"GET","/api/ai-coach",null,null,false).body()).path("canDraft").asBoolean());
+        when(gateway.draft(anyList(),anyList())).thenAnswer(call->json.writeValueAsString(Map.of("status","draft","message","Controleer dit concept.","name","Full body concept","description","Controleer voor gebruik.","workoutType","full-body","exercises",List.of(Map.of("name",((List<?>)call.getArgument(1)).getFirst(),"sets",3,"reps",10,"restSeconds",60)))));
+        String input=json.writeValueAsString(Map.of("id",UUID.randomUUID(),"message","Full body met halters, vier oefeningen","consent",true,"mode","workout"));
+        var response=request(owner,"POST","/api/ai-coach",input,csrf(owner),false);assertEquals(200,response.statusCode(),response.body());
+        var workout=json.readTree(response.body()).path("workout");assertTrue(workout.path("id").isNull());assertTrue(workout.path("athleteId").isNull());assertEquals("none",workout.path("exercises").get(0).path("loadMode").asText());
+        assertEquals(storedBefore,jdbc.queryForObject("SELECT payload FROM workout_state WHERE id=1",String.class));
+        doReturn("{\"status\":\"draft\",\"message\":\"Concept\",\"name\":\"Test\",\"description\":\"\",\"workoutType\":\"other\",\"exercises\":[{\"name\":\"invented exercise\",\"sets\":3,\"reps\":10,\"restSeconds\":60}]}").when(gateway).draft(anyList(),anyList());
+        input=input.replaceAll("\"id\":\"[^\"]+\"","\"id\":\""+UUID.randomUUID()+"\"");
+        assertEquals(503,request(owner,"POST","/api/ai-coach",input,csrf(owner),false).statusCode());
+        assertEquals(2,jdbc.queryForObject("SELECT reserved_cents FROM ai_coach_budget WHERE id=1",Integer.class));
+        jdbc.update("UPDATE cap_user SET staff_role='INSTRUCTOR' WHERE email='coach@example.test'");
+        try{assertFalse(json.readTree(request(owner,"GET","/api/ai-coach",null,null,false).body()).path("canDraft").asBoolean());assertEquals(403,request(owner,"POST","/api/ai-coach",input,csrf(owner),false).statusCode());}
+        finally{jdbc.update("UPDATE cap_user SET staff_role='OWNER' WHERE email='coach@example.test'");}
+        verify(gateway,times(2)).draft(anyList(),anyList());verify(gateway,never()).answer(anyList());
+    }
     String body(UUID id,boolean consent) throws Exception{return json.writeValueAsString(Map.of("id",id,"message","Wat betekenen sets?","history",List.of(),"consent",consent));}
     @Test void allowlistConsentCsrfAndHistoryAreCheckedBeforeProvider() throws Exception {
         var owner=client();login(owner,"coach@example.test","Coach-test-password-123");when(gateway.configured()).thenReturn(true);

@@ -37,3 +37,8 @@
 .coach-glenn-disclosure summary,.coach-glenn-suggestions summary { padding: .4rem 1rem; min-height: 44px; box-sizing: border-box; display: list-item; align-content: center; font-size: .75rem; color: var(--muted); cursor: pointer; }
 .coach-glenn-chat > header,.coach-glenn-chat-form,.coach-glenn-chat > footer,.coach-glenn-consent { flex-shrink: 0; }
 .coach-glenn-chat-log > * { flex-shrink: 0; }
+.coach-glenn-task-mode { display:flex; align-items:center; gap:.75rem; margin:.25rem 1rem; flex-shrink:0; font-size:.8rem; }
+.coach-glenn-task-mode[hidden] { display:none; }
+.coach-glenn-task-mode select { min-height:2.75rem; min-width:0; flex:1; }
+.coach-glenn-answer small { display:block; margin-block:.4rem; }
+.coach-glenn-answer ul { padding-inline-start:1.2rem; }

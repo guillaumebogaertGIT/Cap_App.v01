@@ -34,6 +34,7 @@ const copySubmit = document.querySelector('#save-workout-copy');
 const cancelEdit = document.querySelector('#cancel-workout-edit');
 const deleteEditedWorkout = document.querySelector('#delete-edited-workout');
 function setEditMode(workout = null) {
+    document.querySelector('#ai-workout-draft-notice')?.remove();
     sessionHandoffIds.clear();
     editingAssignmentId = null;
     athleteDate.min = clubToday();
@@ -447,6 +448,19 @@ document.querySelector('#load-workout-template').addEventListener('click', () =>
     const workout = savedTemplates.find(item => item.id === templateSelect.value);
     if (!workout) { document.querySelector('#workout-template-status').textContent = 'Kies eerst een opgeslagen workout.'; return; }
     populateWorkout(workout);
+});
+document.addEventListener('cap:ai-workout-draft', event => {
+    if (previewRole !== 'coach' || !window.capReal || !window.capCan?.('WORKOUT_TEMPLATE_MANAGE')) return;
+    if (!populateWorkout(event.detail)) return;
+    destination.value = 'library';
+    typeSelect.value = event.detail.workoutType || 'other';
+    updateAssignmentOptions();showWorkoutEditor(false);
+    location.hash = 'create-workout';
+    document.querySelector('#workout-template-status').textContent = 'AI-concept: controleer oefeningen, sets, herhalingen en rust. Nog niet bewaard of toegewezen.';
+    const notice = document.createElement('p');notice.id = 'ai-workout-draft-notice';notice.className = 'sample-notice';notice.setAttribute('role','status');
+    notice.textContent = 'AI-concept: controleer oefeningen, sets, herhalingen en rust. Nog niet bewaard of toegewezen.';
+    workoutForm.before(notice);
+    event.preventDefault();
 });
 document.addEventListener('cap:edit-workout', event => {
     if (previewRole !== 'coach') return;
