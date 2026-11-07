@@ -29,10 +29,10 @@
     const categoryCounts = new Map();
     const bodyTypeCounts = new Map();
     const bodyHeading = document.createElement('h3'); bodyHeading.textContent = 'Kies een workout type';
-    const bodyTiles = document.createElement('div'); bodyTiles.className = 'home-tiles';
+    const bodyTiles = document.createElement('div'); bodyTiles.className = 'home-tiles workout-type-tiles';
     chooserTitle.before(bodyHeading, bodyTiles);
     chooserTitle.textContent = 'Of kies een groep';
-    [['lower-body', 'Lower body'], ['upper-body', 'Upper body'], ['full-body', 'Full body']].forEach(([type, label]) => {
+    [['lower-body', 'Lower body'], ['upper-body', 'Upper body'], ['full-body', 'Full body'], ['wod', 'WOD']].forEach(([type, label]) => {
         const tile = document.createElement('button'); tile.type = 'button'; tile.className = 'home-tile'; tile.dataset.workoutType = type;
         const icon = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); icon.setAttribute('viewBox', '0 0 24 24'); icon.setAttribute('aria-hidden', 'true');
         const path = document.createElementNS('http://www.w3.org/2000/svg', 'path'); path.setAttribute('d', 'M3 6h7l2 2h9v13H3zM3 6V3h7l2 3'); icon.append(path);
@@ -86,7 +86,7 @@
         });
     }
     function filterCoachTypes() {
-        const typeName = { 'lower-body': 'Lower body', 'upper-body': 'Upper body', 'full-body': 'Full body', conditioning: 'Conditioning', other: 'Overig' }[coachType];
+        const typeName = { 'lower-body': 'Lower body', 'upper-body': 'Upper body', 'full-body': 'Full body', conditioning: 'Conditioning', wod: 'WOD', other: 'Overig' }[coachType];
         const categoryName = libraryCategories.find(([value]) => value === coachCategory)?.[1] || 'Alle workouts';
         selectionTitle.textContent = typeName ? `${typeName}${coachCategory === 'all' ? '' : ' · ' + categoryName}` : categoryName;
         const query = coachSearch.value.trim().toLocaleLowerCase('nl-BE');
@@ -109,7 +109,7 @@
     }
     const typeFilters = document.createElement('div'); typeFilters.id = 'coach-type-filters'; typeFilters.className = 'workout-type-filters';
     typeFilters.setAttribute('role', 'group'); typeFilters.setAttribute('aria-label', 'Filter op workout type');
-    [['all','Alles'],['full-body','Full body'],['lower-body','Lower body'],['upper-body','Upper body'],['conditioning','Conditioning'],['other','Overig']].forEach(([type,label]) => {
+    [['all','Alles'],['full-body','Full body'],['lower-body','Lower body'],['upper-body','Upper body'],['conditioning','Conditioning'],['wod','WOD'],['other','Overig']].forEach(([type,label]) => {
         const button = document.createElement('button'); button.type='button'; button.className='secondary-button'; button.textContent=label; button.dataset.type=type;
         button.setAttribute('aria-pressed', String(type === coachType));
         button.addEventListener('click', () => { coachType=type; filterCoachTypes(); }); typeFilters.append(button);

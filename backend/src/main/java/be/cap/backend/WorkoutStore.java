@@ -176,7 +176,7 @@ public class WorkoutStore {
         String category = input.category() == null ? "" : input.category();
         if (!List.of("", "CAP HYROX", "CAP Hybrid", "CAP Move", "CAP Lift & HIT", "Private", "Open gym", "Athlete").contains(category)) throw invalid();
         String workoutType = input.workoutType() == null ? "other" : input.workoutType();
-        if (!List.of("other", "full-body", "lower-body", "upper-body", "conditioning").contains(workoutType)) throw invalid();
+        if (!List.of("other", "full-body", "lower-body", "upper-body", "conditioning", "wod").contains(workoutType)) throw invalid();
     }
 
     private Workout write(Workout input, String id) throws IOException {

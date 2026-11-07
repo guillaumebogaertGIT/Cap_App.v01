@@ -1111,3 +1111,7 @@ main { padding: 1rem; }
 .finance-totals dd, .finance-payments { font-variant-numeric: tabular-nums; }
 .sidebar #sidebar-navigation a.sidebar-with-icon { display: flex; align-items: center; gap: .7rem; }
 .sidebar-nav-icon { width: 1.25rem; height: 1.25rem; flex: 0 0 1.25rem; }
+
+/* Four workout types: balanced rows on tablets, one row on wide screens. */
+@media (min-width: 650px) { .workout-type-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (min-width: 1400px) { .workout-type-tiles { grid-template-columns: repeat(4, minmax(0, 1fr)); } }

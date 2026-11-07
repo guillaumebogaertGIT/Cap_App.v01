@@ -58,7 +58,7 @@
         $('exercise-library-open').parentElement.hidden = !draft.name;
         document.querySelector('.exercise-library-selection').hidden = !choosing;
         $('exercise-selection-help').hidden = !choosing;
-        const typeName = { 'upper-body': 'Upper body', 'lower-body': 'Lower body', 'full-body': 'Full body' }[draft.type] || 'Alle oefeningen';
+        const typeName = { 'upper-body': 'Upper body', 'lower-body': 'Lower body', 'full-body': 'Full body', wod: 'WOD' }[draft.type] || 'Alle oefeningen';
         const exerciseCount = `${draft.count} ${draft.count === 1 ? 'oefening' : 'oefeningen'}`;
         $('exercise-library-draft').textContent = `${draft.name || 'Naamloze workout'} · ${typeName} · ${exerciseCount} · Nog niet opgeslagen`;
         $('exercise-library-open').textContent = 'Terug naar mijn workout';

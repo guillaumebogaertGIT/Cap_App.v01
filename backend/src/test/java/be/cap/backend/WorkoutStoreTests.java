@@ -74,6 +74,17 @@ class WorkoutStoreTests {
         assertThrows(ResponseStatusException.class, () -> deleted.assignment(id));
     }
 
+    @Test void wodTypePersistsInTemplatesAndAssignments() throws Exception {
+        String file=directory.resolve("wod-types.json").toString();
+        var store=new WorkoutStore(file);
+        var input=new Workout(null,"WOD Friday","",List.of(new Workout.Exercise("Squat",3,10)),"","","CAP HYROX","wod");
+        var saved=store.create(input);
+        store.assign(saved.id(),new Workout(saved.id(),saved.name(),"",saved.exercises(),"preview-guillaume","",saved.category(),saved.workoutType()));
+        var reloaded=new WorkoutStore(file);
+        assertEquals("wod",reloaded.list().getFirst().workoutType());
+        assertEquals("wod",reloaded.assignments().getFirst().planned().workoutType());
+    }
+
     @Test void workoutTypeAndAudiencePersistThroughCreateResolveAssignAndReload() throws Exception {
         String file = directory.resolve("workout-types.json").toString();
         WorkoutStore store = new WorkoutStore(file);

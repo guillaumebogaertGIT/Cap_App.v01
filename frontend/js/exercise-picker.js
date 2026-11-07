@@ -23,7 +23,7 @@
     const regionForType = type => ({ 'upper-body': 'Upper Body', 'lower-body': 'Lower Body' })[type] || '';
     const matchesType = (exercise, type) => !regionForType(type) || exercise.region === regionForType(type);
     const currentType = () => document.getElementById('workout-kind')?.value || '';
-    const typeLabel = () => ({ 'upper-body': 'Upper body', 'lower-body': 'Lower body', 'full-body': 'Full body' })[currentType()] || 'Alle oefeningen';
+    const typeLabel = () => ({ 'upper-body': 'Upper body', 'lower-body': 'Lower body', 'full-body': 'Full body', wod: 'WOD' })[currentType()] || 'Alle oefeningen';
     function search(query, filters = {}) {
         const words = normalize(query).split(' ').filter(Boolean);
         const source = filters.status === 'archived' ? allExercises.filter(exercise => exercise.archived) : catalog;

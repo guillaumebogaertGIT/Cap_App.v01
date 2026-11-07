@@ -76,7 +76,7 @@ const saveStatus = document.createElement('p'); saveStatus.setAttribute('role', 
 const typeLabel = document.createElement('label'); typeLabel.textContent = 'Workout type';
 const typeSelect = document.createElement('select'); typeSelect.name = 'workoutType'; typeSelect.id = 'workout-kind';
 typeSelect.add(new Option('Kies een workout type', '')); typeSelect.required = true;
-[['other','Overig'],['full-body','Full body'],['lower-body','Lower body'],['upper-body','Upper body'],['conditioning','Conditioning']].forEach(([value,label]) => typeSelect.add(new Option(label,value)));
+[['other','Overig'],['full-body','Full body'],['lower-body','Lower body'],['upper-body','Upper body'],['conditioning','Conditioning'],['wod','WOD']].forEach(([value,label]) => typeSelect.add(new Option(label,value)));
 typeLabel.append(typeSelect);
 const confirmSave = document.createElement('button'); confirmSave.type = 'button'; confirmSave.className = 'primary-button'; confirmSave.textContent = 'Bewaren';
 const closeSave = document.createElement('button'); closeSave.type = 'button'; closeSave.className = 'secondary-button'; closeSave.textContent = 'Verder bewerken';
@@ -110,11 +110,11 @@ const athleteAgenda = window.capAgenda.mount(athleteDate);
 const sessionAgenda = window.capAgenda.mount(sessionDate, { sessions: true, onChange: () => updateAssignmentOptions() });
 
 // Choose body focus first; categories and assignments remain independent.
-const bodyTypes = [['lower-body', 'Lower body'], ['upper-body', 'Upper body'], ['full-body', 'Full body']];
+const bodyTypes = [['lower-body', 'Lower body'], ['upper-body', 'Upper body'], ['full-body', 'Full body'], ['wod', 'WOD']];
 const typeChooser = document.createElement('section'); typeChooser.setAttribute('aria-labelledby', 'workout-type-title');
 const typeHeading = document.createElement('h3'); typeHeading.id = 'workout-type-title'; typeHeading.tabIndex = -1;
 typeHeading.textContent = 'Wat voor workout maak je?';
-const bodyTiles = document.createElement('div'); bodyTiles.className = 'home-tiles';
+const bodyTiles = document.createElement('div'); bodyTiles.className = 'home-tiles workout-type-tiles';
 typeChooser.append(typeHeading, bodyTiles);
 const categoryChooser = document.createElement('section');
 categoryChooser.hidden = true;
@@ -146,7 +146,7 @@ bodyTypes.forEach(([value, label]) => {
     const tile = document.createElement('button'); tile.type = 'button'; tile.className = 'home-tile'; tile.dataset.workoutType = value;
     const icon = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); icon.setAttribute('viewBox', '0 0 24 24'); icon.setAttribute('aria-hidden', 'true');
     const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-    path.setAttribute('d', value === 'lower-body' ? 'M8 3h8v7l-2 11m-4-11 2 3-2 8M8 10h8' : value === 'upper-body' ? 'M9 3h6l2 4 4 3-2 4-3-2v9H8v-9l-3 2-2-4 4-3z' : 'M12 2a2 2 0 1 0 0 4 2 2 0 0 0 0-4M5 8h14m-7 0v6m-4 8 4-8 4 8');
+    path.setAttribute('d', value === 'wod' ? 'M9 2h6M12 2v3m6 1 2 2M12 9v5l3 2M21 14a9 9 0 1 1-18 0 9 9 0 0 1 18 0' : value === 'lower-body' ? 'M8 3h8v7l-2 11m-4-11 2 3-2 8M8 10h8' : value === 'upper-body' ? 'M9 3h6l2 4 4 3-2 4-3-2v9H8v-9l-3 2-2-4 4-3z' : 'M12 2a2 2 0 1 0 0 4 2 2 0 0 0 0-4M5 8h14m-7 0v6m-4 8 4-8 4 8');
     icon.append(path);
     const title = document.createElement('strong'); title.textContent = label;
     const caption = document.createElement('span'); caption.textContent = 'Bewaren bij ' + label;
