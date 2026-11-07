@@ -329,6 +329,7 @@
         content.append(node('h4', workout.name));
         if (workout.description) content.append(node('p', workout.description));
         content.append(window.capWorkoutView.render(workout.exercises, onRemove));
+        window.capCoachGlenn.mount(content,workout);
         return content;
     }
     async function loadWorkouts() {
