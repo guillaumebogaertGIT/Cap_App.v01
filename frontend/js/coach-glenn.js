@@ -19,7 +19,7 @@
         }return content;
     }
     const eligible=()=>Boolean(window.capAccess?.signedIn)&&(window.capReal?['ATHLETE','COACH'].includes(window.capReal.account.role):['athlete','coach'].includes(previewRole));
-    let launcher,panel,log,input,context,identity='',notice,mode,disclosure,consentLabel,consent,send,available=false,loading=false,busy=false,history=[],chatGeneration=0;
+    let launcher,panel,log,input,context,identity='',notice,mode,disclosure,consentLabel,consent,send,ownWorkouts,ownNutrition,ownProfile,ownBookings,dataOptions,dataSummary,available=false,loading=false,busy=false,history=[],chatGeneration=0;
     function close(focus=true){if(!panel)return;panel.hidden=true;launcher.setAttribute('aria-expanded','false');if(focus&&!launcher.hidden)launcher.focus();}
     function open(name){if(!eligible()||!panel)return;context.hidden=!name;context.textContent=name?'Bij deze workout: '+name:'';panel.hidden=false;launcher.setAttribute('aria-expanded','true');input.focus();}
     function reset(){chatGeneration++;history=[];log.replaceChildren(node('p',available?'Welkom! Je chat met AI, niet met de menselijke coach Glenn.':'Welkom! Dit is een voorbeeldchat. Probeer een van de vragen hieronder.','sample-notice'));input.value='';}
@@ -31,7 +31,7 @@
             const asked=node('p',question,'coach-glenn-question'),reply=node('div',null,'coach-glenn-answer');reply.setAttribute('role','status');reply.textContent='Glenn antwoordt…';log.append(asked,reply);log.scrollTop=log.scrollHeight;
             try{
                 let recent=history.slice(-6);while(recent.length&&new TextEncoder().encode(recent.map(t=>t.content).join('')+question).length>8000)recent=recent.slice(2);
-                const result=await window.capReal.request('/api/ai-coach','POST',{id:crypto.randomUUID(),message:question,history:recent,consent:true,mode:'auto'});
+                const result=await window.capReal.request('/api/ai-coach','POST',{id:crypto.randomUUID(),message:question,history:recent,consent:true,mode:'auto',ownWorkouts:ownWorkouts.checked,ownNutrition:ownNutrition.checked,ownProfile:ownProfile.checked,ownBookings:ownBookings.checked});
                 if(!eligible()||identity!==userKey||generation!==chatGeneration)return;
                 reply.replaceChildren(node('strong','Glenn · AI-assistent','coach-glenn-sender'),formattedAnswer(result.answer));history=[...recent,{role:'user',content:question},{role:'assistant',content:result.answer}];
                 if(result.workout){
@@ -55,8 +55,8 @@
     }
     function sync(){
         const key=window.capReal?.account.id||String(window.capAccess?.signedIn)+':'+previewRole;
-        if(identity!==key){identity=key;close(false);reset();}
-        launcher.hidden=!eligible();if(launcher.hidden){close(false);reset();}
+        if(identity!==key){identity=key;close(false);reset();if(ownWorkouts){ownWorkouts.checked=false;ownNutrition.checked=false;ownProfile.checked=false;ownBookings.checked=false;dataSummary.textContent='Eigen gegevens: uit';}}
+        launcher.hidden=!eligible();if(launcher.hidden){close(false);reset();if(ownWorkouts){ownWorkouts.checked=false;ownNutrition.checked=false;ownProfile.checked=false;ownBookings.checked=false;consent.checked=false;dataSummary.textContent='Eigen gegevens: uit';}}
     }
     async function loadAvailability(){
         if(!window.capReal||!eligible())return;
@@ -65,8 +65,9 @@
             const status=await window.capReal.request('/api/ai-coach');available=status.available;
             mode.textContent=available?'AI-test via OpenAI':'Voorbeeldchat';
             consentLabel.hidden=!available;
+            dataOptions.hidden=!available;
             disclosure.open=available&&!consent.checked;
-            notice.textContent=available?'AI-test via OpenAI. Je vragen en recente chattekst worden naar OpenAI gestuurd. Bij Workoutconcept ook gedeelde oefennamen. CAP slaat de chat niet op. Geen automatische toegang tot persoonlijke workouts, voeding of gezondheid. Deel hier geen gevoelige gegevens.': 'Voorbeeldchat · De echte AI-test is voor dit account nog niet beschikbaar. Geen vragen naar een AI-dienst.';
+            notice.textContent=available?'AI-test via OpenAI. Je vragen en recente chattekst worden naar OpenAI gestuurd, voor coaches ook gedeelde oefennamen. Eigen workouts en voeding worden alleen meegestuurd als je hieronder toestemming geeft. CAP bewaart de chat niet; OpenAI kan gegevens verwerken volgens zijn bewaarbeleid. Geen betalingen, wachtwoorden, privéberichten, coachnotities of medische gegevens.': 'Voorbeeldchat · De echte AI-test is voor dit account nog niet beschikbaar. Geen vragen naar een AI-dienst.';
             reset();
         }catch{notice.textContent='AI-status kon niet laden. De voorbeeldchat blijft beschikbaar; er worden geen AI-vragen verstuurd.';}
         finally{loading=false;send.disabled=false;input.disabled=false;}
@@ -86,8 +87,18 @@
         const form=node('form',null,'coach-glenn-chat-form'),label=node('label');input=node('textarea');input.setAttribute('aria-label','Jouw vraag');input.name='question';input.rows=1;input.maxLength=500;input.required=true;input.placeholder='Vraag over training, voeding of CAP…';label.append(input);send=node('button','Versturen','primary-button');send.type='submit';form.append(label,send);form.onsubmit=async event=>{event.preventDefault();const question=input.value.trim();if(!question||!eligible()||busy||loading)return;await answer(question);if(!available||consent.checked)input.value='';if(!panel.hidden)input.focus();};
         consentLabel=node('label',null,'coach-glenn-consent');consentLabel.hidden=true;consent=node('input');consent.type='checkbox';consent.required=true;consentLabel.append(consent,node('span','Ik wil deze AI-test gebruiken en begrijp dat OpenAI mijn chattekst verwerkt.'));
         consent.onchange=()=>{if(consent.checked)disclosure.open=false;};disclosure.append(consentLabel,suggestions);
+        dataOptions=node('fieldset',null,'coach-glenn-data-options');dataOptions.hidden=true;dataOptions.append(node('legend','Eigen gegevens delen met OpenAI (optioneel)'));
+        function dataChoice(title,description){const label=node('label');const checkbox=node('input');checkbox.type='checkbox';const copy=node('span');copy.append(node('strong',title),node('small',description));label.append(checkbox,copy);dataOptions.append(label);return checkbox;}
+        ownWorkouts=dataChoice('Mijn workouts','Deze week: maximaal 3 eigen plannen. Laatste 14 dagen: maximaal 2 afgeronde trainingen met een selectie van oefeningen, herhalingen en kg. Geen cliëntgegevens.');
+        ownNutrition=dataChoice('Mijn voeding','Opgeslagen dagdoelen, voedingstotalen van vandaag en maximaal 8 gelogde producten met porties. Geen gewicht of medische gegevens.');
+        ownProfile=dataChoice('Mijn profiel','Je naam, opgeslagen doel en trainingservaring. Geen geboortedatum, lichaamsmetingen, foto of contactgegevens.');
+        ownBookings=dataChoice('Mijn boekingen','Maximaal 8 eigen actieve boekingen in de komende 14 dagen. Geen deelnemerslijsten of sessienotities.');
+        dataOptions.append(node('small','Geldt voor je volgende vragen in dit gesprek. Uitzetten wist dit gesprek en stopt nieuwe gegevensdeling; eerder verzonden gegevens worden daarmee niet bij OpenAI verwijderd.'));
+        dataSummary=node('p','Eigen gegevens: uit','coach-glenn-data-summary');
+        function scopeChanged(){reset();const active=[ownWorkouts.checked?'workouts':'',ownNutrition.checked?'voeding':'',ownProfile.checked?'profiel':'',ownBookings.checked?'boekingen':''].filter(Boolean);dataSummary.textContent=active.length?'Met eigen '+active.join(' en '):'Eigen gegevens: uit';}
+        ownWorkouts.onchange=scopeChanged;ownNutrition.onchange=scopeChanged;ownProfile.onchange=scopeChanged;ownBookings.onchange=scopeChanged;disclosure.insertBefore(dataOptions,suggestions);
         const footer=node('footer'),coach=node('a','Open Berichten');coach.href='#messages';coach.onclick=()=>close(false);const clear=node('button','Gesprek wissen','secondary-button');clear.type='button';clear.onclick=()=>{reset();input.focus();};footer.append(coach,clear);
-        panel.append(header,disclosure,context,log,form,footer);document.body.append(launcher,panel);
+        panel.append(header,disclosure,dataSummary,context,log,form,footer);document.body.append(launcher,panel);
         launcher.onclick=()=>panel.hidden?open():close();panel.addEventListener('keydown',event=>{if(event.key==='Escape'){event.preventDefault();event.stopPropagation();close();}});
         document.addEventListener('cap:viewchange',sync);sync();loadAvailability();
     });

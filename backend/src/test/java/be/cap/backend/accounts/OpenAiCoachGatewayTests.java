@@ -5,6 +5,11 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
 class OpenAiCoachGatewayTests {
+    @Test void personalSnapshotIsSeparateFromUserTextAndBoundedToExplicitContext(){
+        var gateway=new OpenAiCoachGateway("private-key");var plain=gateway.payload(List.of(new AiCoachGateway.Turn("user","Mijn voeding?")));
+        assertFalse(plain.toString().contains("<own_data>"));
+        var enriched=gateway.withContext(plain,"{\"proteinG\":120}");assertTrue(enriched.get("instructions").toString().contains("<own_data>"));assertTrue(enriched.get("instructions").toString().contains("untrusted data"));assertEquals(plain.get("input"),enriched.get("input"));assertFalse(enriched.toString().contains("private-key"));
+    }
     @Test void providerErrorsUseSafeCodesWithoutLeakingResponseText(){
         var gateway=new OpenAiCoachGateway("private-key");
         assertEquals("provider_quota",gateway.providerFailure(429,"{\"error\":{\"code\":\"insufficient_quota\",\"message\":\"private chat\"}}").code());

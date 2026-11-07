@@ -15,13 +15,14 @@ import org.springframework.web.server.ResponseStatusException;
 @RestController @Profile("accounts") @RequestMapping("/api/ai-coach")
 public class AiCoachController {
     private static final org.slf4j.Logger LOG=org.slf4j.LoggerFactory.getLogger(AiCoachController.class);
-    public record Input(UUID id,String message,List<AiCoachGateway.Turn> history,boolean consent,String mode) {}
+    public record Input(UUID id,String message,List<AiCoachGateway.Turn> history,boolean consent,String mode,Boolean ownWorkouts,Boolean ownNutrition,Boolean ownProfile,Boolean ownBookings) {}
+    private final AiOwnContext ownContext;
     private final StaffPolicy policy;private final AiWorkoutDrafts drafts;
     private final JdbcTemplate jdbc;private final AccountService accounts;private final AiCoachGateway gateway;private final TransactionTemplate transaction;
     private final boolean enabled;private final Set<String> testers;
-    public AiCoachController(JdbcTemplate jdbc,AccountService accounts,AiCoachGateway gateway,PlatformTransactionManager manager,StaffPolicy policy,AiWorkoutDrafts drafts,
+    public AiCoachController(JdbcTemplate jdbc,AccountService accounts,AiCoachGateway gateway,PlatformTransactionManager manager,StaffPolicy policy,AiWorkoutDrafts drafts,AiOwnContext ownContext,
         @Value("${cap.ai-coach.enabled:false}") boolean enabled,@Value("${cap.ai-coach.testers:}") String testers){
-        this.jdbc=jdbc;this.accounts=accounts;this.gateway=gateway;this.policy=policy;this.drafts=drafts;transaction=new TransactionTemplate(manager);this.enabled=enabled;
+        this.jdbc=jdbc;this.accounts=accounts;this.gateway=gateway;this.policy=policy;this.drafts=drafts;this.ownContext=ownContext;transaction=new TransactionTemplate(manager);this.enabled=enabled;
         this.testers=new HashSet<>();for(String email:testers.split(","))if(!email.isBlank())this.testers.add(email.trim().toLowerCase(Locale.ROOT));
     }
     private AccountService.Account user(Principal p){if(p==null)throw error(HttpStatus.UNAUTHORIZED,"Log opnieuw in.");return accounts.account(p.getName());}
@@ -43,6 +44,8 @@ public class AiCoachController {
         List<String> candidates=List.of();
         if(workout){policy.require(user,StaffPolicy.Permission.WORKOUT_TEMPLATE_MANAGE);try{candidates=drafts.candidates(user,input.message());}catch(Exception e){throw error(HttpStatus.SERVICE_UNAVAILABLE,"De oefenbibliotheek kon niet laden.");}}
         if(turns.stream().mapToInt(t->t.content().getBytes(StandardCharsets.UTF_8).length).sum()>8000)throw error(HttpStatus.BAD_REQUEST,"Dit gesprek is te lang. Kies Gesprek wissen.");
+        String personalContext;
+        try{personalContext=ownContext.read(user,Boolean.TRUE.equals(input.ownWorkouts()),Boolean.TRUE.equals(input.ownNutrition()),Boolean.TRUE.equals(input.ownProfile()),Boolean.TRUE.equals(input.ownBookings()));}catch(Exception unavailable){throw error(HttpStatus.SERVICE_UNAVAILABLE,"Je eigen gegevens konden niet veilig laden. Er is geen AI-verzoek verstuurd.");}
         transaction.executeWithoutResult(tx->{
             int used=jdbc.queryForObject("SELECT reserved_cents FROM ai_coach_budget WHERE id=1 FOR UPDATE",Integer.class);
             if(jdbc.queryForObject("SELECT COUNT(*) FROM ai_coach_request WHERE id=?",Integer.class,input.id())>0)throw error(HttpStatus.CONFLICT,"Deze vraag is al verwerkt. Verstuur een nieuwe vraag.");
@@ -55,8 +58,8 @@ public class AiCoachController {
         });
         try{
             Map<String,Object> result;
-            if(workout){String output=gateway.draft(List.copyOf(turns),candidates);try{result=drafts.validate(output,candidates);}catch(Exception invalid){throw new AiCoachFailure("draft_invalid");}}
-            else result=Map.of("answer",gateway.answer(List.copyOf(turns)));
+            if(workout){String output=personalContext.isEmpty()?gateway.draft(List.copyOf(turns),candidates):gateway.draft(List.copyOf(turns),candidates,personalContext);try{result=drafts.validate(output,candidates);}catch(Exception invalid){throw new AiCoachFailure("draft_invalid");}}
+            else result=Map.of("answer",personalContext.isEmpty()?gateway.answer(List.copyOf(turns)):gateway.answer(List.copyOf(turns),personalContext));
             jdbc.update("UPDATE ai_coach_request SET state='completed' WHERE id=?",input.id());
             return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(result);
         }catch(Exception failure){

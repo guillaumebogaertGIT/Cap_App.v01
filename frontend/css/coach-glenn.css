@@ -47,3 +47,9 @@
 .coach-glenn-context[hidden] { display:none; }
 .coach-glenn-chat-form { margin:0; border-top:1px solid var(--border); }
 .coach-glenn-chat-form label { margin:0; }
+.coach-glenn-data-options { margin:.5rem 1rem; padding:.5rem; min-width:0; font-size:.8rem; }
+.coach-glenn-data-options[hidden] { display:none; }
+.coach-glenn-data-options label { display:flex; gap:.65rem; align-items:start; padding:.5rem 0; min-height:44px; }
+.coach-glenn-data-options input { flex:0 0 auto; width:1.25rem; height:1.25rem; }
+.coach-glenn-data-options small { display:block; line-height:1.5; margin-top:.25rem; }
+.coach-glenn-data-summary { flex-shrink:0; margin:.25rem 1rem; font-size:.75rem; color:var(--muted); }

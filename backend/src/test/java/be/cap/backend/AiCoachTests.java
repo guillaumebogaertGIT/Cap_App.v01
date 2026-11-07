@@ -12,7 +12,38 @@ import static org.mockito.Mockito.*;
 @TestPropertySource(properties={"cap.ai-coach.enabled=true","cap.ai-coach.testers=coach@example.test"})
 class AiCoachTests extends AccountApiTests {
     @MockitoBean AiCoachGateway gateway;
+    @org.springframework.beans.factory.annotation.Autowired be.cap.backend.accounts.AiOwnContext ownContext;
+    @org.springframework.beans.factory.annotation.Autowired be.cap.backend.accounts.AccountService accounts;
+    @org.springframework.beans.factory.annotation.Autowired be.cap.backend.accounts.AccountWorkoutService workouts;
     @BeforeEach void cleanAiLedger(){jdbc.update("DELETE FROM ai_coach_request");jdbc.update("UPDATE ai_coach_budget SET reserved_cents=0 WHERE id=1");}
+    @Test void ownContextRequiresOptInAndExcludesOtherUsersAndPrivateFields() throws Exception {
+        var coach=accounts.account("coach@example.test");
+        var first=accounts.accept(accounts.invite(UUID.randomUUID()+"@example.test",coach.email()).token(),"Private identity one","Athlete-test-password-123");
+        var other=accounts.accept(accounts.invite(UUID.randomUUID()+"@example.test",coach.email()).token(),"Private identity two","Athlete-test-password-123");
+        var today=java.time.LocalDate.now(java.time.ZoneId.of("Europe/Brussels"));
+        for(var person:List.of(first,other)){
+            boolean own=person.id().equals(first.id());
+            jdbc.update("INSERT INTO nutrition_target(athlete_id,coach_id,calories,protein_g,carbs_g,fat_g,water_ml,origin,saved_at) VALUES(?,?,2000,120,200,70,2000,'handmatig',CURRENT_TIMESTAMP)",person.id(),coach.id());
+            var entry=Map.of("id",UUID.randomUUID(),"date",today,"meal","lunch","name",own?"OWN_FOOD_MARKER":"OTHER_FOOD_SECRET","amount",100,"unit","g","calories",300,"proteinG",20,"carbsG",40,"fatG",10);
+            jdbc.update("INSERT INTO food_diary_entry(id,athlete_id,entry_date,payload) VALUES(?,?,?,?)",entry.get("id"),person.id(),today,json.writeValueAsString(entry));
+            var saved=workouts.save(null,new Workout(null,own?"OWN_WORKOUT_MARKER":"OTHER_WORKOUT_SECRET","PRIVATE_COACH_NOTE",List.of(new Workout.Exercise("Squat",3,10)),"",""),null,coach);
+            workouts.assign(saved.id(),person.id().toString(),today.toString(),null,coach);
+            jdbc.update("INSERT INTO account_profile(user_id,values_json) VALUES(?,?) ON CONFLICT(user_id) DO UPDATE SET values_json=EXCLUDED.values_json",person.id(),json.writeValueAsString(new be.cap.backend.accounts.ProfileController.Values(person.name(),"1990-01-01","male",180.0,80.0,own?"strength":"OTHER_PROFILE_SECRET","beginner","PRIVATE_PHONE_123")));
+            UUID session=UUID.randomUUID();
+            jdbc.update("INSERT INTO club_session(id,title,session_date,start_time,end_time,coach_id,location,capacity,session_type,category,program) VALUES(?,?,?,'10:00','11:00',?,'CAP',10,'Groep','','PRIVATE_SESSION_NOTE')",session,own?"OWN_BOOKING_MARKER":"OTHER_BOOKING_SECRET",today.plusDays(1),coach.id());
+            jdbc.update("INSERT INTO session_booking(session_id,athlete_id) VALUES(?,?)",session,person.id());
+        }
+        assertEquals("",ownContext.read(first,false,false));
+        String food=ownContext.read(first,false,true);assertTrue(food.contains("OWN_FOOD_MARKER"));assertFalse(food.contains("OWN_WORKOUT_MARKER"));assertFalse(food.contains("OTHER_FOOD_SECRET"));
+        String training=ownContext.read(first,true,false);assertTrue(training.contains("OWN_WORKOUT_MARKER"));assertFalse(training.contains("OTHER_WORKOUT_SECRET"));assertFalse(training.contains("PRIVATE_COACH_NOTE"));assertFalse(training.contains(first.email()));assertFalse(training.contains(first.id().toString()));
+        assertFalse(ownContext.read(coach,true,true).contains("OWN_WORKOUT_MARKER"));
+        String profile=ownContext.read(first,false,false,true,false);assertTrue(profile.contains(first.name()));assertTrue(profile.contains("strength"));assertFalse(profile.contains("PRIVATE_PHONE_123"));assertFalse(profile.contains("1990-01-01"));assertFalse(profile.contains("heightCm"));assertFalse(profile.contains("OTHER_PROFILE_SECRET"));assertFalse(profile.contains("OWN_BOOKING_MARKER"));
+        String bookings=ownContext.read(first,false,false,false,true);assertTrue(bookings.contains("OWN_BOOKING_MARKER"));assertFalse(bookings.contains("OTHER_BOOKING_SECRET"));assertFalse(bookings.contains("PRIVATE_SESSION_NOTE"));assertFalse(bookings.contains(first.name()));
+        var client=client();login(client,"coach@example.test","Coach-test-password-123");when(gateway.configured()).thenReturn(true);when(gateway.answer(anyList(),anyString())).thenReturn("Eigen gegevens gelezen.");
+        String input=json.writeValueAsString(Map.of("id",UUID.randomUUID(),"message","Mijn voeding?","mode","chat","consent",true,"ownNutrition",true,"athleteId",first.id()));
+        assertEquals(200,request(client,"POST","/api/ai-coach",input,csrf(client),false).statusCode());
+        var capture=org.mockito.ArgumentCaptor.forClass(String.class);verify(gateway).answer(anyList(),capture.capture());assertFalse(capture.getValue().contains("OWN_FOOD_MARKER"));
+    }
     @Test void workoutDraftValidatesCatalogAndNeverSavesIt() throws Exception {
         var owner=client();login(owner,"coach@example.test","Coach-test-password-123");when(gateway.configured()).thenReturn(true);
         String storedBefore=jdbc.queryForObject("SELECT payload FROM workout_state WHERE id=1",String.class);
