@@ -18,7 +18,7 @@ class AiCoachTests extends AccountApiTests {
         String storedBefore=jdbc.queryForObject("SELECT payload FROM workout_state WHERE id=1",String.class);
         assertTrue(json.readTree(request(owner,"GET","/api/ai-coach",null,null,false).body()).path("canDraft").asBoolean());
         when(gateway.draft(anyList(),anyList())).thenAnswer(call->json.writeValueAsString(Map.of("status","draft","message","Controleer dit concept.","name","Full body concept","description","Controleer voor gebruik.","workoutType","full-body","exercises",List.of(Map.of("name",((List<?>)call.getArgument(1)).getFirst(),"sets",3,"reps",10,"restSeconds",60)))));
-        String input=json.writeValueAsString(Map.of("id",UUID.randomUUID(),"message","Full body met halters, vier oefeningen","consent",true,"mode","workout"));
+        String input=json.writeValueAsString(Map.of("id",UUID.randomUUID(),"message","Full body met halters, vier oefeningen","consent",true,"mode","auto"));
         var response=request(owner,"POST","/api/ai-coach",input,csrf(owner),false);assertEquals(200,response.statusCode(),response.body());
         var workout=json.readTree(response.body()).path("workout");assertTrue(workout.path("id").isNull());assertTrue(workout.path("athleteId").isNull());assertEquals("none",workout.path("exercises").get(0).path("loadMode").asText());
         assertEquals(storedBefore,jdbc.queryForObject("SELECT payload FROM workout_state WHERE id=1",String.class));
@@ -27,7 +27,7 @@ class AiCoachTests extends AccountApiTests {
         assertEquals(503,request(owner,"POST","/api/ai-coach",input,csrf(owner),false).statusCode());
         assertEquals(2,jdbc.queryForObject("SELECT reserved_cents FROM ai_coach_budget WHERE id=1",Integer.class));
         jdbc.update("UPDATE cap_user SET staff_role='INSTRUCTOR' WHERE email='coach@example.test'");
-        try{assertFalse(json.readTree(request(owner,"GET","/api/ai-coach",null,null,false).body()).path("canDraft").asBoolean());assertEquals(403,request(owner,"POST","/api/ai-coach",input,csrf(owner),false).statusCode());}
+        try{assertFalse(json.readTree(request(owner,"GET","/api/ai-coach",null,null,false).body()).path("canDraft").asBoolean());assertEquals(403,request(owner,"POST","/api/ai-coach",input.replace("\"auto\"","\"workout\""),csrf(owner),false).statusCode());}
         finally{jdbc.update("UPDATE cap_user SET staff_role='OWNER' WHERE email='coach@example.test'");}
         verify(gateway,times(2)).draft(anyList(),anyList());verify(gateway,never()).answer(anyList());
     }

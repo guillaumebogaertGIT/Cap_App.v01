@@ -37,8 +37,8 @@ public class AiCoachController {
             if(turn==null||!Set.of("user","assistant").contains(turn.role()==null?"":turn.role())||turn.content()==null||turn.content().isBlank()||turn.content().length()>8000)throw error(HttpStatus.BAD_REQUEST,"Ongeldig gesprek.");turns.add(turn);
         }}
         turns.add(new AiCoachGateway.Turn("user",input.message().trim()));
-        boolean workout="workout".equals(input.mode());
-        if(input.mode()!=null&&!Set.of("chat","workout").contains(input.mode()))throw error(HttpStatus.BAD_REQUEST,"Onbekende AI-modus.");
+        boolean workout="workout".equals(input.mode())||("auto".equals(input.mode())&&policy.allows(user,StaffPolicy.Permission.WORKOUT_TEMPLATE_MANAGE));
+        if(input.mode()!=null&&!Set.of("chat","workout","auto").contains(input.mode()))throw error(HttpStatus.BAD_REQUEST,"Onbekende AI-modus.");
         List<String> candidates=List.of();
         if(workout){policy.require(user,StaffPolicy.Permission.WORKOUT_TEMPLATE_MANAGE);try{candidates=drafts.candidates(user,input.message());}catch(Exception e){throw error(HttpStatus.SERVICE_UNAVAILABLE,"De oefenbibliotheek kon niet laden.");}}
         if(turns.stream().mapToInt(t->t.content().getBytes(StandardCharsets.UTF_8).length).sum()>8000)throw error(HttpStatus.BAD_REQUEST,"Dit gesprek is te lang. Kies Gesprek wissen.");

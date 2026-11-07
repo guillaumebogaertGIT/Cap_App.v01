@@ -20,6 +20,7 @@ class AiWorkoutDraftsTests {
     @Test void clarificationHasNoWorkoutAndMalformedProviderTextFails() throws Exception {
         String question=json.writeValueAsString(Map.of("status","clarification","message","Welk materiaal is beschikbaar?","name","","description","","workoutType","other","exercises",List.of()));
         assertEquals(Map.of("answer","Welk materiaal is beschikbaar?"),drafts.validate(question,List.of("Squat")));
+        assertEquals(Map.of("answer","Welk materiaal is beschikbaar?"),drafts.validate(question.replace("clarification","answer"),List.of("Squat")));
         assertThrows(Exception.class,()->drafts.validate("not JSON",List.of("Squat")));
     }
 }

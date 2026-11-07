@@ -19,9 +19,9 @@
         }return content;
     }
     const eligible=()=>Boolean(window.capAccess?.signedIn)&&(window.capReal?['ATHLETE','COACH'].includes(window.capReal.account.role):['athlete','coach'].includes(previewRole));
-    let launcher,panel,log,input,context,identity='',notice,mode,taskMode,modeLabel,consentLabel,consent,send,available=false,loading=false,busy=false,history=[],chatGeneration=0;
+    let launcher,panel,log,input,context,identity='',notice,mode,disclosure,consentLabel,consent,send,available=false,loading=false,busy=false,history=[],chatGeneration=0;
     function close(focus=true){if(!panel)return;panel.hidden=true;launcher.setAttribute('aria-expanded','false');if(focus&&!launcher.hidden)launcher.focus();}
-    function open(name){if(!eligible()||!panel)return;context.textContent=name?'Bij deze workout: '+name:'Voor cliënten en coaches. Probeer een voorbeeldvraag of typ je vraag.';panel.hidden=false;launcher.setAttribute('aria-expanded','true');input.focus();}
+    function open(name){if(!eligible()||!panel)return;context.hidden=!name;context.textContent=name?'Bij deze workout: '+name:'';panel.hidden=false;launcher.setAttribute('aria-expanded','true');input.focus();}
     function reset(){chatGeneration++;history=[];log.replaceChildren(node('p',available?'Welkom! Je chat met AI, niet met de menselijke coach Glenn.':'Welkom! Dit is een voorbeeldchat. Probeer een van de vragen hieronder.','sample-notice'));input.value='';}
     async function answer(question,key){
         if(!eligible()||busy||loading)return;
@@ -31,7 +31,7 @@
             const asked=node('p',question,'coach-glenn-question'),reply=node('div',null,'coach-glenn-answer');reply.setAttribute('role','status');reply.textContent='Glenn antwoordt…';log.append(asked,reply);log.scrollTop=log.scrollHeight;
             try{
                 let recent=history.slice(-6);while(recent.length&&new TextEncoder().encode(recent.map(t=>t.content).join('')+question).length>8000)recent=recent.slice(2);
-                const result=await window.capReal.request('/api/ai-coach','POST',{id:crypto.randomUUID(),message:question,history:recent,consent:true,mode:taskMode.value});
+                const result=await window.capReal.request('/api/ai-coach','POST',{id:crypto.randomUUID(),message:question,history:recent,consent:true,mode:'auto'});
                 if(!eligible()||identity!==userKey||generation!==chatGeneration)return;
                 reply.replaceChildren(node('strong','Glenn · AI-assistent','coach-glenn-sender'),formattedAnswer(result.answer));history=[...recent,{role:'user',content:question},{role:'assistant',content:result.answer}];
                 if(result.workout){
@@ -62,9 +62,10 @@
         if(!window.capReal||!eligible())return;
         loading=true;send.disabled=true;input.disabled=true;
         try{
-            const status=await window.capReal.request('/api/ai-coach');available=status.available;modeLabel.hidden=!status.canDraft;
+            const status=await window.capReal.request('/api/ai-coach');available=status.available;
             mode.textContent=available?'AI-test via OpenAI':'Voorbeeldchat';
             consentLabel.hidden=!available;
+            disclosure.open=available&&!consent.checked;
             notice.textContent=available?'AI-test via OpenAI. Je vragen en recente chattekst worden naar OpenAI gestuurd. Bij Workoutconcept ook gedeelde oefennamen. CAP slaat de chat niet op. Geen automatische toegang tot persoonlijke workouts, voeding of gezondheid. Deel hier geen gevoelige gegevens.': 'Voorbeeldchat · De echte AI-test is voor dit account nog niet beschikbaar. Geen vragen naar een AI-dienst.';
             reset();
         }catch{notice.textContent='AI-status kon niet laden. De voorbeeldchat blijft beschikbaar; er worden geen AI-vragen verstuurd.';}
@@ -77,17 +78,16 @@
         const header=node('header'),title=node('h2','AI Coach Glenn');title.id='coach-glenn-title';const dismiss=node('button',null,'secondary-button');dismiss.type='button';dismiss.setAttribute('aria-label','Chat sluiten');dismiss.innerHTML='<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg>';dismiss.onclick=()=>close();header.append(title,dismiss);
         mode=node('small','Voorbeeldchat','coach-glenn-mode');title.append(mode);
         notice=node('p','Voorbeeldchat · Nog geen AI gekoppeld. Vaste voorbeeldantwoorden, niet geschreven door Glenn. Geen gegevens naar een AI-dienst.','coach-glenn-notice');
-        const disclosure=node('details',null,'coach-glenn-disclosure');disclosure.append(node('summary','Over deze AI-test'),notice);
-        modeLabel=node('label','Modus','coach-glenn-task-mode');modeLabel.hidden=true;taskMode=node('select');taskMode.append(new Option('Chat','chat'),new Option('Workoutconcept','workout'));modeLabel.append(taskMode);
-        taskMode.onchange=()=>{reset();input.placeholder=taskMode.value==='workout'?'Bijv. full body voor beginners, halters en machines, 4 oefeningen':'Typ je vraag';};
+        disclosure=node('details',null,'coach-glenn-disclosure');disclosure.append(node('summary','Over Glenn · AI & toestemming'),notice);
         context=node('p',null,'coach-glenn-context');log=node('div',null,'coach-glenn-chat-log');log.setAttribute('role','log');log.setAttribute('aria-label','Voorbeeldgesprek');log.setAttribute('aria-live','polite');log.setAttribute('aria-relevant','additions');log.tabIndex=0;
         const choices=node('div',null,'coach-glenn-quick');choices.setAttribute('aria-label','Voorbeeldvragen');
         for(const [key,question]of examples){const button=node('button',question,'secondary-button');button.type='button';button.dataset.example=key;button.onclick=()=>answer(question,key);choices.append(button);}
         const suggestions=node('details',null,'coach-glenn-suggestions');suggestions.append(node('summary','Voorbeeldvragen'),choices);
-        const form=node('form',null,'coach-glenn-chat-form'),label=node('label','Jouw vraag');input=node('textarea');input.name='question';input.rows=2;input.maxLength=500;input.required=true;input.placeholder='Typ je vraag';label.append(input);send=node('button','Versturen','primary-button');send.type='submit';form.append(label,send);form.onsubmit=async event=>{event.preventDefault();const question=input.value.trim();if(!question||!eligible()||busy||loading)return;await answer(question);if(!available||consent.checked)input.value='';if(!panel.hidden)input.focus();};
+        const form=node('form',null,'coach-glenn-chat-form'),label=node('label');input=node('textarea');input.setAttribute('aria-label','Jouw vraag');input.name='question';input.rows=1;input.maxLength=500;input.required=true;input.placeholder='Vraag over training, voeding of CAP…';label.append(input);send=node('button','Versturen','primary-button');send.type='submit';form.append(label,send);form.onsubmit=async event=>{event.preventDefault();const question=input.value.trim();if(!question||!eligible()||busy||loading)return;await answer(question);if(!available||consent.checked)input.value='';if(!panel.hidden)input.focus();};
         consentLabel=node('label',null,'coach-glenn-consent');consentLabel.hidden=true;consent=node('input');consent.type='checkbox';consent.required=true;consentLabel.append(consent,node('span','Ik wil deze AI-test gebruiken en begrijp dat OpenAI mijn chattekst verwerkt.'));
+        consent.onchange=()=>{if(consent.checked)disclosure.open=false;};disclosure.append(consentLabel,suggestions);
         const footer=node('footer'),coach=node('a','Open Berichten');coach.href='#messages';coach.onclick=()=>close(false);const clear=node('button','Gesprek wissen','secondary-button');clear.type='button';clear.onclick=()=>{reset();input.focus();};footer.append(coach,clear);
-        panel.append(header,disclosure,modeLabel,context,log,suggestions,consentLabel,form,footer);document.body.append(launcher,panel);
+        panel.append(header,disclosure,context,log,form,footer);document.body.append(launcher,panel);
         launcher.onclick=()=>panel.hidden?open():close();panel.addEventListener('keydown',event=>{if(event.key==='Escape'){event.preventDefault();event.stopPropagation();close();}});
         document.addEventListener('cap:viewchange',sync);sync();loadAvailability();
     });

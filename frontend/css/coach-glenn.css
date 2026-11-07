@@ -1,14 +1,14 @@
 .coach-glenn-launcher { position: fixed; right: max(1rem,env(safe-area-inset-right,0px)); bottom: calc(1rem + env(safe-area-inset-bottom,0px)); z-index: 60; width: 3.75rem; height: 3.75rem; padding: .35rem; border: 2px solid var(--action); border-radius: 50%; background: #191b1c; color: #fff; box-shadow: 0 .3rem 1rem #0003; cursor: pointer; }
 .coach-glenn-launcher img { width: 100%; height: 100%; object-fit: contain; }
 .coach-glenn-launcher-label { position: absolute; right: -.15rem; bottom: -.1rem; padding: .1rem .3rem; background: var(--action); color: #171717; border-radius: .35rem; font-size: .65rem; font-weight: 700; }
-.coach-glenn-chat { position: fixed; right: max(1rem,env(safe-area-inset-right,0px)); bottom: calc(5.5rem + env(safe-area-inset-bottom,0px)); z-index: 61; width: min(34rem,calc(100vw - 2rem)); height: min(46rem,calc(100dvh - 7rem - env(safe-area-inset-bottom,0px))); max-height: calc(100dvh - 7rem - env(safe-area-inset-bottom,0px)); display: flex; flex-direction: column; overflow-y: auto; overscroll-behavior: contain; box-sizing: border-box; background: var(--surface); color: var(--text); border: 1px solid var(--border); border-radius: 1rem; box-shadow: 0 .5rem 1.75rem #0003; }
+.coach-glenn-chat { position: fixed; right: max(1rem,env(safe-area-inset-right,0px)); bottom: calc(1rem + env(safe-area-inset-bottom,0px)); z-index: 61; width: min(40rem,calc(100vw - 2rem)); height: calc(100dvh - 2rem - env(safe-area-inset-bottom,0px)); max-height: 60rem; padding: 0; margin: 0; display: flex; flex-direction: column; overflow: hidden; overscroll-behavior: contain; box-sizing: border-box; background: var(--surface); color: var(--text); border: 1px solid var(--border); border-radius: 1rem; box-shadow: 0 .5rem 1.75rem #0003; }
 .coach-glenn-chat[hidden],.coach-glenn-launcher[hidden] { display: none; }
 .coach-glenn-chat > header { display: flex; justify-content: space-between; gap: .5rem; align-items: center; padding: .75rem 1rem; border-bottom: 1px solid var(--border); }
 .coach-glenn-chat h2 { font-size: 1rem; margin: 0; }
 .coach-glenn-chat > header button { display: inline-flex; align-items: center; justify-content: center; padding: .5rem; min-width: 44px; min-height: 44px; }
 .coach-glenn-notice { padding: .35rem 1rem .6rem; margin: 0; background: var(--highlight); font-size: .75rem; line-height: 1.5; }
 .coach-glenn-context { margin: .25rem 1rem; font-size: .75rem; color: var(--muted); overflow-wrap: anywhere; }
-.coach-glenn-chat-log { min-height: 8rem; max-height: none; flex: 1 1 auto; overflow-y: auto; overscroll-behavior: contain; padding: .75rem 1rem; display: flex; flex-direction: column; gap: .65rem; }
+.coach-glenn-chat-log { min-height: 0; max-height: none; flex: 1 1 0; overflow-y: auto; overscroll-behavior: contain; padding: .75rem 1rem; display: flex; flex-direction: column; gap: .65rem; }
 .coach-glenn-question { align-self: flex-end; margin: .4rem 0 0; padding: .75rem 1rem; max-width: 85%; background: var(--action); color: #171717; border-radius: .85rem .85rem .2rem .85rem; overflow-wrap: anywhere; font-size: .875rem; line-height: 1.6; white-space: pre-wrap; }
 .coach-glenn-answer { align-self: flex-start; max-width: 100%; box-sizing: border-box; padding: 1rem; background: color-mix(in srgb,var(--surface) 94%,var(--text)); color: var(--text); border-radius: .2rem .85rem .85rem .85rem; font-size: .875rem; overflow-wrap: anywhere; line-height: 1.65; margin-bottom: .6rem; }
 .coach-glenn-answer .coach-glenn-sender { display:block; font-size: .75rem; color: var(--muted); margin-bottom: .6rem; }
@@ -20,7 +20,7 @@
 .coach-glenn-quick button { flex: 0 0 11rem; min-height: 44px; white-space: normal; text-align: left; font-size: .75rem; padding: .5rem; }
 .coach-glenn-chat-form { padding: .5rem 1rem; display: flex; align-items: end; gap: .5rem; }
 .coach-glenn-chat-form label { min-width: 0; flex: 1; font-size: .8rem; }
-.coach-glenn-chat-form textarea { width: 100%; box-sizing: border-box; resize: vertical; min-height: 44px; max-height: 7rem; font: inherit; }
+.coach-glenn-chat-form textarea { width: 100%; box-sizing: border-box; resize: none; height: 44px; min-height: 44px; max-height: 44px; margin: 0; padding: .65rem; font: inherit; }
 .coach-glenn-chat-form button { min-height: 44px; font-size: .8rem; padding: .6rem; }
 .coach-glenn-chat > footer { display: flex; align-items: center; justify-content: space-between; gap: .5rem; flex-wrap: wrap; padding: .25rem 1rem .75rem; }
 .coach-glenn-chat > footer a { color: var(--accent-text); min-height: 44px; display: inline-flex; align-items: center; font-size: .8rem; }
@@ -30,9 +30,9 @@
 .coach-glenn-consent[hidden] { display: none; }
 @media(max-width:800px) {
     .coach-glenn-launcher { bottom: calc(6.5rem + env(safe-area-inset-bottom,0px)); }
-    .coach-glenn-chat { right: max(.5rem,env(safe-area-inset-right,0px)); width: calc(100vw - 1rem); bottom: calc(6rem + env(safe-area-inset-bottom,0px)); height: calc(100dvh - 7rem - env(safe-area-inset-bottom,0px)); max-height: calc(100dvh - 7rem - env(safe-area-inset-bottom,0px)); }
+    .coach-glenn-chat { right: max(.5rem,env(safe-area-inset-right,0px)); width: calc(100vw - 1rem); bottom: calc(1rem + env(safe-area-inset-bottom,0px)); height: calc(100dvh - 2rem - env(safe-area-inset-bottom,0px)); max-height: calc(100dvh - 2rem - env(safe-area-inset-bottom,0px)); }
     body:has(#create-workout:not([hidden])) .coach-glenn-launcher { bottom: calc(10rem + env(safe-area-inset-bottom,0px)); }
-    body:has(#create-workout:not([hidden])) .coach-glenn-chat { bottom: calc(6rem + env(safe-area-inset-bottom,0px)); max-height: calc(100dvh - 7rem - env(safe-area-inset-bottom,0px)); }
+    body:has(#create-workout:not([hidden])) .coach-glenn-chat { bottom: calc(1rem + env(safe-area-inset-bottom,0px)); max-height: calc(100dvh - 2rem - env(safe-area-inset-bottom,0px)); }
 }
 
 .coach-glenn-mode { display: block; margin-top: .2rem; font-size: .7rem; color: var(--muted); font-weight: 400; }
@@ -40,8 +40,10 @@
 .coach-glenn-disclosure summary,.coach-glenn-suggestions summary { padding: .4rem 1rem; min-height: 44px; box-sizing: border-box; display: list-item; align-content: center; font-size: .75rem; color: var(--muted); cursor: pointer; }
 .coach-glenn-chat > header,.coach-glenn-chat-form,.coach-glenn-chat > footer,.coach-glenn-consent { flex-shrink: 0; }
 .coach-glenn-chat-log > * { flex-shrink: 0; }
-.coach-glenn-task-mode { display:flex; align-items:center; gap:.75rem; margin:.25rem 1rem; flex-shrink:0; font-size:.8rem; }
-.coach-glenn-task-mode[hidden] { display:none; }
-.coach-glenn-task-mode select { min-height:2.75rem; min-width:0; flex:1; }
 .coach-glenn-answer small { display:block; margin-block:.4rem; }
 .coach-glenn-answer ul { padding-inline-start:1.2rem; }
+
+.coach-glenn-disclosure { max-height: 40%; overflow-y: auto; }
+.coach-glenn-context[hidden] { display:none; }
+.coach-glenn-chat-form { margin:0; border-top:1px solid var(--border); }
+.coach-glenn-chat-form label { margin:0; }

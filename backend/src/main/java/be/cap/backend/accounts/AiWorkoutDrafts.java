@@ -36,9 +36,9 @@ public class AiWorkoutDrafts {
     private void fields(JsonNode node,Set<String> expected){if(!node.isObject()||!node.propertyNames().equals(expected))throw new IllegalArgumentException("Unexpected draft fields");}
     public Map<String,Object> validate(String output,List<String> names) throws Exception {
         var root=mapper.readTree(output);fields(root,Set.of("status","message","name","description","workoutType","exercises"));
-        String status=text(root,"status",20),message=text(root,"message",500),name=text(root,"name",100),description=text(root,"description",1000),type=text(root,"workoutType",30);
+        String status=text(root,"status",20),message=text(root,"message",8000),name=text(root,"name",100),description=text(root,"description",1000),type=text(root,"workoutType",30);
         if(message.isBlank()||!Set.of("other","lower-body","upper-body","full-body","conditioning","wod").contains(type)||!root.path("exercises").isArray())throw new IllegalArgumentException("Invalid draft");
-        var rows=root.path("exercises");if(status.equals("clarification")&&rows.isEmpty())return Map.of("answer",message);
+        var rows=root.path("exercises");if(Set.of("answer","clarification").contains(status)&&rows.isEmpty())return Map.of("answer",message);
         if(!status.equals("draft")||name.isBlank()||rows.isEmpty()||rows.size()>8)throw new IllegalArgumentException("Invalid draft");
         var exercises=new ArrayList<Workout.Exercise>();
         for(var row:rows){fields(row,Set.of("name","sets","reps","restSeconds"));String exercise=text(row,"name",180);if(!names.contains(exercise))throw new IllegalArgumentException("Unknown exercise");
