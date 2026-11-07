@@ -16,12 +16,21 @@
 .athlete-home-training small { color: var(--muted); }
 .athlete-home [data-workouts] { max-height: 26rem; overflow-y: auto; overscroll-behavior-y: contain; }
 .athlete-home-training.is-done h4 { text-decoration: line-through; color: var(--muted); }
-.athlete-home-nutrient { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: .4rem; margin-block: 1rem; }
-.athlete-home-nutrient strong { font-variant-numeric: tabular-nums; }
-.athlete-home-nutrient progress { appearance: none; border: 0; border-radius: .4rem; overflow: hidden; width: 100%; height: .6rem; background: var(--hover); accent-color: var(--action); }
-.athlete-home-nutrient progress::-webkit-progress-bar { background: var(--hover); }
-.athlete-home-nutrient progress::-webkit-progress-value { background: var(--action); }
-.athlete-home-nutrient progress::-moz-progress-bar { background: var(--action); }
+.athlete-home-nutrients { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .65rem; margin-block: 1.25rem; }
+.athlete-home-nutrient { --nutrient-color: #c66a0c; display: flex; flex-direction: column; align-items: center; gap: .5rem; min-width: 0; text-align: center; }
+.athlete-home-nutrient[data-nutrient="proteinG"] { --nutrient-color: #8661cc; }
+.athlete-home-nutrient[data-nutrient="carbsG"] { --nutrient-color: #247fbb; }
+.athlete-home-nutrient[data-nutrient="fatG"] { --nutrient-color: #2e966c; }
+.athlete-home-nutrient strong { font-size: .9rem; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.athlete-home-nutrient-track { display: flex; align-items: flex-end; width: clamp(1.8rem, 6vw, 2.8rem); height: 8rem; border-radius: .5rem; overflow: hidden; background: color-mix(in srgb, var(--nutrient-color) 13%, var(--surface)); outline: 1px solid color-mix(in srgb, var(--nutrient-color) 35%, var(--surface)); }
+.athlete-home-nutrient-fill { width: 100%; background: var(--nutrient-color); min-height: 0; }
+.athlete-home-nutrient-track.has-no-target { background: var(--hover); outline-color: var(--border); }
+.athlete-home-nutrient-label { font-size: .8rem; line-height: 1.3; overflow-wrap: anywhere; }
+.athlete-home-nutrient small { color: var(--muted); font-size: .75rem; line-height: 1.3; }
+:root:not([data-theme="light"]) .athlete-home-nutrient[data-nutrient="calories"] { --nutrient-color: #f0a23d; }
+:root:not([data-theme="light"]) .athlete-home-nutrient[data-nutrient="proteinG"] { --nutrient-color: #ae8fe5; }
+:root:not([data-theme="light"]) .athlete-home-nutrient[data-nutrient="carbsG"] { --nutrient-color: #5aafe0; }
+:root:not([data-theme="light"]) .athlete-home-nutrient[data-nutrient="fatG"] { --nutrient-color: #60bd96; }
 .athlete-home-empty { color: var(--muted); margin-block: 1rem; }
 .athlete-home-message { display: grid; gap: .3rem; padding: .8rem 0; background: transparent; color: var(--text); border: 0; border-bottom: 1px solid var(--border); border-radius: 0; width: 100%; min-height: 44px; text-align: left; font: inherit; cursor: pointer; }
 .athlete-home-message:hover { background: var(--hover); }
