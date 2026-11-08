@@ -19,7 +19,7 @@
         }return content;
     }
     const eligible=()=>Boolean(window.capAccess?.signedIn)&&(window.capReal?['ATHLETE','COACH'].includes(window.capReal.account.role):['athlete','coach'].includes(previewRole));
-    let launcher,panel,log,input,context,identity='',notice,mode,disclosure,consentLabel,consent,send,ownWorkouts,ownNutrition,ownProfile,ownBookings,dataOptions,dataSummary,available=false,loading=false,busy=false,history=[],chatGeneration=0;
+    let launcher,panel,log,input,context,identity='',notice,mode,disclosure,consentLabel,consent,send,ownWorkouts,ownNutrition,ownProfile,ownBookings,ownMealPlan,dataOptions,dataSummary,available=false,loading=false,busy=false,history=[],chatGeneration=0;
     function close(focus=true){if(!panel)return;panel.hidden=true;launcher.setAttribute('aria-expanded','false');if(focus&&!launcher.hidden)launcher.focus();}
     function open(name){if(!eligible()||!panel)return;context.hidden=!name;context.textContent=name?'Bij deze workout: '+name:'';panel.hidden=false;launcher.setAttribute('aria-expanded','true');input.focus();}
     function reset(){chatGeneration++;history=[];log.replaceChildren(node('p',available?'Welkom! Je chat met AI, niet met de menselijke coach Glenn.':'Welkom! Dit is een voorbeeldchat. Probeer een van de vragen hieronder.','sample-notice'));input.value='';}
@@ -31,7 +31,7 @@
             const asked=node('p',question,'coach-glenn-question'),reply=node('div',null,'coach-glenn-answer');reply.setAttribute('role','status');reply.textContent='Glenn antwoordt…';log.append(asked,reply);log.scrollTop=log.scrollHeight;
             try{
                 let recent=history.slice(-6);while(recent.length&&new TextEncoder().encode(recent.map(t=>t.content).join('')+question).length>8000)recent=recent.slice(2);
-                const result=await window.capReal.request('/api/ai-coach','POST',{id:crypto.randomUUID(),message:question,history:recent,consent:true,mode:'auto',ownWorkouts:ownWorkouts.checked,ownNutrition:ownNutrition.checked,ownProfile:ownProfile.checked,ownBookings:ownBookings.checked});
+                const result=await window.capReal.request('/api/ai-coach','POST',{id:crypto.randomUUID(),message:question,history:recent,consent:true,mode:'auto',ownWorkouts:ownWorkouts.checked,ownNutrition:ownNutrition.checked,ownProfile:ownProfile.checked,ownBookings:ownBookings.checked,ownMealPlan:ownMealPlan.checked});
                 if(!eligible()||identity!==userKey||generation!==chatGeneration)return;
                 reply.replaceChildren(node('strong','Glenn · AI-assistent','coach-glenn-sender'),formattedAnswer(result.answer));history=[...recent,{role:'user',content:question},{role:'assistant',content:result.answer}];
                 if(result.workout){
@@ -55,8 +55,8 @@
     }
     function sync(){
         const key=window.capReal?.account.id||String(window.capAccess?.signedIn)+':'+previewRole;
-        if(identity!==key){identity=key;close(false);reset();if(ownWorkouts){ownWorkouts.checked=false;ownNutrition.checked=false;ownProfile.checked=false;ownBookings.checked=false;dataSummary.textContent='Eigen gegevens: uit';}}
-        launcher.hidden=!eligible();if(launcher.hidden){close(false);reset();if(ownWorkouts){ownWorkouts.checked=false;ownNutrition.checked=false;ownProfile.checked=false;ownBookings.checked=false;consent.checked=false;dataSummary.textContent='Eigen gegevens: uit';}}
+        if(identity!==key){identity=key;close(false);reset();if(ownWorkouts){ownWorkouts.checked=false;ownNutrition.checked=false;ownProfile.checked=false;ownBookings.checked=false;ownMealPlan.checked=false;dataSummary.textContent='Eigen gegevens: uit';}}
+        launcher.hidden=!eligible();if(launcher.hidden){close(false);reset();if(ownWorkouts){ownWorkouts.checked=false;ownNutrition.checked=false;ownProfile.checked=false;ownBookings.checked=false;ownMealPlan.checked=false;consent.checked=false;dataSummary.textContent='Eigen gegevens: uit';}}
     }
     async function loadAvailability(){
         if(!window.capReal||!eligible())return;
@@ -93,10 +93,11 @@
         ownNutrition=dataChoice('Mijn voeding','Opgeslagen dagdoelen, voedingstotalen van vandaag en maximaal 8 gelogde producten met porties. Geen gewicht of medische gegevens.');
         ownProfile=dataChoice('Mijn profiel','Je naam, opgeslagen doel en trainingservaring. Geen geboortedatum, lichaamsmetingen, foto of contactgegevens.');
         ownBookings=dataChoice('Mijn boekingen','Maximaal 8 eigen actieve boekingen in de komende 14 dagen. Geen deelnemerslijsten of sessienotities.');
+        ownMealPlan=dataChoice('Mijn voedingsplan','Het gepubliceerde plan van deze week: maaltijdnamen en opgetelde algemene boodschappen met hoeveelheden. Alleen je eigen plan, geen concepten.');
         dataOptions.append(node('small','Geldt voor je volgende vragen in dit gesprek. Uitzetten wist dit gesprek en stopt nieuwe gegevensdeling; eerder verzonden gegevens worden daarmee niet bij OpenAI verwijderd.'));
         dataSummary=node('p','Eigen gegevens: uit','coach-glenn-data-summary');
-        function scopeChanged(){reset();const active=[ownWorkouts.checked?'workouts':'',ownNutrition.checked?'voeding':'',ownProfile.checked?'profiel':'',ownBookings.checked?'boekingen':''].filter(Boolean);dataSummary.textContent=active.length?'Met eigen '+active.join(' en '):'Eigen gegevens: uit';}
-        ownWorkouts.onchange=scopeChanged;ownNutrition.onchange=scopeChanged;ownProfile.onchange=scopeChanged;ownBookings.onchange=scopeChanged;disclosure.insertBefore(dataOptions,suggestions);
+        function scopeChanged(){reset();const active=[ownWorkouts.checked?'workouts':'',ownNutrition.checked?'voeding':'',ownProfile.checked?'profiel':'',ownBookings.checked?'boekingen':'',ownMealPlan.checked?'voedingsplan':''].filter(Boolean);dataSummary.textContent=active.length?'Met eigen '+active.join(' en '):'Eigen gegevens: uit';}
+        ownWorkouts.onchange=scopeChanged;ownNutrition.onchange=scopeChanged;ownProfile.onchange=scopeChanged;ownBookings.onchange=scopeChanged;ownMealPlan.onchange=scopeChanged;disclosure.insertBefore(dataOptions,suggestions);
         const footer=node('footer'),coach=node('a','Open Berichten');coach.href='#messages';coach.onclick=()=>close(false);const clear=node('button','Gesprek wissen','secondary-button');clear.type='button';clear.onclick=()=>{reset();input.focus();};footer.append(coach,clear);
         panel.append(header,disclosure,dataSummary,context,log,form,footer);document.body.append(launcher,panel);
         // On iOS the keyboard shrinks the visual viewport, not always the layout viewport.

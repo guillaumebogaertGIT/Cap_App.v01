@@ -12,9 +12,9 @@ import tools.jackson.databind.json.JsonMapper;
 /** Explicit own-data projection. No target account parameter, identifiers, notes or writes. */
 @Component @Profile("accounts")
 public class AiOwnContext {
-    private final JdbcTemplate jdbc;private final AccountWorkoutService workouts;
+    private final JdbcTemplate jdbc;private final AccountWorkoutService workouts;private final MealPlanController mealPlans;
     private final JsonMapper json=JsonMapper.builder().build();
-    public AiOwnContext(JdbcTemplate jdbc,AccountWorkoutService workouts){this.jdbc=jdbc;this.workouts=workouts;}
+    public AiOwnContext(JdbcTemplate jdbc,AccountWorkoutService workouts,MealPlanController mealPlans){this.jdbc=jdbc;this.workouts=workouts;this.mealPlans=mealPlans;}
     private String shortText(String value){return value==null?"":value.substring(0,Math.min(value.length(),100));}
     private Map<String,Object> planned(Workout workout){return Map.of("name",shortText(workout.name()),"date",Objects.toString(workout.assignedDate(),""),"exercises",workout.exercises().stream().limit(8).map(e->Map.of("name",shortText(e.name()),"sets",e.sets(),"reps",e.reps())).toList());}
     @Transactional(readOnly=true)
@@ -23,7 +23,11 @@ public class AiOwnContext {
     }
     @Transactional(readOnly=true)
     public String read(AccountService.Account user,boolean training,boolean nutrition,boolean profile,boolean bookings) throws Exception {
-        if(!training&&!nutrition&&!profile&&!bookings)return "";
+        return read(user,training,nutrition,profile,bookings,false);
+    }
+    @Transactional(readOnly=true)
+    public String read(AccountService.Account user,boolean training,boolean nutrition,boolean profile,boolean bookings,boolean mealPlan) throws Exception {
+        if(!training&&!nutrition&&!profile&&!bookings&&!mealPlan)return "";
         LocalDate today=LocalDate.now(ZoneId.of("Europe/Brussels")),monday=today.with(java.time.DayOfWeek.MONDAY);
         var data=new LinkedHashMap<String,Object>();data.put("todayBrussels",today.toString());data.put("scope","Only the signed-in user's own data; bounded snapshot, not all app records.");
         if(profile){
@@ -52,6 +56,18 @@ public class AiOwnContext {
             data.put("todayFoodSample",jdbc.query("SELECT payload FROM food_diary_entry WHERE athlete_id=? AND entry_date=? ORDER BY saved_at,id LIMIT 8",(r,i)->{var e=json.readValue(r.getString(1),FoodDiaryController.Entry.class);return Map.of("food",shortText(e.name()),"meal",e.meal(),"amount",e.amount(),"unit",shortText(e.unit()));},user.id(),today));
             data.put("nutritionLimits","Today only. Totals include all logged entries; names are a sample of at most 8. No entries means no logged food, not that the person has eaten nothing. No weight, medical records or inferred diet needs.");
         }
-        String encoded=json.writeValueAsString(data);if(encoded.getBytes(java.nio.charset.StandardCharsets.UTF_8).length>6000)throw new IllegalStateException("Own context too large");return encoded;
+        if(mealPlan){
+            var published=mealPlans.ownPublished(user.id(),monday);
+            if(published.isEmpty())data.put("publishedMealPlanThisWeek",Map.of("weekStart",monday.toString(),"available",false));
+            else{var plan=published.getFirst();var shopping=new LinkedHashMap<String,Map<String,Object>>();
+                for(var day:plan.content().days())for(var meal:day.meals())for(var food:meal.foods()){
+                    String key=(food.name()+"|"+food.preparation()+"|"+food.unit()).toLowerCase(Locale.ROOT);
+                    var row=shopping.computeIfAbsent(key,k->{var r=new LinkedHashMap<String,Object>();r.put("food",food.name());r.put("preparation",food.preparation());r.put("unit",food.unit());r.put("amount",0.0);return r;});row.put("amount",((Number)row.get("amount")).doubleValue()+food.amount());
+                }
+                data.put("publishedMealPlanThisWeek",Map.of("weekStart",monday.toString(),"name",plan.content().name(),"mealsPerDay",plan.content().days().stream().map(d->Map.of("day",d.day(),"meals",d.meals().stream().map(MealPlanController.Meal::name).toList())).toList(),"combinedIngredientsForShopping",shopping.values()));
+            }
+            data.put("mealPlanLimits","Published plan for this Brussels week only, planned food not consumed food. Shopping amounts are already summed across the whole week; do not multiply again. Keep preparation states and units separate. Suggest generic supermarket equivalents only; no verified stock, package sizes or prices. Ask before assuming substitutions.");
+        }
+        String encoded=json.writeValueAsString(data);if(encoded.getBytes(java.nio.charset.StandardCharsets.UTF_8).length>(mealPlan?12000:6000))throw new IllegalStateException("Own context too large");return encoded;
     }
 }
