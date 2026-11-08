@@ -1129,3 +1129,8 @@ main { padding: 1rem; }
 .progress-entry-body ul { padding-inline-start:1.25rem; line-height:1.8; }
 .progress-rep > summary { min-height:44px; padding:.5rem 0; box-sizing:border-box; cursor:pointer; }
 @media(min-width:800px) { .progress-entry > summary span { display:inline; margin:0; } }
+.progress-folder { margin-block:.65rem; border:1px solid var(--border); border-radius:.75rem; overflow:hidden; }
+.progress-folder > summary { padding:1rem; min-height:44px; cursor:pointer; overflow-wrap:anywhere; }
+.progress-folder > summary span { display:inline-block; margin-inline-start:.75rem; color:var(--muted); font-size:.8rem; }
+.progress-folder > .progress-entry,.progress-folder > div { margin-inline:.75rem; }
+.progress-folder > button { margin:.5rem .75rem 1rem; }
