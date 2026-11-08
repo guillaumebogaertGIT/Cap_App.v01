@@ -146,6 +146,21 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     meals.forEach(([value, label]) => $('food-meal').add(new Option(label, value)));
     ['athlete-food-date', 'coach-food-date'].forEach(id => { $(id).value = today(); $(id).max = today(); });
+    ['athlete-food-date', 'coach-food-date'].forEach(id => {
+        const input=$(id),label=input.closest('label'),controls=document.createElement('div');controls.className='food-diary-date-navigation';
+        label.before(controls);controls.append(label);input.min='1900-01-01';
+        function arrow(delta){const button=document.createElement('button');button.type='button';button.className='secondary-button';
+            button.setAttribute('aria-label',delta<0?'Vorige dag':'Volgende dag');button.title=delta<0?'Vorige dag':'Volgende dag';
+            button.innerHTML=`<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="${delta<0?'m15 6-6 6 6 6':'m9 6 6 6-6 6'}"/></svg>`;
+            button.onclick=()=>{if(!input.value||!input.validity.valid){input.reportValidity();return;}
+                const date=new Date(input.value+'T12:00:00Z');date.setUTCDate(date.getUTCDate()+delta);const next=date.toISOString().slice(0,10);
+                if(next<input.min||next>today())return;input.value=next;input.dispatchEvent(new Event('change',{bubbles:true}));
+            };return button;
+        }
+        const previous=arrow(-1),next=arrow(1);controls.prepend(previous);controls.append(next);
+        function syncDateArrows(){previous.disabled=!input.value||input.value<=input.min;next.disabled=!input.value||input.value>=today();}
+        input.addEventListener('change',syncDateArrows);document.addEventListener('cap:viewchange',syncDateArrows);window.addEventListener('focus',syncDateArrows);syncDateArrows();
+    });
     function renderProducts() {
         const query = normalize($('food-search').value).trim().split(/\s+/).filter(Boolean);
         const selected = $('food-product').value;
