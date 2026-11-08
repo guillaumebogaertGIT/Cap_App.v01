@@ -50,9 +50,6 @@ public class AiCoachController {
             int used=jdbc.queryForObject("SELECT reserved_cents FROM ai_coach_budget WHERE id=1 FOR UPDATE",Integer.class);
             if(jdbc.queryForObject("SELECT COUNT(*) FROM ai_coach_request WHERE id=?",Integer.class,input.id())>0)throw error(HttpStatus.CONFLICT,"Deze vraag is al verwerkt. Verstuur een nieuwe vraag.");
             if(used>=500)throw error(HttpStatus.TOO_MANY_REQUESTS,"Het gedeelde AI-testbudget is op. Er worden geen nieuwe AI-verzoeken verstuurd.");
-            int day=jdbc.queryForObject("SELECT COUNT(*) FROM ai_coach_request WHERE user_id=? AND created_at>CURRENT_TIMESTAMP-INTERVAL '24 hours'",Integer.class,user.id());
-            int minute=jdbc.queryForObject("SELECT COUNT(*) FROM ai_coach_request WHERE user_id=? AND created_at>CURRENT_TIMESTAMP-INTERVAL '1 minute'",Integer.class,user.id());
-            if(day>=20||minute>=3)throw error(HttpStatus.TOO_MANY_REQUESTS,"Je AI-vragenlimiet is bereikt. Probeer later opnieuw.");
             jdbc.update("UPDATE ai_coach_budget SET reserved_cents=reserved_cents+1 WHERE id=1");
             jdbc.update("INSERT INTO ai_coach_request(id,user_id,state) VALUES(?,?,'reserved')",input.id(),user.id());
         });

@@ -104,15 +104,16 @@ class AiCoachTests extends AccountApiTests {
         assertEquals(500,jdbc.queryForObject("SELECT reserved_cents FROM ai_coach_budget WHERE id=1",Integer.class));
         assertEquals(0,json.readTree(request(owner,"GET","/api/ai-coach",null,null,false).body()).path("remainingRequests").asInt());verify(gateway,times(1)).answer(anyList());
     }
-    @Test void perUserMinuteAndDailyLimitsStopBeforeProvider() throws Exception {
+    @Test void previousPerUserLimitsNoLongerBlockRequestsButBudgetStillDoes() throws Exception {
         var owner=client();login(owner,"coach@example.test","Coach-test-password-123");when(gateway.configured()).thenReturn(true);when(gateway.answer(anyList())).thenReturn("Antwoord");
-        String token=csrf(owner);
-        for(int i=0;i<3;i++)assertEquals(200,request(owner,"POST","/api/ai-coach",body(UUID.randomUUID(),true),token,false).statusCode());
-        assertEquals(429,request(owner,"POST","/api/ai-coach",body(UUID.randomUUID(),true),token,false).statusCode());
-        jdbc.update("UPDATE ai_coach_request SET created_at=CURRENT_TIMESTAMP-INTERVAL '2 minutes'");
         UUID user=jdbc.queryForObject("SELECT id FROM cap_user WHERE email='coach@example.test'",UUID.class);
-        for(int i=0;i<17;i++)jdbc.update("INSERT INTO ai_coach_request(id,user_id,state,created_at) VALUES(?,?,'completed',CURRENT_TIMESTAMP-INTERVAL '2 minutes')",UUID.randomUUID(),user);
+        for(int i=0;i<25;i++)jdbc.update("INSERT INTO ai_coach_request(id,user_id,state) VALUES(?,?,'completed')",UUID.randomUUID(),user);
+        jdbc.update("UPDATE ai_coach_budget SET reserved_cents=25 WHERE id=1");
+        String token=csrf(owner);
+        for(int i=0;i<4;i++)assertEquals(200,request(owner,"POST","/api/ai-coach",body(UUID.randomUUID(),true),token,false).statusCode());
+        assertEquals(29,jdbc.queryForObject("SELECT reserved_cents FROM ai_coach_budget WHERE id=1",Integer.class));
+        jdbc.update("UPDATE ai_coach_budget SET reserved_cents=500 WHERE id=1");
         assertEquals(429,request(owner,"POST","/api/ai-coach",body(UUID.randomUUID(),true),token,false).statusCode());
-        assertEquals(3,jdbc.queryForObject("SELECT reserved_cents FROM ai_coach_budget WHERE id=1",Integer.class));verify(gateway,times(3)).answer(anyList());
+        verify(gateway,times(4)).answer(anyList());
     }
 }
