@@ -154,7 +154,7 @@ main { width: 100%; max-width: 1600px; padding: 1.25rem; }
         text-align: center;
         overflow-wrap: anywhere;
     }
-    .mobile-bottom-nav.has-admin-tabs { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+    .mobile-bottom-nav.has-admin-tabs,.mobile-bottom-nav.has-client-tabs { grid-template-columns: repeat(5, minmax(0, 1fr)); }
     .mobile-bottom-nav svg { width: 1.5rem; height: 1.5rem; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
     .mobile-bottom-nav a.active { color: var(--text); background: var(--highlight); font-weight: 700; }
     .mobile-bottom-nav a:focus-visible { outline: 2px solid var(--accent-text); outline-offset: -2px; }
@@ -1115,3 +1115,17 @@ main { padding: 1rem; }
 /* Four workout types: balanced rows on tablets, one row on wide screens. */
 @media (min-width: 650px) { .workout-type-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (min-width: 1400px) { .workout-type-tiles { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+.personal-progress { margin-block:2rem; display:grid; gap:2rem; }
+.personal-progress[hidden] { display:none; }
+.progress-heading { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:.75rem; }
+.progress-heading h3 { margin:0; }
+.personal-progress input[type="search"] { width:100%; box-sizing:border-box; font-size:1rem; margin-block:.5rem 1rem; }
+.progress-entry { border-bottom:1px solid var(--border); }
+.progress-entry > summary { padding:1rem .5rem; min-height:44px; cursor:pointer; overflow-wrap:anywhere; }
+.progress-entry > summary strong { margin-inline-end:1rem; }
+.progress-entry > summary span { color:var(--muted); font-size:.85rem; display:block; margin-top:.35rem; }
+.progress-entry-body { padding:.25rem .75rem 1rem; }
+.progress-entry-body h4 { margin:1rem 0 .5rem; }
+.progress-entry-body ul { padding-inline-start:1.25rem; line-height:1.8; }
+.progress-rep > summary { min-height:44px; padding:.5rem 0; box-sizing:border-box; cursor:pointer; }
+@media(min-width:800px) { .progress-entry > summary span { display:inline; margin:0; } }

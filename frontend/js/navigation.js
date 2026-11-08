@@ -189,6 +189,7 @@ function showCurrentView(moveFocus = true) {
     const ownNutritionLink=sidebarNavigation.querySelector('[data-view-link="nutrition"]');
     ownNutritionLink.textContent='Voeding';
     document.querySelector('.mobile-bottom-nav').classList.toggle('has-admin-tabs',adminBottom);
+    document.querySelector('.mobile-bottom-nav').classList.toggle('has-client-tabs',previewRole==='athlete');
     if(adminBottom)allowedViews.push('more');
     sidebarNavigation.querySelector('[data-view-link="health"]').textContent='Gezondheid & Progress';
     sidebarNavigation.querySelector('[data-view-link="coach-health"]').textContent='Gezondheid sporters';

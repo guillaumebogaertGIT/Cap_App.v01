@@ -61,6 +61,7 @@
     <script src="js/workouts-api.js" defer></script>
     <script src="js/training.js" defer></script>
     <script src="js/health.js" defer></script>
+    <script src="js/progress.js" defer></script>
     <script src="js/coach-health.js" defer></script>
     <script src="js/nutrition-calculator.js" defer></script>
     <script src="js/nutrition.js" defer></script>
@@ -625,7 +626,6 @@
 <details class="saved-workout"><summary>Meetgeschiedenis</summary><div id="body-latest"></div><div id="body-history"></div></details></article>
                 <article class="club-card"><details><summary>Gewicht bijhouden</summary><form id="weight-log-form" class="club-form"><label>Nieuw gewicht (kg)<input name="weightKg" type="number" min="20" max="500" step="0.1" required inputmode="decimal" placeholder="Bijv. 75,5"></label><button type="submit" class="primary-button">Gewicht toevoegen</button><p id="weight-log-status" role="status"></p></form></details></article>
                 <article class="club-card"><details><summary>Apple Health · niet gekoppeld</summary><p>Nog niet gekoppeld. Je kunt metingen alvast handmatig toevoegen.</p></details></article>
-                <article class="club-card"><h3>Trainingsprogress</h3><p>Bekijk je afgeronde trainingen en persoonlijke records.</p><a class="secondary-button" href="#training">Trainingen &amp; PRs bekijken</a></article>
             </div>
 
             <details class="saved-workout"><summary>Gewichtslog</summary><ul id="weight-history" class="weight-history"></ul></details>
@@ -758,6 +758,9 @@
         </a>
         <a href="#health" data-view-link="health" data-mobile-role="athlete">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 3v18h17M7 16l4-5 4 2 5-7"/></svg><span>Progress</span>
+        </a>
+        <a href="#nutrition" data-view-link="nutrition" data-mobile-role="athlete">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 3v5a3 3 0 0 0 6 0V3M7 3v18M17 3c-2 3-3 6-3 9h5M19 3v18"/></svg><span>Voeding</span>
         </a>
         <a href="#create-workout" data-view-link="create-workout" data-mobile-role="coach" hidden>
             <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M12 8v8m-4-4h8"/></svg><span>Workout maken</span>
