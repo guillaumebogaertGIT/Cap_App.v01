@@ -99,6 +99,16 @@
         ownWorkouts.onchange=scopeChanged;ownNutrition.onchange=scopeChanged;ownProfile.onchange=scopeChanged;ownBookings.onchange=scopeChanged;disclosure.insertBefore(dataOptions,suggestions);
         const footer=node('footer'),coach=node('a','Open Berichten');coach.href='#messages';coach.onclick=()=>close(false);const clear=node('button','Gesprek wissen','secondary-button');clear.type='button';clear.onclick=()=>{reset();input.focus();};footer.append(coach,clear);
         panel.append(header,disclosure,dataSummary,context,log,form,footer);document.body.append(launcher,panel);
+        // On iOS the keyboard shrinks the visual viewport, not always the layout viewport.
+        // Resize just the chat so the composer stays above the keyboard.
+        function fitVisibleViewport(){const viewport=window.visualViewport;
+            if(!viewport)return;
+            panel.style.setProperty('--coach-visible-height',viewport.height+'px');
+            panel.style.setProperty('--coach-visible-top',viewport.offsetTop+'px');
+        }
+        window.visualViewport?.addEventListener('resize',fitVisibleViewport);
+        window.visualViewport?.addEventListener('scroll',fitVisibleViewport);
+        fitVisibleViewport();
         launcher.onclick=()=>panel.hidden?open():close();panel.addEventListener('keydown',event=>{if(event.key==='Escape'){event.preventDefault();event.stopPropagation();close();}});
         document.addEventListener('cap:viewchange',sync);sync();loadAvailability();
     });
