@@ -1,5 +1,6 @@
 // Real authorization is enforced by Spring Security; this object only drives the UI.
-window.capAccess = { signedIn: true, plan: 'complete', can() { return this.signedIn; } };
+window.capAccess = { signedIn: true, plan: window.capReal.fullAccess===false?'none':'complete', can() { return this.signedIn&&window.capReal.fullAccess!==false; } };
+window.capRefreshFeatureAccess=async()=>{const state=await window.capReal.request('/api/accounts/access');if(state.fullAccess!==window.capReal.fullAccess)location.reload();};
 let accountProfileValues = {};
 let accountMeasurements=[];
 window.capProfile = { get: () => ({ ...accountProfileValues }),

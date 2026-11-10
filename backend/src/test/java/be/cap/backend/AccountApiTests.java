@@ -22,6 +22,7 @@ import static org.junit.jupiter.api.Assertions.*;
 @ActiveProfiles("accounts")
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, properties = {
     "spring.datasource.url=jdbc:h2:mem:accounts;MODE=PostgreSQL;DB_CLOSE_DELAY=-1",
+    "cap.accounts.enforce-membership=false", // Legacy feature tests; AthleteMembershipAccessTests exercises the enabled gate.
     "spring.datasource.username=sa", "spring.datasource.password=",
     "cap.accounts.bootstrap-owner=true", "cap.accounts.bootstrap-email=coach@example.test", "cap.accounts.bootstrap-password=Coach-test-password-123"
 })

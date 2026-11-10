@@ -200,8 +200,10 @@ function showCurrentView(moveFocus = true) {
     sidebarNavigation.querySelector('[data-view-link="health"]').textContent='Gezondheid & Progress';
     sidebarNavigation.querySelector('[data-view-link="coach-health"]').textContent='Gezondheid sporters';
     if(allowedViews.includes('finance'))allowedViews.push('invoices');
+    const limited=window.capReal?.fullAccess===false;
+    if(limited){allowedViews=['planning','shop'];if(!allowedViews.includes(requestedView))window.history.replaceState(null,'','#planning');}
     const routeId = allowedViews.includes(requestedView)
-        ? requestedView : 'dashboard';
+        ? requestedView : limited?'planning':'dashboard';
     document.querySelector('.welcome-bar').hidden = routeId !== 'dashboard';
     const moreIsActive = previewRole === 'coach' && (moreViews.includes(routeId)||routeId==='invoices');
     moreNavigation.classList.toggle('has-active-page', moreIsActive);
@@ -210,6 +212,7 @@ function showCurrentView(moveFocus = true) {
     document.body.classList.toggle('is-workout-editor', viewId === 'create-workout');
 
     sidebarNavigation.querySelectorAll('a').forEach((link) => {
+        if(limited){link.hidden=!allowedViews.includes(link.dataset.viewLink);return;}
         if(link.dataset.viewLink==='coach-glenn'){link.hidden=false;return;}
         if(link.dataset.viewLink==='coach-health'){link.hidden=true;return;}
         if(['community','messages'].includes(link.dataset.viewLink)){link.hidden=!socialAllowed;return;}
@@ -258,6 +261,13 @@ function showCurrentView(moveFocus = true) {
         }
     });
 
+    if(limited){
+        document.querySelectorAll('[data-view-link]').forEach(link=>{link.hidden=!allowedViews.includes(link.dataset.viewLink);});
+        for(const id of ['header-settings','header-messages','header-notifications'])document.getElementById(id).hidden=true;
+        document.querySelectorAll('[data-account=profile],[data-account=notifications]').forEach(button=>{button.hidden=true;});
+    }
+    document.querySelector('[data-membership-shop]').hidden=!limited;
+    document.querySelector('.mobile-bottom-nav').classList.toggle('is-membership-limited',limited);
     setMenuOpen(false);
     if (moveFocus) {
         document.querySelector(`#${viewId}-title`)?.focus();

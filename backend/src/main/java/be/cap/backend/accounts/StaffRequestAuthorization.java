@@ -24,6 +24,7 @@ class StaffRequestAuthorization {
         if(path.equals("/api/complimentary-memberships")||path.startsWith("/api/complimentary-memberships/"))return get&&athlete||policy.role(user).equals("OWNER");
         if(path.equals("/api/coach-shifts")||path.startsWith("/api/coach-shifts/"))return get?java.util.Set.of("OWNER","MANAGER","INSTRUCTOR").contains(policy.role(user)):policy.role(user).equals("OWNER");
         if(path.equals("/api/owner-agenda")||path.startsWith("/api/owner-agenda/"))return policy.role(user).equals("OWNER");
+        if(path.equals("/api/accounts/access"))return get;
         if(path.equals("/api/accounts/me") || path.equals("/api/accounts/password") || path.startsWith("/api/accounts/profile")
             || path.equals("/api/measurements"))return true;
         if(path.equals("/api/accounts/invitations"))return policy.allows(user,CLIENT_SCOPE_MANAGE);

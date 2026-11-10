@@ -71,6 +71,7 @@ document.addEventListener('DOMContentLoaded', () => {
         refresh.textContent = current?.configured ? 'Status bijwerken' : 'Opnieuw laden';
     }
     function render(value) {
+        window.capRefreshFeatureAccess?.().catch(()=>{});
         current = value; planningPending = false; details.replaceChildren();
         picker.replaceChildren(new Option('Kies een aanbod', ''));
         for (const offer of value.offers || []) picker.add(new Option(offer.name + ' · ' + money(offer) + (offer.available ? '' : ' · nog niet ingesteld'), offer.code));

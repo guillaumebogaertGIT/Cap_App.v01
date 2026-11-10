@@ -239,6 +239,7 @@
                 $('calendar-day-title').focus();
             }));
         } else if (!real || real.account.role==='ATHLETE') {
+            if(real?.fullAccess===false){const link=document.createElement('a');link.href='#shop';link.className='secondary-button';link.textContent='Bekijk abonnementen';actions.append(link);card.append(actions);return card;}
             const booked = active.some(ownBooking);
             const permitted = window.capAccess.can(bookingFeature(session));
             const unavailable = session.cancelled || past(session) || (!booked && count >= session.capacity);

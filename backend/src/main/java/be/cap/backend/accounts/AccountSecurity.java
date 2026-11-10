@@ -30,7 +30,7 @@ class AccountSecurity {
     }
 
     @Bean
-    SecurityFilterChain accountFilterChain(HttpSecurity http, org.springframework.security.core.session.SessionRegistry registry,org.springframework.jdbc.core.JdbcTemplate jdbc,AccountService accounts,StaffRequestAuthorization requests) throws Exception {
+    SecurityFilterChain accountFilterChain(HttpSecurity http, org.springframework.security.core.session.SessionRegistry registry,org.springframework.jdbc.core.JdbcTemplate jdbc,AccountService accounts,StaffRequestAuthorization requests,AthleteFeatureAccess featureAccess) throws Exception {
         return http.authorizeHttpRequests(auth -> auth
                 .dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
                 .requestMatchers(HttpMethod.GET, "/accounts/**", "/app/**").permitAll()
@@ -40,8 +40,9 @@ class AccountSecurity {
                 .requestMatchers("/api/**").access((authentication, context) -> {
                     var current=authentication.get();
                     boolean authenticated=current!=null && current.isAuthenticated() && !(current instanceof org.springframework.security.authentication.AnonymousAuthenticationToken);
-                    return new org.springframework.security.authorization.AuthorizationDecision(authenticated && requests.allowed(
-                        accounts.account(current.getName()),context.getRequest().getMethod(),context.getRequest().getServletPath()));
+                    if(!authenticated)return new org.springframework.security.authorization.AuthorizationDecision(false);
+                    var user=accounts.account(current.getName());var method=context.getRequest().getMethod();var path=context.getRequest().getServletPath();
+                    return new org.springframework.security.authorization.AuthorizationDecision(requests.allowed(user,method,path)&&featureAccess.allowed(user,method,path));
                 })
                 // Legacy endpoints still use the example athlete. Deny them until migrated.
                 .anyRequest().denyAll())

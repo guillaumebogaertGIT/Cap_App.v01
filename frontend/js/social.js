@@ -1,5 +1,5 @@
 (() => {
-    const real=window.capReal,$=id=>document.getElementById(id),allowed=()=>real?real.account.role==='ATHLETE'||['OWNER','MANAGER','INSTRUCTOR'].includes(real.staffRole):window.capAccess.signedIn;
+    const real=window.capReal,$=id=>document.getElementById(id),allowed=()=>real?real.fullAccess!==false&&(real.account.role==='ATHLETE'||['OWNER','MANAGER','INSTRUCTOR'].includes(real.staffRole)):window.capAccess.signedIn;
     function section(id,title,description){const page=document.createElement('section');page.id=id;page.dataset.view='';page.hidden=true;page.setAttribute('aria-labelledby',id+'-title');page.innerHTML=`<header class="dashboard-header"><div><h2 id="${id}-title" tabindex="-1">${title}</h2><p class="dashboard-intro">${description}</p></div></header>`;document.querySelector('main').append(page);return page;}
     const feed=section('community','Community','Deel je vooruitgang met CAP. Communityberichten zijn zichtbaar voor de club.'),chat=section('messages','Berichten','Privégesprekken met je coaches en contacten, of de groep van een geboekte les.');
     const community=window.capCommunityChannels.mount(feed,()=>refresh());

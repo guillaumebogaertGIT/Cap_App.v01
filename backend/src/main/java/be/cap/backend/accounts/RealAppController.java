@@ -23,10 +23,12 @@ class RealAppController {
     private final FinanceAccess financeAccess;
     private final StaffManagementAccess staffManagement;
     private final StaffPolicy staffPolicy;
+    private final AthleteFeatureAccess featureAccess;
     @Value("${cap.frontend-location:classpath:/static/app/}index.html")
     private Resource appTemplate;
 
-    RealAppController(AccountService accounts, PlanningService planning, AccountWorkoutService workouts, MembershipReviewAccess membershipReview, FinanceAccess financeAccess,StaffManagementAccess staffManagement,StaffPolicy staffPolicy) {
+    RealAppController(AccountService accounts, PlanningService planning, AccountWorkoutService workouts, MembershipReviewAccess membershipReview, FinanceAccess financeAccess,StaffManagementAccess staffManagement,StaffPolicy staffPolicy,AthleteFeatureAccess featureAccess) {
+        this.featureAccess=featureAccess;
         this.staffPolicy=staffPolicy;
         this.staffManagement=staffManagement;
         this.financeAccess = financeAccess;
@@ -40,13 +42,14 @@ class RealAppController {
         var account = accounts.account(principal.getName());
         var data = new LinkedHashMap<String, Object>();
         data.put("account", account);
+        boolean fullAccess=featureAccess.fullAccess(account);data.put("fullAccess",fullAccess);
         data.put("staffRole", staffPolicy.role(account));
         data.put("permissions", staffPolicy.capabilities(account));
         boolean planningAccess=account.role().equals("ATHLETE") || staffPolicy.allows(account,StaffPolicy.Permission.CLASS_VIEW);
         data.put("people", staffPolicy.allows(account,StaffPolicy.Permission.CLASS_VIEW) ? planning.people(account) : List.of());
         data.put("sessions", planningAccess?planning.list(account, null, null):List.of());
         data.put("bookings", planningAccess?planning.bookings(account):List.of());
-        data.put("draft", account.role().equals("ATHLETE") ? workouts.active(account) : null);
+        data.put("draft", account.role().equals("ATHLETE") && fullAccess ? workouts.active(account) : null);
         String json = JsonMapper.builder().build().writeValueAsString(data)
             .replace("&", "\\u0026").replace("<", "\\u003c")
             .replace("\u2028", "\\u2028").replace("\u2029", "\\u2029");

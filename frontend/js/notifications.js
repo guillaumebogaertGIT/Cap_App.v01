@@ -16,6 +16,7 @@
         if(!items.length){const row=document.createElement('li');row.textContent='Je bent helemaal bij. Geen nieuwe meldingen.';list.append(row);}
     }
     async function refresh(){
+        if(real?.fullAccess===false){messages.hidden=true;bell.hidden=true;close();return;}
         messages.hidden=!social.allowed();if(!window.capAccess.signedIn){close();return;}
         const current=++generation;loading=true;
         const results=await Promise.allSettled([social.notificationData(),owner()&&real?real.request('/api/owner-agenda/notifications'):Promise.resolve({items:[],unread:0})]);

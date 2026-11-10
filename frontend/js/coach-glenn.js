@@ -18,7 +18,7 @@
             else{list=null;if(!paragraph){paragraph=node('p');content.append(paragraph);}else paragraph.append(document.createElement('br'));inline(paragraph,line.replace(/^#{1,4}\s+/,''));}
         }return content;
     }
-    const eligible=()=>Boolean(window.capAccess?.signedIn)&&(window.capReal?['ATHLETE','COACH'].includes(window.capReal.account.role):['athlete','coach'].includes(previewRole));
+    const eligible=()=>window.capReal?.fullAccess!==false&&Boolean(window.capAccess?.signedIn)&&(window.capReal?['ATHLETE','COACH'].includes(window.capReal.account.role):['athlete','coach'].includes(previewRole));
     const isCoach=()=>window.capReal?window.capReal.account.role==='COACH':previewRole==='coach';
     let launcher,panel,log,input,context,identity='',notice,mode,disclosure,consentLabel,consent,send,ownWorkouts,ownNutrition,ownProfile,ownBookings,ownMealPlan,dataOptions,dataSummary,coachActionsInput,settingsForm,settingsState,budget,settingsVersion=0,settingsDirty=false,available=false,loading=false,busy=false,history=[],chatGeneration=0;
     function applySettings(saved){settingsVersion=saved.version||0;const v=saved.values||{};

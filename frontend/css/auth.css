@@ -25,3 +25,5 @@
 /* Profile pictures share the existing account avatar and dialog layout. */
 .account-avatar img { width: 100%; height: 100%; object-fit: cover; border-radius: inherit; }
 .account-profile-photo { width: 6rem; height: 6rem; object-fit: cover; border-radius: 50%; max-width: 100%; }
+
+.mobile-bottom-nav.is-membership-limited { grid-template-columns: repeat(2, minmax(0, 1fr)); }

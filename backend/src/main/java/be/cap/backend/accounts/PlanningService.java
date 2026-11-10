@@ -25,9 +25,10 @@ public class PlanningService {
                           String category, String program, List<UUID> athleteIds, int bookedCount, boolean booked, Workout workoutSnapshot) {}
     public record Booking(UUID sessionId, UUID athleteId, String athlete, boolean cancelled, String attendance) {}
     private final JdbcTemplate jdbc;
+    private final AthleteFeatureAccess featureAccess;
     private final be.cap.backend.accounts.billing.LessonAccess lessonAccess;
     private static final ZoneId CLUB_ZONE = ZoneId.of("Europe/Brussels");
-    public PlanningService(JdbcTemplate jdbc, be.cap.backend.accounts.billing.LessonAccess lessonAccess) { this.jdbc = jdbc; this.lessonAccess = lessonAccess; }
+    public PlanningService(JdbcTemplate jdbc, be.cap.backend.accounts.billing.LessonAccess lessonAccess,AthleteFeatureAccess featureAccess) { this.featureAccess=featureAccess; this.jdbc = jdbc; this.lessonAccess = lessonAccess; }
     private ResponseStatusException invalid(String message) { return new ResponseStatusException(HttpStatus.BAD_REQUEST, message); }
     private void coach(AccountService.Account user) {
         new StaffPolicy(jdbc).require(user,StaffPolicy.Permission.CLASS_MANAGE);
@@ -66,6 +67,7 @@ public class PlanningService {
         if (from != null) { sql += " AND s.session_date >= ?"; parameters.add(Date.valueOf(from)); }
         if (through != null) { sql += " AND s.session_date <= ?"; parameters.add(Date.valueOf(through)); }
         sql += " ORDER BY s.session_date, s.start_time, s.title";
+        boolean fullAccess=featureAccess.fullAccess(user);
         return jdbc.query(sql, (row, index) -> {
             UUID id = row.getObject("id", UUID.class);
             // Athletes receive no other athlete identities, even in their own private session.
@@ -76,7 +78,7 @@ public class PlanningService {
                 row.getObject("coach_id", UUID.class), row.getString("coach_name"), row.getString("location"),
                 row.getInt("capacity"), row.getString("session_type"), row.getString("category"), row.getString("program"),
                 recipients, row.getInt("booked_count"), row.getInt("mine") > 0,
-                row.getString("workout_snapshot") == null ? null : JsonMapper.builder().build().readValue(row.getString("workout_snapshot"),Workout.class));
+                !fullAccess || row.getString("workout_snapshot") == null ? null : JsonMapper.builder().build().readValue(row.getString("workout_snapshot"),Workout.class));
         }, parameters.toArray());
     }
     private void upcoming(Session session) {
