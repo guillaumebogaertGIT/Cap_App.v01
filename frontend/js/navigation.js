@@ -134,6 +134,10 @@ function syncSidebarIcons() {
     for (const link of sidebarNavigation.querySelectorAll('a[data-view-link]')) {
         if (link.classList.contains('settings-link') || link.querySelector('.sidebar-nav-icon')) continue;
         const route = link.dataset.viewLink;
+        if(route==='coach-glenn'){
+            const robot=document.createElement('img');robot.src='img/coach-glenn-robot.png';robot.alt='';robot.className='sidebar-nav-icon sidebar-glenn-icon';
+            link.classList.add('sidebar-with-icon');link.prepend(robot);continue;
+        }
         const source = document.querySelector(`.home-tiles a[href="#${route}"] svg`);
         const icon = source ? source.cloneNode(true) : document.createElementNS('http://www.w3.org/2000/svg', 'svg');
         if (!source) {

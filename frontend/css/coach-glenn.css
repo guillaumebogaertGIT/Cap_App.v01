@@ -65,3 +65,5 @@
 .coach-glenn-proposal summary { min-height:44px; cursor:pointer; padding:.5rem 0; }
 .coach-glenn-proposal > button { min-height:44px; margin:.4rem .4rem .4rem 0; }
 .coach-glenn-disclosure > a { display:inline-flex; align-items:center; min-height:44px; margin-inline:1rem; }
+
+.sidebar-glenn-icon { filter: grayscale(1); object-fit: contain; }
