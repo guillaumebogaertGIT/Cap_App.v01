@@ -58,10 +58,12 @@
         apply();if(!active())return;const current=++generation;loading=true;$('owner-home-refresh').disabled=true;$('owner-home-task').disabled=true;
         lessons();$('owner-home-tasks-status').textContent='Taken laden…';$('owner-home-completions-status').textContent='Workouts laden…';
         const preview=()=>{const data=agenda.preview(),due=data.tasks.filter(t=>t.date===today()||t.date<today()&&(!t.done||t.updatedAt&&new Intl.DateTimeFormat('sv-SE',{timeZone:'Europe/Brussels'}).format(new Date(t.updatedAt))===today())).sort((a,b)=>Number(b.date===today())-Number(a.date===today())||a.date.localeCompare(b.date)||a.id.localeCompare(b.id));return {today:today(),tasks:due.slice(0,8),totalCount:due.length,dueCount:due.filter(t=>!t.done).length,overdueCount:due.filter(t=>!t.done&&t.date<today()).length,owners:data.owners};};
+        const finishLoading=[$('owner-home-tasks'),$('owner-home-completions')].map(target=>capLoading.begin(target,{count:3}));
         const results=await Promise.allSettled([
             real?real.request('/api/owner-agenda/overview'):Promise.resolve(preview()),
             real?real.request('/api/owner-agenda/notifications'):Promise.resolve({items:agenda.preview().notifications,unread:agenda.preview().notifications.filter(n=>!n.read).length})
         ]);
+        finishLoading.forEach(done=>done());
         if(current!==generation||!active())return;
         loading=false;$('owner-home-refresh').disabled=false;
         const [tasks,events]=results;

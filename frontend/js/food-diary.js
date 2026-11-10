@@ -121,6 +121,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!id || !math.validDay(date, today())) { render(); return; }
         const key = dayKey(id, date);
         loadStates.set(key, 'Dagboek laden...'); render();
+        const finishLoading=capLoading.begin($(prefix+'-entries'),{count:3});
         try {
             const rows = await real.request(`/api/food-diary?date=${encodeURIComponent(date)}${prefix === 'coach-food' ? `&athleteId=${encodeURIComponent(id)}` : ''}`);
             if (version !== loadVersion || !window.capAccess.signedIn) return;
@@ -129,7 +130,7 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (error) {
             if (version !== loadVersion) return;
             loadStates.set(key, error.message);
-        }
+        } finally {finishLoading();}
         render();
     }
     async function mutate(action) {

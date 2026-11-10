@@ -338,6 +338,7 @@
         $('#reload-workouts').disabled = true;
         $('#api-workouts').setAttribute('aria-busy', 'true');
         $('#workouts-status').textContent = 'Workouts laden…';
+        const finishLoading=capLoading.begin($('#api-workouts'),{shape:'cards',count:2});
         const controller = new AbortController();
         const timeout = setTimeout(() => controller.abort(), 5000);
         try {
@@ -540,7 +541,7 @@
             $('#workouts-status').textContent = message;
             $('#coach-library-load-status').textContent = message;
         } finally {
-            clearTimeout(timeout); loading = false;
+            finishLoading(); clearTimeout(timeout); loading = false;
             $('#reload-workouts').disabled = false;
             $('#api-workouts').setAttribute('aria-busy', 'false');
             if (pending) { pending = false; loadWorkouts(); }

@@ -144,11 +144,14 @@
     async function refreshReal(message) {
         if(real?.account.role==='COACH' && !window.capCan('CLASS_VIEW'))return;
         const version = ++refreshVersion;
+        const finishLoading=capLoading.begin($('planning-calendar-grid'),{shape:'calendar'});
+        try {
         const [sessions, bookings] = await Promise.all([real.request('/api/club/sessions'), real.request('/api/club/bookings')]);
         if (version !== refreshVersion) return;
         data.sessions = sessions.map(s => ({ ...s, start: s.start.slice(0,5), end: s.end.slice(0,5) }));
         data.bookings = bookings.map(b => ({ ...b, id: b.sessionId + ':' + b.athleteId }));
         render(); if (message) announce(message);
+        } finally {finishLoading();}
     }
     let realBusy = false;
     async function mutateReal(path, method, body, message) {

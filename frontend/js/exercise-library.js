@@ -207,13 +207,14 @@
         loading = true; $('exercise-new').disabled = true;
         $('exercise-catalog-status').textContent = 'Oefenbibliotheek laden…'; $('exercise-catalog-retry').hidden = true;
         render();
+        const finishLoading=capLoading.begin($('exercise-library-list'),{count:4});
         try {
             await api.load(true);
             $('exercise-catalog-status').textContent = 'Bibliotheek geladen. Wijzigingen blijven bewaard na vernieuwen.';
         } catch (error) {
             $('exercise-catalog-status').textContent = error.message;
             $('exercise-catalog-retry').hidden = false;
-        } finally { loading = false; $('exercise-new').disabled = !api.ready; updateFilters(); renderDraft(); render(); }
+        } finally { finishLoading(); loading = false; $('exercise-new').disabled = !api.ready; updateFilters(); renderDraft(); render(); }
     }
     $('exercise-catalog-retry').addEventListener('click', loadCatalog);
     $('exercise-library-state').addEventListener('change', () => {

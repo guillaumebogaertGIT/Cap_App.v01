@@ -144,6 +144,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const version = (planVersions.get(id) || 0) + 1;
         planVersions.set(id, version);
         const draftVersion = draftVersions.get(id) || 0;
+        const finishLoading=capLoading.begin(id===real.account.id?$('athlete-nutrition-targets'):targetsForm,{shape:'metrics',count:4});
         try {
             const path = real.account.role==='COACH'&&id===real.account.id?'/api/nutrition-targets/self':'/api/nutrition-targets' + (real.account.role === 'COACH' ? '?athleteId=' + encodeURIComponent(id) : '');
             const plan = await real.request(path);
@@ -159,7 +160,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (planVersions.get(id) !== version) return;
             if (canEdit() && id === selectedId) $('nutrition-save-status').textContent = error.message;
             else if (!canEdit()) $('athlete-nutrition-status').textContent = error.message;
-        }
+        } finally {finishLoading();}
     }
     function refreshVisiblePlan() {
         if (!real || !window.capAccess.signedIn) return;

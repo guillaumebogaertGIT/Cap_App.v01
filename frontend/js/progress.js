@@ -73,14 +73,14 @@
         if(!sessions.length)past.append(node('p','Nog geen afgeronde trainingen. Na het afronden van een workout vind je hier je uitgevoerde sets.','club-empty'));
     }
     async function load(){const current=++generation;controller?.abort();controller=new AbortController();const signal=AbortSignal.any([controller.signal,AbortSignal.timeout(10000)]);
-        status.textContent='Je resultaten laden…';reload.disabled=true;sessions=[];records=[];recordList.replaceChildren();past.replaceChildren();count.textContent='';
+        status.textContent='Je resultaten laden…';reload.disabled=true;if(!sessions.length&&!records.length){recordList.replaceChildren();past.replaceChildren();count.textContent='';}const finishLoading=[recordList,past].map(target=>capLoading.begin(target,{count:3}));
         try{const get=async path=>{const response=await fetch('http://localhost:8080'+path,{cache:'no-store',signal});if(!response.ok)throw Error();return response.json();};
             const [history,prs]=await Promise.all([get('/api/training'),get('/api/records')]);
             if(current!==generation||!own())return;if(!Array.isArray(history)||!Array.isArray(prs))throw Error();
             sessions=history.filter(s=>s.finishedAt&&s.planned&&Number.isFinite(Date.parse(s.finishedAt))).sort((a,b)=>Date.parse(b.finishedAt)-Date.parse(a.finishedAt));records=prs;renderRecords();renderPast();status.textContent='';
             window.capExerciseCatalog?.load().catch(()=>{});
         }catch(error){if(current===generation&&own())status.textContent='Je resultaten konden niet laden. Kies Vernieuwen om opnieuw te proberen.';}
-        finally{if(current===generation)reload.disabled=false;}
+        finally{finishLoading.forEach(done=>done());if(current===generation)reload.disabled=false;}
     }
     search.addEventListener('input',renderRecords);reload.onclick=load;
     document.addEventListener('cap:exercise-catalog-changed',()=>{if(own()&&location.hash==='#health')renderRecords();});

@@ -26,13 +26,13 @@
     section.append(node('h3','Aan coach koppelen'),node('p','Admins hebben al toegang tot alle sporters. Koppel hier één of meerdere lesgevers.'),form,status,linked,retry);dialog.append(section);
     let members=[],grants=[];
     function controls(){select.disabled=busy||!members.some(m=>m.active&&m.role==='INSTRUCTOR');submit.disabled=busy||!select.value||grants.includes(select.value);retry.disabled=busy;}
-    async function load(){const version=++generation,id=selectedId;submit.disabled=true;select.disabled=true;linked.replaceChildren();status.textContent='Coaches laden…';
+    async function load(){const version=++generation,id=selectedId;submit.disabled=true;select.disabled=true;linked.replaceChildren();status.textContent='Coaches laden…';const finishLoading=capLoading.begin(linked,{count:2});
         try{const [people,ids]=await Promise.all([real.request('/api/staff/members'),real.request('/api/staff/clients/'+id+'/instructors')]);if(version!==generation||!dialog.open)return;
             members=people;grants=ids;const previous=select.value;select.replaceChildren(new Option('Kies een coach',''),...members.filter(m=>m.active&&m.role==='INSTRUCTOR').map(m=>new Option(m.name,m.id)));if(members.some(m=>m.id===previous&&m.active&&m.role==='INSTRUCTOR'))select.value=previous;
             for(const coachId of grants){const coach=members.find(m=>m.id===coachId),item=node('li');item.append(node('span',(coach?.name||'Onbekende medewerker')+(coach?.active?'':' · niet actief')));
                 const remove=node('button','Ontkoppelen');remove.type='button';remove.className='secondary-button';remove.setAttribute('aria-label',(coach?.name||'Coach')+' ontkoppelen');remove.disabled=busy;remove.addEventListener('click',()=>mutate(coachId,'DELETE'));item.append(remove);linked.append(item);}
             status.textContent=grants.length?grants.length+' gekoppelde coach(es).':'Nog geen coach gekoppeld.';controls();
-        }catch(error){if(version===generation&&dialog.open){status.textContent=error.message;select.disabled=true;submit.disabled=true;retry.disabled=false;}}
+        }catch(error){if(version===generation&&dialog.open){status.textContent=error.message;select.disabled=true;submit.disabled=true;retry.disabled=false;}}finally{finishLoading();}
     }
     async function mutate(coachId,method){if(busy||!selectedId)return;busy=true;controls();dialog.querySelectorAll('button').forEach(b=>{b.disabled=true;});status.textContent='Koppeling bewaren…';
         try{await real.request('/api/staff/'+coachId+'/clients/'+selectedId,method);await load();status.textContent=method==='PUT'?'Sporter aan coach gekoppeld. De coach ziet deze sporter bij Mijn klanten.':'Coach ontkoppeld. De toegang tot deze sporter is ingetrokken.';}

@@ -10,8 +10,8 @@ document.addEventListener('DOMContentLoaded',()=>{
     function delta(key,current,previous){const el=elements[key].change;el.classList.remove('is-up','is-down');if(previous==null){el.textContent=key==='active'?'Historische vergelijking niet beschikbaar.':'Vergelijking niet beschikbaar.';return;}const diff=current-previous;el.classList.toggle('is-up',diff>0);el.classList.toggle('is-down',diff<0);const amount=key==='income'?money(Math.abs(diff)):Math.abs(diff);el.textContent=diff===0?'Gelijk aan vorige periode.':`${diff>0?'+':'−'}${amount}${previous>0?' · '+(Math.abs(diff)/previous*100).toFixed(0)+'% '+(diff>0?'meer':'minder'):''} t.o.v. dezelfde periode vorige maand.`;}
     let loading=false,generation=0,loaded=false;
     const preview=()=>{const now=new Date(),day=capDateTime.date(now);return {today:day,activeClients:8,newClients:{value:3,previous:2},participants:{value:6,previous:5},billingEnabled:false};};
-    async function load(){if(loading)return;loading=true;loaded=false;const current=++generation;host.querySelector('[data-refresh]').disabled=true;host.querySelector('[role=status]').textContent='Cijfers laden…';for(const item of Object.values(elements)){item.value.textContent='—';item.change.textContent='';item.change.classList.remove('is-up','is-down');}
-        try{const data=real?await real.request('/api/finance/overview'):preview();if(current!==generation)return;
+    async function load(){if(loading)return;loading=true;loaded=false;const current=++generation;host.querySelector('[data-refresh]').disabled=true;host.querySelector('[role=status]').textContent='Cijfers laden…';const finishLoading=capLoading.begin(host.querySelector('.finance-metrics'),{shape:'metrics',count:4,retain:Object.values(elements).some(item=>item.value.textContent!=='—')});for(const item of Object.values(elements)){item.value.textContent='—';item.change.textContent='';item.change.classList.remove('is-up','is-down');}
+        try{const data=real?await real.request('/api/finance/overview'):preview();if(current!==generation)return;finishLoading();
             host.querySelector('[data-date]').textContent=real?capDateTime.dayLabel(data.today):data.today;
             elements.active.value.textContent=data.activeClients;delta('active',data.activeClients,null);
             for(const [key,counter] of [['new',data.newClients],['participants',data.participants]]){elements[key].value.textContent=counter.value;delta(key,counter.value,counter.previous);}
@@ -29,7 +29,7 @@ document.addEventListener('DOMContentLoaded',()=>{
             }
             loaded=true;
         }catch(error){host.querySelector('[role=status]').textContent='Cijfers laden mislukt. '+error.message+' Kies Cijfers vernieuwen om opnieuw te proberen.';}
-        finally{loading=false;host.querySelector('[data-refresh]').disabled=false;}
+        finally{finishLoading();loading=false;host.querySelector('[data-refresh]').disabled=false;}
     }
     host.querySelector('[data-refresh]').onclick=load;document.addEventListener('cap:viewchange',()=>{if(location.hash==='#finance'&&!loaded)load();});if(location.hash==='#finance')load();
 });

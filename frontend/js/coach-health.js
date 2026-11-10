@@ -115,11 +115,11 @@ document.addEventListener('DOMContentLoaded', () => {
     async function loadMeasurements(){
         const version=++measurementGeneration,id=selectedId;realProfile={};realEntries=[];renderMeasurements();
         if(!id){measurementStatus.textContent='Er zijn nog geen sporters.';return;}
-        measurementStatus.textContent='Metingen laden…';
+        measurementStatus.textContent='Metingen laden…';const finishLoading=capLoading.begin($('coach-health-metrics'),{shape:'metrics',count:4});
         try{const value=await real.request('/api/measurements/athletes/'+encodeURIComponent(id));
             if(version!==measurementGeneration || selectedId!==id || !isOpen())return;
             applyMeasurements(value);measurementStatus.textContent='Metingen uit het sportersaccount.';
-        }catch(error){if(version===measurementGeneration)measurementStatus.textContent=error.message+' Kies Vernieuwen om opnieuw te proberen.';}
+        }catch(error){if(version===measurementGeneration)measurementStatus.textContent=error.message+' Kies Vernieuwen om opnieuw te proberen.';}finally{finishLoading();}
     }
     async function loadTraining() {
         request?.abort(); request = null;
@@ -136,6 +136,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const controller = new AbortController(); request = controller;
         $('coach-health-training-status').textContent = 'Trainingsgegevens laden…';
         const timeout = setTimeout(() => controller.abort(), 6000);
+        const finishLoading=capLoading.begin($('coach-health-training-history'),{count:3});
         try {
             const responses = await Promise.all(['/api/training', '/api/records'].map(path => fetch(`http://localhost:8080${path}${window.capReal ? "?athleteId=" + encodeURIComponent(athlete.id) : ""}`, { signal: controller.signal, cache: 'no-store' })));
             if (responses.some(response => !response.ok)) throw new Error('Load failed');
@@ -168,7 +169,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 clearTraining();
                 $('coach-health-training-status').textContent = 'Trainingsgegevens niet geladen. Controleer de backend en kies Vernieuwen.';
             }
-        } finally { clearTimeout(timeout); if (request === controller) request = null; }
+        } finally { finishLoading(); clearTimeout(timeout); if (request === controller) request = null; }
     }
     metrics.forEach(metric => {
         const label = node('label', `${metric.label} (${metric.unit})`);

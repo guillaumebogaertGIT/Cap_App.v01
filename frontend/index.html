@@ -23,6 +23,9 @@
     <link rel="stylesheet" href="css/coach-glenn.css">
     <link rel="stylesheet" href="css/community.css">
     <link rel="stylesheet" href="css/auth.css">
+    <link rel="stylesheet" href="css/foundation.css">
+    <script src="js/loading.js" defer></script>
+    <script src="js/ui-accessibility.js" defer></script>
     <script src="js/preview-storage.js" defer></script>
     <script src="js/auth-preview.js" defer></script>
     <script src="js/staff-ui.js" defer></script>
@@ -144,7 +147,8 @@
 
     </div>
 
-    <main>
+    <a class="skip-link" href="#main-content">Naar de inhoud</a>
+    <main id="main-content" tabindex="-1">
         <div class="account-bar">
             <div class="account-tools">
                 <a id="header-settings" class="account-icon-button" href="#settings" data-view-link="settings" aria-label="Instellingen" title="Instellingen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
@@ -637,7 +641,7 @@
         </section>
         <section id="nutrition" data-view aria-labelledby="nutrition-title" hidden>
             <header class="dashboard-header"><div><h2 id="nutrition-title" tabindex="-1">Voeding</h2><p class="dashboard-intro">Jouw dagdoelen van de coach.</p></div></header>
-            <article class="club-card"><h3>Mijn dagdoelen</h3><p id="athlete-nutrition-status" role="status"></p><dl id="athlete-nutrition-targets" class="nutrition-metrics"></dl><p id="athlete-nutrition-energy-note" class="sample-notice"></p><p class="sample-notice">Voorbeeldsporter: Guillaume. Maaltijdplanning volgt later.</p></article>
+            <article class="club-card"><h3>Mijn dagdoelen</h3><p id="athlete-nutrition-status" role="status"></p><dl id="athlete-nutrition-targets" class="nutrition-metrics"></dl><p id="athlete-nutrition-energy-note" class="sample-notice"></p><p class="sample-notice">Je dagdoelen staan los van wat je in je voedingsdagboek registreert.</p></article>
             <article class="club-card">
                 <div class="health-overview-heading"><h3>Voedingsdagboek</h3><label>Datum<input id="athlete-food-date" type="date" required></label></div>
                 <p id="food-diary-storage-note" class="sample-notice">Log wat je hebt gegeten. Je log blijft in deze browser bewaard.</p>
