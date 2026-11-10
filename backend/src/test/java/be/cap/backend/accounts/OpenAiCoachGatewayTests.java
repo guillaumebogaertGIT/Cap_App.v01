@@ -5,6 +5,8 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
 class OpenAiCoachGatewayTests {
+    @Test void actionPayloadRequiresReviewAndRetainsBudgetBounds(){var p=new OpenAiCoachGateway("secret-key").actionPayload(List.of(new AiCoachGateway.Turn("user","Maak workout")),Map.of("matchingClients",List.of()),"");assertEquals(6000,p.get("max_output_tokens"));assertEquals(false,p.get("store"));assertTrue(p.get("text").toString().contains("json_object"));assertTrue(p.get("instructions").toString().contains("human must confirm"));assertFalse(p.toString().contains("secret-key"));assertFalse(p.containsKey("tools"));}
+
     @Test void personalSnapshotIsSeparateFromUserTextAndBoundedToExplicitContext(){
         var gateway=new OpenAiCoachGateway("private-key");var plain=gateway.payload(List.of(new AiCoachGateway.Turn("user","Mijn voeding?")));
         assertFalse(plain.toString().contains("<own_data>"));

@@ -55,3 +55,13 @@
 .coach-glenn-data-options input { flex:0 0 auto; width:1.25rem; height:1.25rem; }
 .coach-glenn-data-options small { display:block; line-height:1.5; margin-top:.25rem; }
 .coach-glenn-data-summary { flex-shrink:0; margin:.25rem 1rem; font-size:.75rem; color:var(--muted); }
+#coach-glenn-settings { max-width:52rem; }
+#coach-glenn-settings > button { margin-bottom:1rem; min-height:44px; }
+#coach-glenn-settings .coach-glenn-data-options { margin:1rem 0; }
+#coach-glenn-settings .coach-glenn-consent { padding:.75rem 0; }
+.coach-glenn-proposal { margin-top:1rem; border-top:1px solid var(--border); padding-top:.75rem; }
+.coach-glenn-proposal h3 { font-size:1rem; }
+.coach-glenn-proposal > details { margin:.5rem 0; }
+.coach-glenn-proposal summary { min-height:44px; cursor:pointer; padding:.5rem 0; }
+.coach-glenn-proposal > button { min-height:44px; margin:.4rem .4rem .4rem 0; }
+.coach-glenn-disclosure > a { display:inline-flex; align-items:center; min-height:44px; margin-inline:1rem; }

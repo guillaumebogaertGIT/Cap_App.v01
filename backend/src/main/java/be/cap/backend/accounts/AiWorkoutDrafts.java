@@ -41,8 +41,9 @@ public class AiWorkoutDrafts {
         var rows=root.path("exercises");if(Set.of("answer","clarification").contains(status)&&rows.isEmpty())return Map.of("answer",message);
         if(!status.equals("draft")||name.isBlank()||rows.isEmpty()||rows.size()>8)throw new IllegalArgumentException("Invalid draft");
         var exercises=new ArrayList<Workout.Exercise>();
-        for(var row:rows){fields(row,Set.of("name","sets","reps","restSeconds"));String exercise=text(row,"name",180);if(!names.contains(exercise))throw new IllegalArgumentException("Unknown exercise");
-            exercises.add(new Workout.Exercise(exercise,number(row,"sets",1,8),number(row,"reps",1,50),"none",null,null,null,number(row,"restSeconds",0,600),null));}
+        for(var row:rows){fields(row,row.has("rir")?Set.of("name","sets","reps","restSeconds","rir"):Set.of("name","sets","reps","restSeconds"));String exercise=text(row,"name",180);if(!names.contains(exercise))throw new IllegalArgumentException("Unknown exercise");
+            Integer rir=row.hasNonNull("rir")?number(row,"rir",0,10):null;
+            exercises.add(new Workout.Exercise(exercise,number(row,"sets",1,8),number(row,"reps",1,50),"none",null,null,null,number(row,"restSeconds",0,600),null,null,null,rir));}
         return Map.of("answer",message,"workout",new Workout(null,name,description,List.copyOf(exercises),null,null,"",type));
     }
 }

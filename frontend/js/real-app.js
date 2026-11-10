@@ -25,7 +25,7 @@
         let response;
         try { response = await fetch(path, { method, cache: 'no-store',
             headers: body === undefined ? {} : { 'Content-Type': 'application/json' },
-            body: body === undefined ? undefined : JSON.stringify(body), signal: AbortSignal.timeout(15000) });
+            body: body === undefined ? undefined : JSON.stringify(body), signal: AbortSignal.timeout(path.startsWith('/api/ai-coach')?70000:15000) });
         } catch { throw new Error('Geen verbinding met CAP. Controleer je verbinding en probeer opnieuw.'); }
         if (!response.ok) {
             const error = await response.json().catch(() => ({}));

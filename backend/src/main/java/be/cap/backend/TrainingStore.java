@@ -74,19 +74,19 @@ public class TrainingStore {
                     return new Workout.SetTarget(target.reps(), target.loadMode(), target.loadValue(), target.targetKg(), target.referenceKg());
                 }).toList();
                 Workout.SetTarget first = targets.getFirst();
-                return new Workout.Exercise(e.name(), targets.size(), first.reps(), first.loadMode(), first.loadValue(), first.targetKg(), first.referenceKg(), e.restSeconds(), e.tempo(), e.supersetGroup(), targets);
+                return new Workout.Exercise(e.name(), targets.size(), first.reps(), first.loadMode(), first.loadValue(), first.targetKg(), first.referenceKg(), e.restSeconds(), e.tempo(), e.supersetGroup(), targets, e.rir());
             }
             String mode = e.loadMode() == null ? "none" : e.loadMode();
-            if (mode.equals("none")) return new Workout.Exercise(e.name(), e.sets(), e.reps(), mode, null, null, null, e.restSeconds(), e.tempo(), e.supersetGroup());
+            if (mode.equals("none")) return new Workout.Exercise(e.name(), e.sets(), e.reps(), mode, null, null, null, e.restSeconds(), e.tempo(), e.supersetGroup(), null, e.rir());
             Double value = e.loadValue();
             if (value == null || !Double.isFinite(value) || value < 0 || value > 2000) throw invalid("Ongeldig gewicht of percentage.");
-            if (mode.equals("fixed")) return new Workout.Exercise(e.name(), e.sets(), e.reps(), mode, value, value, null, e.restSeconds(), e.tempo(), e.supersetGroup());
+            if (mode.equals("fixed")) return new Workout.Exercise(e.name(), e.sets(), e.reps(), mode, value, value, null, e.restSeconds(), e.tempo(), e.supersetGroup(), null, e.rir());
             if (!mode.equals("percent") || value <= 0 || value > 200 || e.name() == null
                 || !athleteId.equals(input.athleteId())) throw invalid("Een percentage vereist een toegewezen sporter en een waarde van 1 tot 200.");
             Record reference = records().stream().filter(r -> key(r.exercise(), r.reps()).equals(key(e.name(), e.reps()))).findFirst()
                 .orElseThrow(() -> invalid("Geen PR voor " + e.name() + " met " + e.reps() + " herhalingen. Kies een vast gewicht."));
             double target = Math.round(reference.kg() * value) / 100.0;
-            return new Workout.Exercise(e.name(), e.sets(), e.reps(), mode, value, target, reference.kg(), e.restSeconds(), e.tempo(), e.supersetGroup());
+            return new Workout.Exercise(e.name(), e.sets(), e.reps(), mode, value, target, reference.kg(), e.restSeconds(), e.tempo(), e.supersetGroup(), null, e.rir());
         }).toList();
         return new Workout(input.id(), input.name(), input.description(), exercises, input.athleteId(), input.assignedDate(), input.category(), input.workoutType());
     }

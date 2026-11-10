@@ -85,7 +85,7 @@
             group.items.forEach(({ index }) => { exerciseContainers[index] = exercises; });
         });
         active.planned.exercises.forEach((exercise, index) => {
-            const block = node('fieldset', null, 'exercise-row'); block.append(node('legend', exercise.name), node('p', `Gepland: ${target(exercise)}`));
+            const block = node('fieldset', null, 'exercise-row'); block.append(node('legend', exercise.name), node('p', `Gepland: ${target(exercise)}${exercise.rir!=null?' · Doel-RIR '+exercise.rir:''}`));
             window.capExerciseVideo.append(block, exercise.name);
             if (exercise.supersetGroup) block.classList.add('superset-exercise');
             const sets = active.exercises[index].sets;

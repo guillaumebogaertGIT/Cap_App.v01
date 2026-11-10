@@ -112,6 +112,7 @@ function syncHomeShortcuts(allowedViews) {
 function syncSidebarIcons() {
     // Explicit route icons avoid inheriting an unrelated Home-tile fallback.
     const fallback = {
+        'coach-glenn': 'M4 4h16v12H9l-5 4zM8 8h8m-8 4h5',
         dashboard: 'm3 10 9-7 9 7v10H3zM9 20v-7h6v7',
         planning: 'M4 5h16v16H4zM8 3v4m8-4v4M4 10h16M8 14h2m4 0h2m-8 4h2',
         bookings: 'M4 5h16v16H4zM8 3v4m8-4v4M4 10h16M8 16l3 3 5-5',
@@ -180,6 +181,7 @@ function showCurrentView(moveFocus = true) {
         sidebarNavigation.querySelector('[data-view-link="athletes"]').textContent=instructor?'Mijn klanten':'Klanten';
         document.querySelectorAll('#coach .home-tile').forEach(link=>{link.hidden=!allowedViews.includes(link.hash.slice(1));});
     }
+    allowedViews.push('coach-glenn');
     const adminBottom=previewRole==='coach'&&['OWNER','MANAGER'].includes(window.capReal?.staffRole);
     const ownerAgendaAllowed = previewRole === 'coach' && (window.capReal ? window.capReal.staffRole === 'OWNER' : true);
     if (ownerAgendaAllowed) allowedViews.push('owner-agenda');
@@ -204,6 +206,7 @@ function showCurrentView(moveFocus = true) {
     document.body.classList.toggle('is-workout-editor', viewId === 'create-workout');
 
     sidebarNavigation.querySelectorAll('a').forEach((link) => {
+        if(link.dataset.viewLink==='coach-glenn'){link.hidden=false;return;}
         if(link.dataset.viewLink==='coach-health'){link.hidden=true;return;}
         if(['community','messages'].includes(link.dataset.viewLink)){link.hidden=!socialAllowed;return;}
         if(link.dataset.viewLink==='nutrition'){link.hidden=previewRole==='coach'&&allowedViews.includes('coach-nutrition');return;}

@@ -162,6 +162,7 @@ public class WorkoutStore {
             if (exercise == null || exercise.name() == null || exercise.name().isBlank()
                 || exercise.name().length() > 100 || exercise.sets() < 1 || exercise.sets() > 100
                 || exercise.reps() < 1 || exercise.reps() > 1000
+                || exercise.rir() != null && (exercise.rir() < 0 || exercise.rir() > 10)
                 || exercise.restSeconds() != null && (exercise.restSeconds() < 0 || exercise.restSeconds() > 3600)
                 || exercise.tempo() != null && exercise.tempo().length() > 40) throw invalid();
             if (exercise.setPlan() != null && (exercise.setPlan().size() != exercise.sets()
@@ -195,7 +196,7 @@ public class WorkoutStore {
             input.description() == null ? "" : input.description().trim(),
             input.exercises().stream().map(e -> new Workout.Exercise(e.name().trim(), e.sets(), e.reps(),
                 e.loadMode(), e.loadValue(), e.targetKg(), e.referenceKg(), e.restSeconds(),
-                e.tempo() == null ? null : e.tempo().trim(), e.supersetGroup(), e.setPlan())).toList(), athlete, date, category, workoutType);
+                e.tempo() == null ? null : e.tempo().trim(), e.supersetGroup(), e.setPlan(), e.rir())).toList(), athlete, date, category, workoutType);
         List<Workout> updated = new ArrayList<>(workouts);
         // One assigned workout per example athlete per day; older workouts stay in the library.
         if (existing == null && weekStart == null && !athlete.isEmpty()) updated.replaceAll(w -> athlete.equals(w.athleteId()) && date.equals(w.assignedDate())

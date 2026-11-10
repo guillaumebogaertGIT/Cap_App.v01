@@ -12,7 +12,10 @@ public record Workout(String id, String name, String description, List<Exercise>
     }
     public record SetTarget(int reps, String loadMode, Double loadValue, Double targetKg, Double referenceKg) {}
     public record Exercise(String name, int sets, int reps, String loadMode, Double loadValue,
-                           Double targetKg, Double referenceKg, Integer restSeconds, String tempo, String supersetGroup, List<SetTarget> setPlan) {
+                           Double targetKg, Double referenceKg, Integer restSeconds, String tempo, String supersetGroup, List<SetTarget> setPlan, Integer rir) {
+        public Exercise(String name, int sets, int reps, String loadMode, Double loadValue, Double targetKg, Double referenceKg, Integer restSeconds, String tempo, String supersetGroup, List<SetTarget> setPlan) {
+            this(name,sets,reps,loadMode,loadValue,targetKg,referenceKg,restSeconds,tempo,supersetGroup,setPlan,null);
+        }
         public Exercise(String name, int sets, int reps, String loadMode, Double loadValue, Double targetKg, Double referenceKg, Integer restSeconds, String tempo, String supersetGroup) {
             this(name, sets, reps, loadMode, loadValue, targetKg, referenceKg, restSeconds, tempo, supersetGroup, null);
         }

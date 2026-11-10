@@ -15,7 +15,7 @@ class AiCoachTests extends AccountApiTests {
     @org.springframework.beans.factory.annotation.Autowired be.cap.backend.accounts.AiOwnContext ownContext;
     @org.springframework.beans.factory.annotation.Autowired be.cap.backend.accounts.AccountService accounts;
     @org.springframework.beans.factory.annotation.Autowired be.cap.backend.accounts.AccountWorkoutService workouts;
-    @BeforeEach void cleanAiLedger(){jdbc.update("DELETE FROM ai_coach_request");jdbc.update("UPDATE ai_coach_budget SET reserved_cents=0 WHERE id=1");}
+    @BeforeEach void cleanAiLedger(){jdbc.update("DELETE FROM ai_coach_settings");jdbc.update("DELETE FROM ai_coach_action");jdbc.update("DELETE FROM ai_coach_request");jdbc.update("UPDATE ai_coach_budget SET reserved_cents=0 WHERE id=1");}
     @Test void ownContextRequiresOptInAndExcludesOtherUsersAndPrivateFields() throws Exception {
         var coach=accounts.account("coach@example.test");
         var first=accounts.accept(accounts.invite(UUID.randomUUID()+"@example.test",coach.email()).token(),"Private identity one","Athlete-test-password-123");

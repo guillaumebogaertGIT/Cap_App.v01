@@ -429,7 +429,7 @@ function populateWorkout(workout, edit = false) {
         const row = addExercise(false);
         const values = { exercise: exercise.name, sets: exercise.sets, reps: exercise.reps,
             loadMode: exercise.loadMode || 'none', loadValue: exercise.loadValue,
-            restSeconds: exercise.restSeconds, tempo: exercise.tempo, supersetGroup: exercise.supersetGroup };
+            rir: exercise.rir, restSeconds: exercise.restSeconds, tempo: exercise.tempo, supersetGroup: exercise.supersetGroup };
         Object.entries(values).forEach(([name, value]) => { row.querySelector(`[name="${name}"]`).value = value ?? ''; });
         row.querySelector('[name="exercise"]').dispatchEvent(new Event('change'));
         row.querySelector('[name="loadMode"]').dispatchEvent(new Event('change'));
@@ -599,6 +599,7 @@ workoutForm.addEventListener('submit', async (event) => {
             setPlan: row.capSetPlan.read(),
             sets: Number(row.querySelector('[name="sets"]').value),
             reps: Number(row.querySelector('[name="reps"]').value),
+            rir: row.querySelector('[name="rir"]').value === '' ? null : Number(row.querySelector('[name="rir"]').value),
             restSeconds: row.querySelector('[name="restSeconds"]').value === '' ? null : Number(row.querySelector('[name="restSeconds"]').value),
             tempo: row.querySelector('[name="tempo"]').value.trim(),
             supersetGroup: row.querySelector('[name="supersetGroup"]').value,
