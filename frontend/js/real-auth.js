@@ -13,7 +13,8 @@ window.capProfile = { get: () => ({ ...accountProfileValues }),
         window.capApplyAccountProfile(await window.capReal.request('/api/measurements','POST',input));
     } };
 window.capSignOut = async () => {
-    try { await window.capReal.request('/api/accounts/logout', 'POST'); location.replace('/accounts/index.html'); }
+    if(window.capBeforeSignOut && !window.capBeforeSignOut())return;
+    try { await window.capReal.request('/api/accounts/logout', 'POST');window.capOnSignOut?.();location.replace('/accounts/index.html'); }
     catch (error) { alert(error.message); }
 };
 document.addEventListener('DOMContentLoaded', () => {

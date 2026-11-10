@@ -29,6 +29,6 @@ document.addEventListener('DOMContentLoaded',()=>{
     page.querySelector('header').after(menu,bar);
     page.querySelector('.dashboard-intro').textContent='Kies wat je wilt doen voor je klant of jezelf.';
     back.onclick=()=>show('menu',true);
-    document.addEventListener('cap:viewchange',()=>{if(location.hash!==lastRoute){if(location.hash==='#coach-nutrition')show('menu');lastRoute=location.hash;}});
-    show('menu');
+    document.addEventListener('cap:viewchange',()=>{if(location.hash!==lastRoute){if(location.hash==='#coach-nutrition')show('plan');lastRoute=location.hash;}});
+    show('plan');
 });

@@ -26,6 +26,7 @@ class MealPlanTests extends AccountApiTests {
         var published=request(staff,"POST","/api/meal-plans/"+plan.id()+"/publish","{\"version\":1}",csrf(staff),false);assertEquals(200,published.statusCode(),published.body());
         String snapshot=context.read(first,false,false,false,false,true);assertTrue(snapshot.contains("Rijst"));assertTrue(snapshot.contains("200.0"));assertFalse(context.read(second,false,false,false,false,true).contains("Rijst"));
         var edit=new MealPlanController.Input(plan.id(),first.id(),week(),2,content("PRIVATE_DRAFT",300));assertEquals(200,request(staff,"POST","/api/meal-plans",json.writeValueAsString(edit),csrf(staff),false).statusCode());
+        var publishedView=request(staff,"GET","/api/meal-plans/"+plan.id()+"/published",null,null,false);assertEquals(200,publishedView.statusCode());assertTrue(publishedView.body().contains("Client week"));assertFalse(publishedView.body().contains("PRIVATE_DRAFT"));assertEquals(403,request(owner,"GET","/api/meal-plans/"+plan.id()+"/published",null,null,false).statusCode());
         String view=request(owner,"GET","/api/meal-plans/self?weekStart="+week()+"&athleteId="+second.id(),null,null,false).body();assertTrue(view.contains("Client week"));assertFalse(view.contains("PRIVATE_DRAFT"));assertFalse(context.read(first,false,false,false,false,true).contains("PRIVATE_DRAFT"));
         assertEquals(0,json.readTree(request(other,"GET","/api/meal-plans/self?weekStart="+week()+"&athleteId="+first.id(),null,null,false).body()).size());
         assertEquals(409,request(staff,"POST","/api/meal-plans",json.writeValueAsString(edit),csrf(staff),false).statusCode());
@@ -38,7 +39,19 @@ class MealPlanTests extends AccountApiTests {
         var template=new MealPlanController.Input(null,null,null,0,content("Reusable template",80));var saved=request(staff,"POST","/api/meal-plans",json.writeValueAsString(template),csrf(staff),false);assertEquals(200,saved.statusCode(),saved.body());var id=json.readTree(saved.body()).path("id").asText();
         assertEquals(400,request(staff,"POST","/api/meal-plans/"+id+"/publish","{\"version\":1}",csrf(staff),false).statusCode());
         assertEquals(400,request(staff,"POST","/api/meal-plans",json.writeValueAsString(new MealPlanController.Input(null,null,null,0,content("Invalid",-1))),csrf(staff),false).statusCode());
+        String missingNutrition=json.writeValueAsString(template).replace("\"calories\":348.6","\"calories\":null");assertTrue(missingNutrition.contains("\"calories\":null"));assertEquals(400,request(staff,"POST","/api/meal-plans",missingNutrition,csrf(staff),false).statusCode());
         assertEquals(200,request(staff,"GET","/api/meal-plans/foods",null,null,false).statusCode());
         assertTrue(request(staff,"GET","/api/meal-plans/templates",null,null,false).body().contains("Reusable template"));
+    }
+    @Test void publishedMealCanBeLoggedOnceWithoutChangingPrescription() throws Exception {
+        var first=athlete();var second=athlete();var staff=client();login(staff,coach().email(),"Coach-test-password-123");var owner=client();login(owner,first.email(),"Athlete-test-password-123");var other=client();login(other,second.email(),"Athlete-test-password-123");
+        var base=content("Weekplan",100);var original=base.days().getFirst().meals().getFirst();var days=new ArrayList<>(base.days());days.set(0,new MealPlanController.Day(0,List.of(new MealPlanController.Meal(original.name(),original.foods(),"Kook de rijst"))));
+        var saved=request(staff,"POST","/api/meal-plans",json.writeValueAsString(new MealPlanController.Input(null,first.id(),week(),0,new MealPlanController.Content(base.name(),days))),csrf(staff),false);assertEquals(200,saved.statusCode(),saved.body());var id=json.readTree(saved.body()).path("id").asText();
+        assertEquals(200,request(staff,"POST","/api/meal-plans/"+id+"/publish","{\"version\":1}",csrf(staff),false).statusCode());String before=request(owner,"GET","/api/meal-plans/self?weekStart="+week(),null,null,false).body();assertTrue(before.contains("Kook de rijst"));
+        String payload="{\"day\":0,\"meal\":0,\"diaryMeal\":\"lunch\"}";assertEquals(404,request(other,"POST","/api/meal-plans/self/"+id+"/consume",payload,csrf(other),false).statusCode());
+        var firstLog=request(owner,"POST","/api/meal-plans/self/"+id+"/consume",payload,csrf(owner),false);assertEquals(201,firstLog.statusCode(),firstLog.body());var entry=json.readTree(firstLog.body());assertEquals(348.6,entry.path("calories").asDouble());assertEquals("Rijst",entry.path("ingredients").get(0).path("name").asText());
+        assertEquals(200,request(owner,"POST","/api/meal-plans/self/"+id+"/consume",payload,csrf(owner),false).statusCode());assertTrue(json.readTree(request(owner,"GET","/api/meal-plans/self/consumed?weekStart="+week(),null,null,false).body()).path("0:0").asBoolean());
+        assertEquals(1,jdbc.queryForObject("SELECT COUNT(*) FROM food_diary_entry WHERE athlete_id=?",Integer.class,first.id()));assertEquals(before,request(owner,"GET","/api/meal-plans/self?weekStart="+week(),null,null,false).body());
+        assertEquals(204,request(owner,"DELETE","/api/food-diary/"+entry.path("id").asText(),null,csrf(owner),false).statusCode());assertFalse(json.readTree(request(owner,"GET","/api/meal-plans/self/consumed?weekStart="+week(),null,null,false).body()).path("0:0").asBoolean());
     }
 }

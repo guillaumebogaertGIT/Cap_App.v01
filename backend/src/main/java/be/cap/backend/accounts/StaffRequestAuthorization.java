@@ -13,9 +13,13 @@ class StaffRequestAuthorization {
     boolean allowed(AccountService.Account user,String method,String path) {
         boolean get=method.equals("GET"),athlete=user.role().equals("ATHLETE");
         if(path.equals("/api/ai-coach"))return get||method.equals("POST");
+        if(path.equals("/api/ai-coach/nutrition-draft"))return method.equals("POST")&&policy.allows(user,NUTRITION_MANAGE);
+        if(path.equals("/api/ai-coach/nutrition-profile"))return get&&policy.allows(user,NUTRITION_MANAGE)&&policy.allows(user,CLIENT_HEALTH);
         if(path.equals("/api/ai-coach/settings"))return get||method.equals("PUT");
         if(path.startsWith("/api/ai-coach/actions/"))return method.equals("POST")||method.equals("DELETE");
         if(path.equals("/api/meal-plans/foods")||path.equals("/api/meal-plans/self"))return get;
+        if(path.equals("/api/meal-plans/self/consumed"))return get&&athlete;
+        if(path.matches("/api/meal-plans/self/[^/]+/consume"))return method.equals("POST")&&athlete;
         if(path.equals("/api/meal-plans")||path.startsWith("/api/meal-plans/"))return policy.allows(user,NUTRITION_MANAGE);
         if(path.equals("/api/invoices")||path.startsWith("/api/invoices/"))return get?policy.allows(user,FINANCE_VIEW):java.util.Set.of("POST","PUT").contains(method)&&policy.role(user).equals("OWNER");
         if(path.equals("/api/client-directory")||path.startsWith("/api/client-directory/"))return get?policy.allows(user,FINANCE_VIEW):method.equals("PUT")&&policy.role(user).equals("OWNER");

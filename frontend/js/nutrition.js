@@ -38,6 +38,18 @@ document.addEventListener('DOMContentLoaded', () => {
     let stale = false;
     const selected = () => roster.find(athlete => athlete.id === selectedId);
     window.capNutritionTargets = {
+        applySaved(plan) {
+            if(!real||!plan?.athleteId)return;
+            plans.set(plan.athleteId,plan);loadedPlans.add(plan.athleteId);
+            if(plan.athleteId===selectedId){if(!drafts.get(selectedId)?.unsaved)setFormValues(targetsForm,plan.targets);renderSaved();refreshTargets();}
+            renderAthlete();document.dispatchEvent(new CustomEvent('cap:nutrition-targets-changed'));
+        },
+        setPreviewTargets(athleteId,targets) {
+            if(real)return;
+            const athlete=roster.find(item=>item.id===athleteId);if(!athlete)return;
+            plans.set(athleteId,{athleteId,name:athlete.name,targets:{...targets},origin:'handmatig',savedAt:new Date().toISOString()});
+            renderSaved();renderAthlete();document.dispatchEvent(new CustomEvent('cap:nutrition-targets-changed'));
+        },
         setPreviewOwn(plan) {
             if(real)return;
             plans.set('preview-guillaume',{...plan,savedAt:new Date().toISOString()});renderAthlete();
@@ -261,7 +273,7 @@ document.addEventListener('DOMContentLoaded', () => {
         link.className = 'secondary-button'; notice.after(link);
     }
     if (real) {
-        document.querySelector('#athlete-nutrition-energy-note + .sample-notice').textContent = 'Deze dagdoelen zijn gekoppeld aan jouw account. Maaltijdplanning volgt later.';
+        document.querySelector('#athlete-nutrition-energy-note + .sample-notice').textContent = 'Deze dagdoelen zijn gekoppeld aan jouw account. Je voedingsplan staat hierboven.';
         document.querySelector('#coach-nutrition > .sample-notice').textContent = 'Bewaarde dagdoelen worden gedeeld met deze sporter. Calculatorinvoer en het voedingsdagboek blijven in deze browser.';
         document.addEventListener('cap:athletes-changed', () => {
             const previous = selectedId;

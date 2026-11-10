@@ -112,6 +112,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const coachAthlete = () => window.capNutritionTargets.selectedAthlete();
     if (real) $('food-diary-storage-note').textContent = 'Je dagboek wordt in je account bewaard. Je coach kan het bekijken.';
     const dayKey = (id, date) => `${id}/${date}`;
+    document.addEventListener('cap:food-diary-changed',()=>{if(real)refreshDiary();else{const saved=window.capStorage.map('food-entries');entries.clear();for(const [id,items]of saved)entries.set(id,items);render();}});
     async function refreshDiary() {
         if (!real || !window.capAccess.signedIn || busy) return;
         const prefix = location.hash === '#coach-nutrition' ? 'coach-food' : 'athlete-food';
