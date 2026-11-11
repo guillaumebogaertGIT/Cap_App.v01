@@ -72,6 +72,35 @@ body.training-focus #training>.club-toolbar,body.training-focus #training>#train
 .training-session-heading .training-timer {font-size:.85rem;}
 .training-session-options {margin:.25rem 0 .75rem;font-size:.8rem;}
 .training-session-options summary {min-height:44px;padding-block:.75rem;cursor:pointer;}
+.player-round-progress {display:flex;align-items:center;justify-content:space-between;gap:.5rem;padding:.5rem 0;margin:.5rem 0;border-block:1px solid var(--border);font-size:.8rem;}
+.player-round-progress nav {display:flex;gap:.3rem;}
+.player-round-dot {width:44px;height:44px;border:1px solid var(--border);border-radius:50%;background:var(--surface);color:var(--text);}
+.player-round-dot[aria-current="step"] {background:var(--accent,#f5a719);color:#141a1d;border-color:transparent;}
+.set-log[data-advanced="false"] tr>:nth-child(4) {display:none;}
+.player-advanced-toggle {min-height:44px;padding:.5rem;background:none;border:0;color:var(--text);text-decoration:underline;text-underline-offset:3px;font-size:.8rem;}
+.player-complete-next {min-height:44px;margin:.4rem 0;}
+.set-log-table tr[data-current="true"] th {border-left:1px solid var(--accent,#f5a719);}
+.player-dock {display:none;}
+.player-info-dialog {width:min(92vw,35rem);max-height:80dvh;overflow:auto;background:var(--surface);color:var(--text);border:1px solid var(--border);border-radius:14px;padding:1.25rem;}
+.player-info-dialog::backdrop {background:rgb(0 0 0 / .4);}
+.player-info-dialog p {line-height:1.6;}
+.player-info-dialog button {min-height:44px;}
+@media(max-width:999px) {
+    body.training-focus main {padding-bottom:calc(7rem + env(safe-area-inset-bottom));}
+    #active-training :is(button,input) {scroll-margin-bottom:7rem;}
+    body.training-focus:has(.workout-player-layout[data-exercise-open="true"]) .training-session-date,
+    body.training-focus:has(.workout-player-layout[data-exercise-open="true"]) .training-session-heading,
+    body.training-focus:has(.workout-player-layout[data-exercise-open="true"]) .training-progress,
+    body.training-focus:has(.workout-player-layout[data-exercise-open="true"]) .training-session-options {display:none;}
+    .workout-player-detail {padding-bottom:calc(5rem + env(safe-area-inset-bottom));}
+    .player-dock {display:flex;position:fixed;z-index:60;bottom:calc(.75rem + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);width:min(340px,calc(100vw - 32px));justify-content:space-around;gap:.25rem;padding:.5rem;background:var(--surface);border:1px solid var(--border);border-radius:16px;box-shadow:0 4px 20px rgb(0 0 0 / .13);}
+    .player-dock button {display:grid;place-items:center;width:48px;min-height:44px;padding:0;background:transparent;border:0;color:var(--text);}
+    .player-dock svg {height:22px;width:22px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linejoin:round;stroke-linecap:round;}
+    .player-dock button:nth-child(3) {background:var(--accent,#f5a719);color:#141a1d;border-radius:50%;}
+    .player-dock button:disabled {opacity:.4;}
+    .player-exercise-moves {display:none;}
+    body.keyboard-open .player-dock {position:static;transform:none;margin:1rem auto;}
+}
 #active-training>button {min-height:44px;margin:.4rem .4rem .4rem 0;}
 @media(min-width:1000px) {
     .workout-player-layout {display:grid;grid-template-columns:minmax(250px, .85fr) minmax(360px,1.35fr);gap:2rem;align-items:start;}
