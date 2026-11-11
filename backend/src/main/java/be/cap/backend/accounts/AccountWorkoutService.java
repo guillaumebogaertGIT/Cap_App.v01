@@ -174,7 +174,9 @@ public class AccountWorkoutService {
         jdbc.update("DELETE FROM training_draft WHERE athlete_id=?",user.id());
         return finished;
     }
-    public record UiState(int exerciseIndex,List<List<Boolean>> completed,Long restUntil) {}
+    public record UiState(int exerciseIndex,List<List<Boolean>> completed,Long restUntil,Integer restPausedSeconds) {
+        public UiState(int exerciseIndex,List<List<Boolean>> completed,Long restUntil){this(exerciseIndex,completed,restUntil,null);}
+    }
     public record Draft(String id,Workout planned,String startedAt,String assignmentId,List<TrainingStore.ExerciseResult> exercises,int version,UiState ui) {
         public Draft(String id,Workout planned,String startedAt,String assignmentId,List<TrainingStore.ExerciseResult> exercises,int version){this(id,planned,startedAt,assignmentId,exercises,version,null);}
     }
@@ -222,7 +224,7 @@ public class AccountWorkoutService {
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"Controleer gewicht, herhalingen en RIR.");
         }
         if(ui!=null){
-            if(ui.exerciseIndex()<0||ui.exerciseIndex()>=exercises.size()||ui.completed()==null||ui.completed().size()!=exercises.size()||ui.restUntil()!=null&&(ui.restUntil()<0||ui.restUntil()>System.currentTimeMillis()+86400000L))throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"Controleer de trainingsvoortgang en rusttimer.");
+            if(ui.exerciseIndex()<0||ui.exerciseIndex()>=exercises.size()||ui.completed()==null||ui.completed().size()!=exercises.size()||ui.restUntil()!=null&&(ui.restUntil()<0||ui.restUntil()>System.currentTimeMillis()+86400000L)||ui.restPausedSeconds()!=null&&(ui.restPausedSeconds()<0||ui.restPausedSeconds()>3600||ui.restUntil()!=null))throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"Controleer de trainingsvoortgang en rusttimer.");
             for(int i=0;i<exercises.size();i++){final int index=i;var result=exercises.stream().filter(e->e.exerciseIndex()==index).findFirst().orElseThrow();var flags=ui.completed().get(i);if(flags==null||flags.size()!=result.sets().size()||flags.stream().anyMatch(java.util.Objects::isNull))throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"Controleer de setstatus.");for(int j=0;j<flags.size();j++)if(flags.get(j)&&(result.sets().get(j).reps()<1||result.sets().get(j).kg()==null))throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"Vul herhalingen en gewicht in voordat je een set voltooit.");}
         }
         var updated=new Draft(draft.id(),draft.planned(),draft.startedAt(),draft.assignmentId(),exercises,version+1,ui);

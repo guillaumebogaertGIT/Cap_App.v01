@@ -12,6 +12,7 @@
     let active = null;
     let saving = false;
     let historyLoading = false;
+    let exerciseOpened = matchMedia("(min-width: 1000px)").matches;
     try {
         const draft = window.capReal ? window.capReal.draft : JSON.parse(localStorage.getItem(key));
         if (draft && draft.id && draft.planned?.exercises?.length && Array.isArray(draft.exercises)
@@ -44,33 +45,33 @@
         return `${String(Math.floor(value / 3600)).padStart(2, '0')}:${String(Math.floor(value / 60) % 60).padStart(2, '0')}:${String(value % 60).padStart(2, '0')}`;
     };
     function tick() {
-        if(active&&$('training-rest-count'))$('training-rest-count').textContent=state.remaining(active.ui.restUntil)?state.remaining(active.ui.restUntil)+' s':'Rust klaar';if (active && $('training-timer')) $('training-timer').textContent = duration(((active.finishedAt ? Date.parse(active.finishedAt) : Date.now()) - Date.parse(active.startedAt)) / 1000);
+        if(active&&$('training-rest-count'))$('training-rest-count').textContent=active.ui.restPausedSeconds!=null?active.ui.restPausedSeconds+' s · Gepauzeerd':state.remaining(active.ui.restUntil)?state.remaining(active.ui.restUntil)+' s':'Rust klaar';if (active && $('training-timer')) $('training-timer').textContent = duration(((active.finishedAt ? Date.parse(active.finishedAt) : Date.now()) - Date.parse(active.startedAt)) / 1000);
     }
     setInterval(tick, 1000);
     function target(exercise) {
         if (exercise.setPlan?.length) return exercise.setPlan.map((set, i) => 'Set ' + (i + 1) + ': ' + window.capWorkoutView.targetText(set)).join(' | ');
         return `${exercise.sets} × ${exercise.reps}${exercise.targetKg != null ? ` · ${exercise.targetKg} kg` : ''}${exercise.restSeconds != null ? ` · Rust: ${exercise.restSeconds} s` : ''}${exercise.tempo ? ` · Tempo: ${exercise.tempo}` : ''}${exercise.supersetGroup ? ` · Superset ${exercise.supersetGroup}` : ''}${exercise.loadMode === 'percent' ? ` (${exercise.loadValue}% van ${exercise.referenceKg} kg bij ${exercise.reps} reps)` : ''}`;
     }
-    function previousText(name){const row=historyCache.slice().reverse().flatMap(s=>s.exercises.map(e=>({name:s.planned.exercises[e.exerciseIndex]?.name,sets:e.sets,finishedAt:s.finishedAt}))).find(e=>e.name===name&&e.sets.length);return row?'Vorige keer ('+capDateTime.date(row.finishedAt)+'): '+row.sets.map(s=>s.reps+' × '+s.kg+' kg').join(' · '):'';}
+    function previousPerformance(name){const row=historyCache.slice().sort((a,b)=>Date.parse(b.finishedAt)-Date.parse(a.finishedAt)).flatMap(s=>s.exercises.map(e=>({name:s.planned.exercises[e.exerciseIndex]?.name,sets:e.sets,finishedAt:s.finishedAt}))).find(e=>e.name===name&&e.sets.length);return row?{sets:row.sets,text:'Vorige keer ('+capDateTime.date(row.finishedAt)+'): '+row.sets.map(s=>s.reps+' × '+s.kg+' kg').join(' · ')}:null;}
+    function previousText(name){return previousPerformance(name)?.text||'';}
     function renderActive(){const container=$('active-training');container.replaceChildren();document.body.classList.toggle('training-focus',Boolean(active)&&location.hash==='#training'&&previewRole==='athlete');if(previewRole!=='athlete')return;if(!active){container.append(node('p',finishedRecovery?'Je vorige afronding wordt gecontroleerd op CAP.':'Geen training bezig. Open je workout om te starten.','club-empty'));return;}state.normalize(active);
         const index=active.ui.exerciseIndex,exercise=active.planned.exercises[index],performed=active.exercises[index],done=active.ui.completed.flat().filter(Boolean).length,total=active.exercises.reduce((n,e)=>n+e.sets.length,0);
+        const dateNav=node('nav',null,'training-session-date');dateNav.setAttribute('aria-label','Workoutdag');const days=node('a','Trainingsdagen');days.href='#workouts';dateNav.append(days,node('span',active.planned.assignedDate?capDateTime.date(active.planned.assignedDate):'Weektraining'));container.append(dateNav);
         const head=node('div',null,'training-session-heading');head.append(node('h3',active.planned.name));const timer=node('span',null,'training-timer');timer.id='training-timer';head.append(timer);container.append(head,node('p',done+' van '+total+' sets voltooid · Oefening '+(index+1)+' van '+active.exercises.length,'training-progress'));
         const sync=node('p',syncText||(window.capReal?'Laatst geladen van CAP.':'Alleen in deze browser bewaard.'),'training-sync');sync.id='training-sync';sync.setAttribute('role','status');container.append(sync);
-        if(window.capReal)container.append(button('Opnieuw opslaan',()=>flushProgress().catch(error=>syncStatus(error.message+' Lokale kopie behouden.'))));
+        const sessionOptions=node('details',null,'training-session-options');sessionOptions.append(node('summary','Workoutopties en coachopmerkingen'));
+        if(window.capReal)sessionOptions.append(button('Opnieuw opslaan',()=>flushProgress().catch(error=>syncStatus(error.message+' Lokale kopie behouden.'))));
         if(recovery){const note=node('section',null,'training-recovery');note.append(node('p','CAP heeft een andere versie. Je lokale invoer is apart bewaard. Kies welke versie je wilt gebruiken.'),button('Lokale invoer herstellen',()=>{const version=active.version;active=state.normalize({...recovery,version});recovery=null;persist();renderActive();}),button('CAP-versie gebruiken',()=>{recovery=null;mirror();syncStatus('CAP-versie geladen.');renderActive();}));container.append(note);}
-        const navigation=node('nav',null,'training-exercise-nav');navigation.setAttribute('aria-label','Oefeningen');const previous=button('Vorige oefening',()=>move(-1)),next=button('Volgende oefening',()=>move(1));previous.disabled=index===0;next.disabled=index===active.exercises.length-1;const picker=node('select');picker.setAttribute('aria-label','Huidige oefening');active.planned.exercises.forEach((e,i)=>picker.add(new Option((i+1)+'. '+e.name,String(i))));picker.value=String(index);picker.onchange=()=>{active.ui.exerciseIndex=Number(picker.value);persist();renderActive();};navigation.append(previous,picker,next);container.append(navigation);
-        function move(step){active.ui.exerciseIndex+=step;persist();renderActive();$('active-exercise-title').focus();}
-        if(active.planned.description){const notes=node('details');notes.append(node('summary','Opmerkingen van je coach'),node('p',active.planned.description));container.append(notes);}
-        const block=node('section',null,'training-current-exercise');const title=node('h3',exercise.name);title.id='active-exercise-title';title.tabIndex=-1;block.append(title);if(exercise.supersetGroup){const linked=active.planned.exercises.filter(e=>e.supersetGroup===exercise.supersetGroup).map(e=>e.name);block.append(node('p','Blok '+exercise.supersetGroup+' · '+linked.join(' / '),'training-group'));}
-        block.append(node('p','Voorgeschreven: '+(window.capWorkoutView.compact?window.capWorkoutView.compact(exercise):target(exercise))+(exercise.rir!=null?' · RIR '+exercise.rir:''),'training-prescribed'));window.capExerciseVideo.append(block,exercise.name);
-        const prior=node('p',previousText(exercise.name),'training-previous');prior.id='training-previous';prior.hidden=!prior.textContent;block.append(prior);
-        const form=node('form',null,'club-form training-form');form.noValidate=true;
-        performed.sets.forEach((set,setIndex)=>{const row=node('section',null,'training-set');row.dataset.completed=String(active.ui.completed[index][setIndex]);const target=capWorkoutView.setTargets(exercise)[setIndex];row.append(node('h4','Set '+(setIndex+1)+(active.ui.completed[index][setIndex]?' · Voltooid':'')));if(target)row.append(node('p','Doel: '+capWorkoutView.targetText(target),'training-set-target'));const fields=node('div',null,'training-set-fields');for(const [field,labelText,max]of [['kg','Gewicht (kg)',2000],['reps','Herhalingen',1000],['rir','RIR (optioneel)',10]]){const label=node('label',labelText),input=node('input');input.type='number';input.min=field==='reps'?'1':'0';input.max=String(max);input.step=field==='kg'?'0.01':'1';input.inputMode=field==='kg'?'decimal':'numeric';input.required=field!=='rir';input.value=field==='reps'&&set[field]===0?'':set[field]??'';input.placeholder=field==='rir'?'Optioneel':'Uitgevoerd';input.disabled=Boolean(active.finishedAt)||active.ui.completed[index][setIndex];input.setAttribute('aria-label',labelText+', set '+(setIndex+1));input.oninput=()=>{set[field]=input.value;persist();};label.append(input);fields.append(label);}row.append(fields);const feedback=node('p');feedback.setAttribute('role','status');const complete=button(active.ui.completed[index][setIndex]?'Set corrigeren':'Set voltooien',()=>{if(active.ui.completed[index][setIndex]){active.ui.completed[index][setIndex]=false;active.ui.restUntil=null;persist();renderActive();return;}if(!state.valid(set)){feedback.textContent='Vul uitgevoerde herhalingen en gewicht in. Gebruik 0 kg voor geen toegevoegd gewicht.';fields.querySelector('input:invalid')?.reportValidity();return;}active.ui.completed[index][setIndex]=true;const seconds=Math.min(3600,Math.max(0,Number(exercise.restSeconds)||0));active.ui.restUntil=seconds?Date.now()+seconds*1000:null;persist();renderActive();$('training-rest-count')?.scrollIntoView({block:'nearest'});});complete.className=active.ui.completed[index][setIndex]?'secondary-button':'primary-button';complete.disabled=Boolean(active.finishedAt);const remove=button('Set verwijderen',()=>{performed.sets.splice(setIndex,1);active.ui.completed[index].splice(setIndex,1);persist();renderActive();});remove.disabled=Boolean(active.finishedAt);row.append(complete,remove,feedback);form.append(row);});
-        const add=button('Set toevoegen',()=>{performed.sets.push({reps:'',kg:''});active.ui.completed[index].push(false);persist();renderActive();});add.disabled=Boolean(active.finishedAt)||performed.sets.length>=100;form.append(add);block.append(form);container.append(block);
-        if(active.ui.restUntil){const rest=node('section',null,'training-rest');rest.setAttribute('aria-label','Rusttimer');const count=node('strong');count.id='training-rest-count';rest.append(node('span','Rust'),count);for(const [label,change]of [['15 s minder',-15],['15 s extra',15]])rest.append(button(label,()=>{active.ui.restUntil=Date.now()+Math.min(3600,Math.max(0,state.remaining(active.ui.restUntil)+change))*1000;persist();tick();}));rest.append(button('Rust overslaan',()=>{active.ui.restUntil=null;persist();renderActive();}));container.append(rest);}
+        if(active.planned.description)sessionOptions.append(node('p',active.planned.description));container.append(sessionOptions);
+        const form=capTrainingPlayer.render(container,{
+            draft:active,opened:exerciseOpened,previous:previousPerformance(exercise.name),
+            onChange:persist,onSave:()=>{if(window.capReal)flushProgress().catch(error=>syncStatus(error.message+' Alleen lokaal bewaard. Gebruik Opnieuw opslaan.'));},
+            onOverview:()=>{exerciseOpened=false;renderActive();},onSelect:i=>{active.ui.exerciseIndex=i;exerciseOpened=true;persist();renderActive();$('active-exercise-title')?.focus();},redraw:renderActive,
+            onRest:command=>{const ui=active.ui;if(command==='skip'){ui.restUntil=null;ui.restPausedSeconds=null;}else if(command==='add'){if(ui.restPausedSeconds!=null)ui.restPausedSeconds=Math.min(3600,ui.restPausedSeconds+15);else ui.restUntil=Date.now()+Math.min(3600,state.remaining(ui.restUntil)+15)*1000;}else if(ui.restPausedSeconds!=null){ui.restUntil=Date.now()+ui.restPausedSeconds*1000;ui.restPausedSeconds=null;}else{ui.restPausedSeconds=state.remaining(ui.restUntil);ui.restUntil=null;}persist();renderActive();}
+        });
 
             const finish = node('button', active.finishedAt ? 'Opslaan opnieuw proberen' : 'Training afronden', 'primary-button');
-        finish.type = 'submit'; finish.disabled = saving; form.append(finish);
+        finish.type = 'submit'; finish.disabled = saving; container.append(finish);finish.onclick=()=>form.requestSubmit();
         form.addEventListener('submit', async event => {
             event.preventDefault();
             if (saving || !active || previewRole !== 'athlete' || !window.capAccess.signedIn) return;
@@ -142,6 +143,7 @@
             const responses = await Promise.all(['/api/training', '/api/records'].map(path => fetch(`http://localhost:8080${path}`, { cache: 'no-store', signal: AbortSignal.timeout(8000) })));
             if (responses.some(r => !r.ok)) throw new Error('Load failed');
             const [history, records] = await Promise.all(responses.map(r => r.json()));historyCache=history;
+            if(active&&!document.activeElement?.matches('#active-training input'))renderActive();
             if (!Array.isArray(history) || !Array.isArray(records)) throw new Error('Invalid data');if(finishedRecovery){const receipt=history.find(s=>s.id===finishedRecovery.id);if(receipt){showOverview(receipt);finishedRecovery=null;localStorage.removeItem(key);$('training-message').textContent='Je vorige training is op CAP opgeslagen. Het overzicht is hersteld.';}else $('training-message').textContent='De vorige afronding is nog niet op CAP gevonden. Je lokale kopie blijft bewaard.';}if(active&&$('training-previous')){const text=previousText(active.planned.exercises[active.ui.exerciseIndex].name);$('training-previous').textContent=text;$('training-previous').hidden=!text;}
             $('training-history').replaceChildren(); $('training-records').replaceChildren();
             history.slice().reverse().forEach(session => {
@@ -160,7 +162,7 @@
     window.capTraining = {
         get hasActive() { return Boolean(active); },get current(){return active?{id:active.id,name:active.planned.name}:null;},
         isActive(workoutId) { return active?.planned.id === workoutId; },
-        async start(workout) {
+        async start(workout, exerciseIndex) {
             if (previewRole !== 'athlete' || !window.capAccess.signedIn) return;
             if (!active && window.capReal) {
                 try { active = await window.capReal.request('/api/training/active', 'POST', { assignmentId: workout.assignmentId }); $('finished-overview').hidden = true;active=state.normalize(active);if(active.version===0&&active.ui.completed.flat().every(v=>!v))active.exercises.forEach(e=>e.sets.forEach(s=>{if(s.kg==null)s.reps='';}));mirror(); }
@@ -172,10 +174,12 @@
             } else if (active.planned.id !== workout.id || active.planned.assignmentId !== workout.assignmentId) {
                 $('training-message').textContent = 'Er loopt al een training. Rond die eerst af voordat je een nieuwe start.';
             }
+            if(active&&Number.isInteger(exerciseIndex)){active.ui.exerciseIndex=exerciseIndex;exerciseOpened=true;persist();}else exerciseOpened=matchMedia('(min-width:1000px)').matches;
             location.hash = 'training'; renderActive();
         }
     };
     if(window.capReal){const before=window.capBeforeSignOut,cleanup=window.capOnSignOut;window.capBeforeSignOut=()=>{if(before&&!before())return false;return !(active?.localPending||finishedRecovery)||confirm('Er is invoer die nog niet op CAP is bevestigd. Uitloggen wist de lokale kopie. Toch uitloggen?');};window.capOnSignOut=()=>{cleanup?.();clearTimeout(progressTimer);localStorage.removeItem(key);active=null;finishedRecovery=null;};}
+    window.addEventListener('beforeunload',event=>{if(active?.localPending){event.preventDefault();event.returnValue='';}});
     $('reload-training').addEventListener('click', loadHistory);
     document.addEventListener('cap:viewchange', () => {
         document.body.classList.toggle('training-focus',Boolean(active)&&location.hash==='#training'&&previewRole==='athlete');if (location.hash === '#training' && window.capAccess.signedIn) { renderActive(); loadHistory(); }

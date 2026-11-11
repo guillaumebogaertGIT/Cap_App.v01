@@ -32,7 +32,10 @@ class AccountWorkoutServiceTests {
         assertThrows(ResponseStatusException.class,()->workouts.progress(draft.id(),draft.version(),results,ui,user));
         assertThrows(ResponseStatusException.class,()->workouts.progress(draft.id(),updated.version(),results,new AccountWorkoutService.UiState(2,List.of(List.of(true)),null),user));
         var blank=List.of(new TrainingStore.ExerciseResult(0,List.of(new TrainingStore.SetResult(0,null,null))));assertThrows(ResponseStatusException.class,()->workouts.progress(draft.id(),updated.version(),blank,ui,user));
-        var finished=workouts.finish(completion(updated,40),updated.version(),user);assertEquals(finished.id(),workouts.finish(completion(updated,40),updated.version(),user).id());assertNull(workouts.active(user));
+        assertThrows(ResponseStatusException.class,()->workouts.progress(draft.id(),updated.version(),results,new AccountWorkoutService.UiState(0,List.of(List.of(true)),null,3601),user));
+        assertThrows(ResponseStatusException.class,()->workouts.progress(draft.id(),updated.version(),results,new AccountWorkoutService.UiState(0,List.of(List.of(true)),System.currentTimeMillis()+1000,20),user));
+        var paused=workouts.progress(draft.id(),updated.version(),results,new AccountWorkoutService.UiState(0,List.of(List.of(true)),null,45),user);assertEquals(45,workouts.active(user).ui().restPausedSeconds());
+        var finished=workouts.finish(completion(paused,40),paused.version(),user);assertEquals(finished.id(),workouts.finish(completion(paused,40),paused.version(),user).id());assertNull(workouts.active(user));
     }
     @Test void assignmentsDraftsHistoryAndRecordsBelongToRealAthlete() throws Exception {
         var first=athlete();var other=athlete();

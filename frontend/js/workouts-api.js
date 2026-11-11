@@ -130,10 +130,26 @@
     }
     const node = (tag, text) => { const item = document.createElement(tag); item.textContent = text; return item; };
     const discovery=document.createElement('section');discovery.className='athlete-workout-discovery';discovery.id='athlete-workout-discovery';$('#workouts > header').after(discovery);
-    function discover(all,completed,today){discovery.hidden=previewRole!=='athlete';if(discovery.hidden)return;discovery.replaceChildren();const pending=all.filter(w=>!completed.has(w.assignmentId)),available=pending.filter(w=>w.assignedDate>=today||w.weekStart&&w.weekStart<=today&&capAgenda.add(w.weekStart,6)>=today).sort((a,b)=>(a.assignedDate||a.weekStart).localeCompare(b.assignedDate||b.weekStart));const next=available[0]||pending[0];discovery.append(node('h3',capTraining.hasActive?'Verder met je training':next?.assignedDate===today?'Je workout voor vandaag':'Jouw volgende workout'));
-        function entry(workout,primary){const row=document.createElement('article');row.className=primary?'workout-next':'workout-assigned-row';const copy=document.createElement('div');copy.append(node('h4',workout.name),node('p',scheduleLabel(workout)));if(workout.description)copy.append(node('p',workout.description));const view=node('button','Bekijk workout');view.type='button';view.className=primary?'primary-button':'secondary-button';view.onclick=()=>{const dialog=document.createElement('dialog');dialog.className='club-dialog workout-viewer';dialog.setAttribute('aria-label',workout.name);const start=node('button',capTraining.hasActive?'Verder trainen':'Training starten');start.type='button';start.className='primary-button';start.onclick=()=>{dialog.close();capTraining.start(workout);};const close=node('button','Sluiten');close.type='button';close.className='secondary-button';close.onclick=()=>dialog.close();dialog.append(details(workout),start,close);document.body.append(dialog);dialog.addEventListener('close',()=>{dialog.remove();view.focus();});dialog.showModal();};row.append(copy,view);return row;}
-        if(capTraining.hasActive){const resume=node('a','Verder trainen');resume.href='#training';resume.className='primary-button';discovery.append(node('p',capTraining.current?.name||'Je hebt een openstaande training.'),resume);}else if(next)discovery.append(entry(next,true));else discovery.append(node('p','Nog geen persoonlijke workout toegewezen. Je geboekte lessen vind je in Planning.'));
-        const other=pending.filter(w=>w!==next);if(other.length){const more=document.createElement('details');more.className='workout-other-assignments';more.append(node('summary','Andere toegewezen workouts ('+other.length+')'));other.forEach(w=>more.append(entry(w,false)));discovery.append(more);}const history=node('a','PR’s en afgeronde trainingen');history.href='#health';discovery.append(history);
+    let selectedAssignment=null;
+    function discover(all,completed,today){
+        discovery.hidden=previewRole!=='athlete';if(discovery.hidden)return;
+        const ordered=all.slice().sort((a,b)=>(a.assignedDate||a.weekStart||'').localeCompare(b.assignedDate||b.weekStart||''));
+        let index=ordered.findIndex(w=>w.assignmentId===selectedAssignment);
+        if(index<0)index=ordered.findIndex(w=>!completed.has(w.assignmentId)&&(w.assignedDate||capAgenda.add(w.weekStart,6))>=today);
+        if(index<0)index=0;const workout=ordered[index];selectedAssignment=workout?.assignmentId;discovery.replaceChildren();
+        if(!workout){discovery.append(node('p','Nog geen persoonlijke workout toegewezen. Je geboekte lessen vind je in Planning.'));return;}
+        const wrap=document.createElement('section');wrap.className='workout-day-overview';
+        const nav=document.createElement('nav');nav.className='workout-day-nav';nav.setAttribute('aria-label','Toegewezen trainingsdagen');
+        function step(label,offset){const button=node('button',label);button.type='button';button.className='secondary-button';button.disabled=index+offset<0||index+offset>=ordered.length;button.onclick=()=>{selectedAssignment=ordered[index+offset].assignmentId;discover(all,completed,today);};return button;}
+        nav.append(step('Vorige',-1),node('strong',scheduleLabel(workout)),step('Volgende',1));
+        wrap.append(nav,node('h3',workout.name));
+        const status=node('p',completed.has(workout.assignmentId)?'Afgerond':capTraining.isActive(workout.id)?'Training bezig':'Klaar om te starten');status.className='workout-day-status';wrap.append(status);
+        if(workout.description){const notes=document.createElement('details');notes.append(node('summary','Opmerkingen van je coach'),node('p',workout.description));wrap.append(notes);}
+        const start=node('button',capTraining.hasActive?'Verder trainen':completed.has(workout.assignmentId)?'Bekijk afgeronde training':'Training starten');start.type='button';start.className='primary-button';
+        function open(i){if(completed.has(workout.assignmentId)){location.hash='health';return;}if(capTraining.hasActive&&!capTraining.isActive(workout.id)){location.hash='training';return;}capTraining.start(workout,i);}
+        start.onclick=()=>{if(capTraining.hasActive){location.hash='training';return;}open();};
+        wrap.append(capTrainingPlayer.timeline(workout.exercises,{onSelect:open}),start);
+        const history=node('a','PR’s en afgeronde trainingen');history.href='#health';history.className='secondary-button';wrap.append(history);discovery.append(wrap);
     }
     let viewedWeek = window.capAgenda.monday(window.capAgenda.today());
     const weekToolbar = node('div', ''); weekToolbar.className = 'agenda-week-toolbar';
