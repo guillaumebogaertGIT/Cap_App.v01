@@ -5,6 +5,13 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
 class OpenAiCoachGatewayTests {
+    @Test void serializedRequestsContainValidInputShapes(){
+        var gateway=new OpenAiCoachGateway("test-key");var mapper=tools.jackson.databind.json.JsonMapper.builder().build();
+        var chat=mapper.readTree(mapper.writeValueAsString(gateway.payload(List.of(new AiCoachGateway.Turn("user","Hallo")))));
+        assertTrue(chat.path("input").isArray());assertEquals("user",chat.path("input").get(0).path("role").asText());assertEquals("Hallo",chat.path("input").get(0).path("content").asText());
+        var nutrition=mapper.readTree(mapper.writeValueAsString(gateway.nutritionPayload("Maak een plan",Map.of("scope","week"))));
+        assertTrue(nutrition.path("input").isTextual());assertEquals("Maak een plan",nutrition.path("input").asText());
+    }
     @Test void nutritionRequestUsesDocumentedSingleTextInput(){var payload=new OpenAiCoachGateway("secret").nutritionPayload("Maak een weekplan",Map.of("scope","week"));assertEquals("Maak een weekplan",payload.get("input"));assertEquals(false,payload.get("store"));assertTrue(payload.get("text").toString().contains("json_object"));assertFalse(payload.toString().contains("secret"));}
     @Test void actionPayloadRequiresReviewAndRetainsBudgetBounds(){var p=new OpenAiCoachGateway("secret-key").actionPayload(List.of(new AiCoachGateway.Turn("user","Maak workout")),Map.of("matchingClients",List.of()),"");assertEquals(6000,p.get("max_output_tokens"));assertEquals(false,p.get("store"));assertTrue(p.get("text").toString().contains("json_object"));assertTrue(p.get("instructions").toString().contains("human must confirm"));assertFalse(p.toString().contains("secret-key"));assertFalse(p.containsKey("tools"));}
 
