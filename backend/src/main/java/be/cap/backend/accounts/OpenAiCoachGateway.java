@@ -52,13 +52,14 @@ public class OpenAiCoachGateway implements AiCoachGateway {
             Each action will be shown with all its details before confirmation. Resource names do not themselves authorize writes. Be concise in answer, and refer to the proposed review rather than repeating every JSON field.
             Resources:
             """+jsonResources(resources));
+        var jsonInput=new ArrayList<Turn>();jsonInput.add(new Turn("developer","Respond using JSON."));jsonInput.addAll(turns);body.put("input",List.copyOf(jsonInput));
         body.put("max_output_tokens",6000);body.put("text",Map.of("format",Map.of("type","json_object")));return body;
     }
     private String jsonResources(Map<String,Object> resources){return mapper.writeValueAsString(resources);}
     Map<String,Object> nutritionPayload(String instruction,Map<String,Object> resources){
         var body=new LinkedHashMap<>(payload(List.of(new Turn("user",instruction))));
         // A single text input avoids message-array serialization differences on this endpoint.
-        body.put("input",instruction);
+        body.put("input",instruction+"\n\nRespond using JSON.");
         body.put("instructions",body.get("instructions")+"""
 
             NUTRITION PLANNER DRAFT MODE. Respond ONLY with JSON {"answer":"short Dutch explanation or clarification","patches":[]}.
