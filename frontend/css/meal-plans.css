@@ -107,3 +107,51 @@
     .nutrition-option { min-height:6rem; }
     .nutrition-history-row > button { flex:1 1 10rem; }
 }
+
+/* Read the plan first; open editing controls only for the meal being changed. */
+#coach-meal-plans .meal-plan-days { max-width:64rem; }
+.meal-plan-day-tabs { display:flex; gap:.25rem; overflow-x:auto; padding:.25rem 0 .75rem; margin-block:1rem; scrollbar-width:thin; scrollbar-color:var(--action) var(--surface); }
+.meal-plan-day-tabs .meal-plan-day-tab { flex:1 0 5.5rem; min-height:46px; padding:.6rem .75rem; border:1px solid var(--border); border-radius:var(--control-radius); color:var(--muted); background:var(--surface); font:inherit; cursor:pointer; }
+.meal-plan-day-tab[aria-selected="true"] { color:var(--action-ink); background:var(--action); border-color:var(--action); font-weight:700; }
+.meal-plan-day-short { display:none; }
+.meal-plan-day-tab:focus-visible { outline:2px solid var(--accent-text); outline-offset:2px; }
+#coach-meal-plans section.meal-plan-day { border:0; padding:0; margin:0; }
+#coach-meal-plans .meal-plan-day[hidden],.meal-plan-edit-panel[hidden],.meal-plan-copy-panel[hidden] { display:none; }
+.meal-plan-day-heading { display:flex; justify-content:space-between; align-items:start; flex-wrap:wrap; gap:1rem; padding-block:.75rem; }
+.meal-plan-day-heading > div { display:flex; flex-wrap:wrap; align-items:baseline; gap:.35rem 1rem; }
+.meal-plan-day-heading h4 { font-size:1.4rem; margin:0; }
+.meal-plan-day-heading strong { font-size:1.4rem; font-variant-numeric:tabular-nums; }
+.meal-plan-day-heading small { flex-basis:100%; color:var(--muted); font-size:.875rem; }
+.meal-plan-macro-line { display:flex; flex-wrap:wrap; gap:.6rem 1.5rem; }
+.meal-plan-macro-line > span { display:flex; gap:.4rem; align-items:baseline; font-size:.875rem; }
+.meal-plan-macro-line > span > span { color:var(--muted); }
+.meal-plan-macro-line strong { font-weight:500; font-variant-numeric:tabular-nums; }
+.meal-plan-day > [data-day-macros] { padding-bottom:1.25rem; }
+#coach-meal-plans article.meal-plan-meal { padding:1.35rem 0; margin:0; border-top:1px solid var(--border); }
+.meal-plan-meal-heading { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:1rem; align-items:baseline; margin-bottom:.5rem; }
+.meal-plan-meal-heading h5 { margin:0; color:var(--text); font-size:1.125rem; line-height:1.4; overflow-wrap:anywhere; }
+.meal-plan-meal-heading > span { font-size:.9375rem; white-space:nowrap; font-variant-numeric:tabular-nums; }
+.meal-plan-day ul.meal-plan-ingredients { list-style:none; padding:0; margin:1rem 0; max-width:44rem; line-height:1.5; }
+.meal-plan-ingredients li { display:flex; justify-content:space-between; align-items:baseline; gap:1rem; padding:.3rem 0; font-size:.9375rem; }
+.meal-plan-ingredients li > span { min-width:0; overflow-wrap:anywhere; }
+.meal-plan-ingredients small { display:inline; margin-inline-start:.5rem; color:var(--muted); font-size:.8125rem; }
+.meal-plan-ingredients strong { font-weight:500; flex-shrink:0; font-variant-numeric:tabular-nums; }
+.meal-plan-meal > button { font-size:.875rem; }
+.meal-plan-edit-panel { margin-top:1rem; padding:1rem; background:var(--surface); border-top:1px solid var(--border); }
+.meal-plan-copy-panel { padding:1rem; margin-block:.5rem 1rem; background:var(--surface); border:1px solid var(--border); border-radius:var(--control-radius); }
+.meal-plan-copy-panel fieldset { border:0; padding:0; display:flex; flex-wrap:wrap; gap:.5rem 1rem; margin:0 0 .75rem; }
+.meal-plan-copy-panel legend { float:none; width:100%; padding:0 0 .75rem; font-size:.875rem; }
+.meal-plan-copy-panel label { display:flex; align-items:center; gap:.5rem; min-height:44px; }
+.meal-plan-copy-panel input[type=checkbox] { width:1.25rem; height:1.25rem; min-height:0; accent-color:var(--action); }
+.meal-plan-copy-panel > button { margin-inline-end:.5rem; }
+@media(max-width:36rem) {
+    .meal-plan-day-tabs .meal-plan-day-tab { flex:1 0 2rem; padding:.6rem .2rem; font-size:.875rem; }
+    .meal-plan-day-full { display:none; }
+    .meal-plan-day-short { display:inline; }
+    .meal-plan-day-heading h4,.meal-plan-day-heading strong { font-size:1.2rem; }
+    .meal-plan-day-heading > div { gap:.35rem .6rem; }
+    .meal-plan-meal-heading { gap:.75rem; }
+    .meal-plan-macro-line { gap:.45rem .85rem; }
+    .meal-plan-macro-line > span { font-size:.8125rem; gap:.25rem; }
+    .meal-plan-edit-panel { padding:.75rem .5rem; }
+}
