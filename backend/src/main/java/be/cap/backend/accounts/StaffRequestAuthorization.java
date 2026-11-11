@@ -13,6 +13,7 @@ class StaffRequestAuthorization {
     boolean allowed(AccountService.Account user,String method,String path) {
         boolean get=method.equals("GET"),athlete=user.role().equals("ATHLETE");
         if(path.equals("/api/ai-coach"))return get||method.equals("POST");
+        if(path.equals("/api/ai-coach/nutrition-chat")||path.startsWith("/api/ai-coach/nutrition-chat/"))return !athlete&&policy.allows(user,NUTRITION_MANAGE)&&policy.allows(user,CLIENT_HEALTH)&&(get||method.equals("POST")||method.equals("DELETE"));
         if(path.equals("/api/ai-coach/diagnostic"))return method.equals("POST")&&policy.role(user).equals("OWNER");
         if(path.equals("/api/ai-coach/nutrition-draft"))return method.equals("POST")&&policy.allows(user,NUTRITION_MANAGE);
         if(path.equals("/api/ai-coach/nutrition-profile"))return get&&policy.allows(user,NUTRITION_MANAGE)&&policy.allows(user,CLIENT_HEALTH);

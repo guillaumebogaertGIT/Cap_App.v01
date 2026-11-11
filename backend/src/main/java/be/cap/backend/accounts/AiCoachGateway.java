@@ -4,6 +4,9 @@ import java.util.List;
 
 public interface AiCoachGateway {
     record Turn(String role,String content) {}
+    record ToolCall(String callId,String name,String arguments) {}
+    record ToolReply(List<java.util.Map<String,Object>> output,List<ToolCall> calls,String text) {}
+    default ToolReply nutritionTools(List<java.util.Map<String,Object>> input,List<java.util.Map<String,Object>> tools,String instructions) throws Exception {throw new UnsupportedOperationException();}
     boolean configured();
     String answer(List<Turn> turns) throws Exception;
     default String answer(List<Turn> turns,String context) throws Exception {return answer(turns);}

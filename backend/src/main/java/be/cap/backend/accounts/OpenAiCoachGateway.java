@@ -117,6 +117,29 @@ public class OpenAiCoachGateway implements AiCoachGateway {
     }
     private String request(Map<String,Object> payload) throws Exception {return request(payload,false);}
     private String request(Map<String,Object> payload,boolean syntheticDiagnostic) throws Exception {
+        var root=requestRoot(payload,syntheticDiagnostic);
+        String answer=outputText(root);if(answer.isBlank()||answer.length()>48000)throw new IllegalStateException("AI empty");return answer;
+    }
+    private String outputText(tools.jackson.databind.JsonNode root){
+        var output=new StringBuilder();
+        for(var item:root.path("output"))if(item.path("type").asText().equals("message"))for(var part:item.path("content")){
+            if(part.path("type").asText().equals("output_text"))output.append(part.path("text").asText()).append('\n');
+            if(part.path("type").asText().equals("refusal"))output.append(part.path("refusal").asText()).append('\n');
+        }return output.toString().trim();
+    }
+    Map<String,Object> toolPayload(List<Map<String,Object>> input,List<Map<String,Object>> tools,String instructions){
+        return Map.of("model","gpt-6-luna","instructions",instructions,"input",input,"tools",tools,"parallel_tool_calls",false,"store",false,"reasoning",Map.of("effort","none"),"max_output_tokens",7000);
+    }
+    public ToolReply nutritionTools(List<Map<String,Object>> input,List<Map<String,Object>> tools,String instructions) throws Exception {
+        var root=requestRoot(toolPayload(input,tools,instructions),false);var calls=new ArrayList<ToolCall>();var output=new ArrayList<Map<String,Object>>();
+        for(var item:root.path("output")){
+            output.add(mapper.convertValue(item,new tools.jackson.core.type.TypeReference<Map<String,Object>>(){}));
+            if(item.path("type").asText().equals("function_call"))calls.add(new ToolCall(item.path("call_id").asText(),item.path("name").asText(),item.path("arguments").asText()));
+        }
+        if(calls.size()>1)throw new AiCoachFailure("draft_invalid");
+        return new ToolReply(List.copyOf(output),List.copyOf(calls),outputText(root));
+    }
+    private tools.jackson.databind.JsonNode requestRoot(Map<String,Object> payload,boolean syntheticDiagnostic) throws Exception {
         String body=mapper.writeValueAsString(payload);
         // Conservative fixed-cent reservation still covers this bounded text-only request.
         if(body.getBytes(StandardCharsets.UTF_8).length>40000)throw new IllegalStateException("AI request too large");
@@ -131,13 +154,7 @@ public class OpenAiCoachGateway implements AiCoachGateway {
             if(bytes.length>65536)throw new AiCoachFailure("provider_response_size");
             var root=mapper.readTree(new String(bytes,StandardCharsets.UTF_8));
             if(!root.path("status").asText().equals("completed"))throw new AiCoachFailure("provider_incomplete");
-            var output=new StringBuilder();
-            for(var item:root.path("output"))if(item.path("type").asText().equals("message"))for(var part:item.path("content")){
-                String type=part.path("type").asText();
-                if(type.equals("output_text"))output.append(part.path("text").asText()).append('\n');
-                if(type.equals("refusal"))output.append(part.path("refusal").asText()).append('\n');
-            }
-            String answer=output.toString().trim();if(answer.isBlank()||answer.length()>48000)throw new IllegalStateException("AI empty");return answer;
+            return root;
         }
     }
     String safeSyntheticError(int status,String body){

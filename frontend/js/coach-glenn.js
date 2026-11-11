@@ -21,15 +21,25 @@
     const eligible=()=>window.capReal?.fullAccess!==false&&Boolean(window.capAccess?.signedIn)&&(window.capReal?['ATHLETE','COACH'].includes(window.capReal.account.role):['athlete','coach'].includes(previewRole));
     const isCoach=()=>window.capReal?window.capReal.account.role==='COACH':previewRole==='coach';
     let launcher,panel,log,input,context,identity='',notice,mode,disclosure,consentLabel,consent,send,ownWorkouts,ownNutrition,ownProfile,ownBookings,ownMealPlan,dataOptions,dataSummary,coachActionsInput,settingsForm,settingsState,budget,settingsVersion=0,settingsDirty=false,available=false,loading=false,busy=false,history=[],chatGeneration=0;
+    let nutritionConversation=null,nutritionRevision=0;
+    const nutritionKey=()=>`cap-nutrition-chat-${identity}`;
+    function forgetNutrition(){nutritionConversation=null;nutritionRevision=0;try{sessionStorage.removeItem(nutritionKey());}catch{}}
+    function rememberNutrition(result){if(!result.conversationId)return;nutritionConversation=result.conversationId;nutritionRevision=result.revision;try{sessionStorage.setItem(nutritionKey(),nutritionConversation);}catch{}}
+    function obsoleteNutritionProposals(){for(const review of log.querySelectorAll('[data-nutrition-proposal]')){for(const button of review.querySelectorAll('button'))button.disabled=true;review.dataset.superseded='true';}}
+    async function restoreNutrition(){if(!isCoach()||!coachActionsInput.checked)return;let id;try{id=sessionStorage.getItem(nutritionKey());}catch{}if(!id)return;const userKey=identity,generation=chatGeneration;
+        try{const result=await window.capReal.request('/api/ai-coach/nutrition-chat/'+id);if(identity!==userKey||generation!==chatGeneration)return;rememberNutrition(result);const reply=node('div',null,'coach-glenn-answer');reply.append(formattedAnswer(result.answer));if(result.proposal)renderProposal(reply,result.proposal,userKey,generation);log.append(reply);}
+        catch{if(identity===userKey)forgetNutrition();}
+    }
     function applySettings(saved){settingsVersion=saved.version||0;const v=saved.values||{};
         for(const [key,el]of Object.entries({consent,ownProfile,ownWorkouts,ownNutrition,ownBookings,ownMealPlan,coachActions:coachActionsInput}))el.checked=Boolean(v[key]);
         settingsDirty=false;dataSummary.textContent=!v.consent?'Coach Glenn is uit · open instellingen':v.coachActions?'Coachacties met controle vóór opslaan':'Coach Glenn · voorkeuren bewaard';
     }
     function renderProposal(reply,proposal,userKey,generation){
         const review=node('section',null,'coach-glenn-proposal');review.append(node('h3','Controleer vóór opslaan'));
+        if(proposal.actions.some(a=>a.type==='save_nutrition_draft'))review.dataset.nutritionProposal=proposal.id;
         for(const action of proposal.actions){const detail=node('details');detail.open=true;detail.append(node('summary',action.summary.replace(/\d{4}-\d{2}-\d{2}/g,value=>window.capDateTime.date(value))));const d=action.data;
             if(action.type==='create_workout'){detail.append(window.capWorkoutView.render(d.workout.exercises));}
-            if(action.type==='create_meal_plan')for(const day of d.days){const section=node('details');const names=['Maandag','Dinsdag','Woensdag','Donderdag','Vrijdag','Zaterdag','Zondag'];const total={calories:0,proteinG:0,carbsG:0,fatG:0};for(const meal of day.meals)for(const food of meal.foods){const factor=food.amount/(food.unit==='stuk'?1:100);for(const key of Object.keys(total))total[key]+=food[key]*factor;}
+            if(['create_meal_plan','save_nutrition_draft'].includes(action.type))for(const day of (d.content?.days||d.days)){const section=node('details');const names=['Maandag','Dinsdag','Woensdag','Donderdag','Vrijdag','Zaterdag','Zondag'];const total={calories:0,proteinG:0,carbsG:0,fatG:0};for(const meal of day.meals)for(const food of meal.foods){const factor=food.amount/(food.unit==='stuk'?1:100);for(const key of Object.keys(total))total[key]+=food[key]*factor;}
                 section.append(node('summary',names[day.day]+' · '+Math.round(total.calories)+' kcal · E '+Math.round(total.proteinG)+' g · K '+Math.round(total.carbsG)+' g · V '+Math.round(total.fatG)+' g'));
                 for(const meal of day.meals){section.append(node('h4',meal.name));const list=node('ul');for(const f of meal.foods)list.append(node('li',`${f.amount} ${f.unit} ${f.name} · ${f.preparation}`));section.append(list);}detail.append(section);
             }
@@ -55,8 +65,11 @@
             const asked=node('p',question,'coach-glenn-question'),reply=node('div',null,'coach-glenn-answer');reply.setAttribute('role','status');reply.textContent='Glenn antwoordt…';log.append(asked,reply);log.scrollTop=log.scrollHeight;
             try{
                 let recent=history.slice(-6);while(recent.length&&new TextEncoder().encode(recent.map(t=>t.content).join('')+question).length>8000)recent=recent.slice(2);
-                const result=await window.capReal.request('/api/ai-coach','POST',{id:crypto.randomUUID(),message:question,history:recent,consent:true,mode:'auto',ownWorkouts:ownWorkouts.checked,ownNutrition:ownNutrition.checked,ownProfile:ownProfile.checked,ownBookings:ownBookings.checked,ownMealPlan:ownMealPlan.checked});
+                const nutritionRequest=isCoach()&&coachActionsInput.checked&&window.capCan('NUTRITION_MANAGE')&&((nutritionConversation&&!/(workout|trainingsschema|maak.*les|plan.*les|werkuren)/i.test(question))||/(voedings?(?:schema|plan)|voedingsschema|maaltijdplan|meal\s?plan)/i.test(question));
+                if(nutritionRequest)obsoleteNutritionProposals();
+                const result=await window.capReal.request(nutritionRequest?'/api/ai-coach/nutrition-chat':'/api/ai-coach','POST',nutritionRequest?{id:crypto.randomUUID(),conversationId:nutritionConversation,revision:nutritionRevision,message:question,history:nutritionConversation?[]:recent.filter(t=>t.role==='user')}:{id:crypto.randomUUID(),message:question,history:recent,consent:true,mode:'auto',ownWorkouts:ownWorkouts.checked,ownNutrition:ownNutrition.checked,ownProfile:ownProfile.checked,ownBookings:ownBookings.checked,ownMealPlan:ownMealPlan.checked});
                 if(!eligible()||identity!==userKey||generation!==chatGeneration)return;
+                rememberNutrition(result);
                 reply.replaceChildren(node('strong','Glenn · AI-assistent','coach-glenn-sender'),formattedAnswer(result.answer));history=[...recent,{role:'user',content:question},{role:'assistant',content:result.answer}];
                 if(result.proposal){const contextText=JSON.stringify(result.proposal.actions.map(a=>({type:a.type,data:a.data,summary:a.summary})));const combined=history[history.length-1].content+'\nOnbevestigd voorstel: '+contextText;if(new TextEncoder().encode(combined).length<7800)history[history.length-1].content=combined;renderProposal(reply,result.proposal,userKey,generation);}
                 if(result.workout){
@@ -67,7 +80,7 @@
                         if(!document.dispatchEvent(event))close(false);
                     };reply.append(edit);
                 }
-            }catch(error){if(eligible()&&identity===userKey&&generation===chatGeneration)reply.textContent=error.message||'AI kon niet antwoorden. Probeer later opnieuw.';}
+            }catch(error){if(eligible()&&identity===userKey&&generation===chatGeneration){reply.textContent=error.message||'AI kon niet antwoorden. Probeer later opnieuw.';if(nutritionConversation)await restoreNutrition();}}
             finally{busy=false;send.disabled=false;log.scrollTop=log.scrollHeight;}
             return;
         }
@@ -80,7 +93,7 @@
     }
     function sync(){
         const key=window.capReal?.account.id||String(window.capAccess?.signedIn)+':'+previewRole;
-        if(identity!==key){identity=key;close(false);reset();if(coachActionsInput){coachActionsInput.closest('label').hidden=!isCoach();applySettings({version:0,values:{}});if(window.capReal)loadAvailability();else applySettings(window.capStorage.read('glenn-preferences-'+previewRole,{version:0,values:{}}));}}
+        if(identity!==key){nutritionConversation=null;nutritionRevision=0;identity=key;close(false);reset();if(coachActionsInput){coachActionsInput.closest('label').hidden=!isCoach();applySettings({version:0,values:{}});if(window.capReal)loadAvailability();else applySettings(window.capStorage.read('glenn-preferences-'+previewRole,{version:0,values:{}}));}}
         launcher.hidden=!eligible();if(launcher.hidden){close(false);reset();if(ownWorkouts){ownWorkouts.checked=false;ownNutrition.checked=false;ownProfile.checked=false;ownBookings.checked=false;ownMealPlan.checked=false;coachActionsInput.checked=false;consent.checked=false;dataSummary.textContent='Eigen gegevens: uit';}}
     }
     async function loadAvailability(){
@@ -92,8 +105,8 @@
             consentLabel.hidden=!available;
             dataOptions.hidden=!available;
             disclosure.open=false;
-            notice.textContent=available?'AI-test via OpenAI. Je vragen en recente chattekst worden naar OpenAI gestuurd. Bij toestemming kunnen relevante profiel-, trainings-, voedings- en gezondheidsgegevens worden gedeeld. Betaalgegevens, wachtwoorden en privéberichten worden niet automatisch gedeeld. CAP bewaart de chat niet; OpenAI kan gegevens verwerken volgens zijn bewaarbeleid.': 'Voorbeeldchat · De echte AI-test is voor dit account nog niet beschikbaar. Geen vragen naar een AI-dienst.';
-            reset();
+            notice.textContent=available?'AI-test via OpenAI. Je vragen en recente chattekst worden naar OpenAI gestuurd. Bij toestemming kunnen relevante profiel-, trainings-, voedings- en gezondheidsgegevens worden gedeeld. Betaalgegevens, wachtwoorden en privéberichten worden niet automatisch gedeeld. CAP bewaart voedingstaakgegevens tot 24 uur na het laatste bericht; OpenAI kan gegevens verwerken volgens zijn bewaarbeleid.': 'Voorbeeldchat · De echte AI-test is voor dit account nog niet beschikbaar. Geen vragen naar een AI-dienst.';
+            reset();await restoreNutrition();
         }catch{notice.textContent='AI-status kon niet laden. De voorbeeldchat blijft beschikbaar; er worden geen AI-vragen verstuurd.';}
         finally{loading=false;send.disabled=false;input.disabled=false;}
     }
@@ -127,7 +140,7 @@
         coachActionsInput=dataChoice('Coachacties voorbereiden','Deel klantnamen en, wanneer de klant dit heeft toegestaan, relevante profiel-, trainings-, boekings-, meet- en voedingsgegevens met OpenAI. Coach Glenn mag acties voorstellen; elke opslag vereist Bevestigen. Je CAP-rechten blijven gelden. Geen betaalgegevens, wachtwoorden of privéberichten.');
         coachActionsInput.onchange=scopeChanged;coachActionsInput.closest('label').hidden=!isCoach();
         const settingsRoot=document.getElementById('coach-glenn-settings');settingsForm=node('form',null,'settings-card');
-        const explanation=node('p','OpenAI verwerkt je vragen, recente chattekst en de gegevens waarvoor je hieronder kiest. Je instellingen blijven bewaard bij je CAP-account. CAP bewaart geen gesprek; actievoorstellen verlopen na 24 uur. Eerder naar OpenAI verzonden gegevens worden door uitschakelen niet teruggehaald.','sample-notice');
+        const explanation=node('p','OpenAI verwerkt je vragen, recente chattekst en de gegevens waarvoor je hieronder kiest. Je instellingen blijven bewaard bij je CAP-account. CAP bewaart voedingstaakgegevens tot 24 uur na het laatste bericht; actievoorstellen verlopen na 24 uur. Eerder naar OpenAI verzonden gegevens worden door uitschakelen niet teruggehaald.','sample-notice');
         budget=node('p','Het gedeelde testbudget blijft begrensd.','sample-notice');settingsState=node('p');settingsState.setAttribute('role','status');const saveSettings=node('button','Voorkeuren bewaren','primary-button');saveSettings.type='submit';
         settingsForm.append(node('h3','Instellingen & toestemming'),explanation,consentLabel,dataOptions,saveSettings,settingsState,budget);settingsRoot.append(settingsForm);
         const openChat=node('button','Open Coach Glenn','secondary-button');openChat.type='button';openChat.onclick=()=>open();settingsRoot.prepend(openChat);
@@ -140,7 +153,7 @@
         }catch(error){settingsState.textContent=error.message||'Voorkeuren niet bewaard.';}finally{saveSettings.disabled=false;}};
         consent.onchange=scopeChanged;
         if(!window.capReal){consentLabel.hidden=false;dataOptions.hidden=false;applySettings(window.capStorage.read('glenn-preferences-'+previewRole,{version:0,values:{}}));settingsState.textContent='Voorbeeldinstellingen: alleen in deze browser. Geen echte AI-acties.';}
-        const footer=node('footer'),coach=node('a','Open Berichten');coach.href='#messages';coach.onclick=()=>close(false);const clear=node('button','Gesprek wissen','secondary-button');clear.type='button';clear.onclick=()=>{reset();input.focus();};footer.append(coach,clear);
+        const footer=node('footer'),coach=node('a','Open Berichten');coach.href='#messages';coach.onclick=()=>close(false);const clear=node('button','Gesprek wissen','secondary-button');clear.type='button';clear.onclick=async()=>{if(nutritionConversation){clear.disabled=true;try{await window.capReal.request('/api/ai-coach/nutrition-chat/'+nutritionConversation,'DELETE');forgetNutrition();}catch(error){input.value=error.message;return;}finally{clear.disabled=false;}}reset();input.focus();};footer.append(coach,clear);
         panel.append(header,disclosure,dataSummary,context,log,form,footer);document.body.append(launcher,panel);
         // On iOS the keyboard shrinks the visual viewport, not always the layout viewport.
         // Resize just the chat so the composer stays above the keyboard.

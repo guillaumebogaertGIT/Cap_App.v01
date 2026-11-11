@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import static org.junit.jupiter.api.Assertions.*;
 
 class NutritionPreferencesTests extends AccountApiTests {
+    @org.springframework.test.context.DynamicPropertySource static void preferencesDatabase(org.springframework.test.context.DynamicPropertyRegistry r){PostgresTestDatabase.configure(r,"nutrition_preferences");}
     @Autowired AccountService accounts;
     @Test void selfOwnershipScopedCoachAccessAndRevocation() throws Exception {
         var coach=accounts.account("coach@example.test");var one=accounts.accept(accounts.invite(UUID.randomUUID()+"@example.test",coach.email()).token(),"Food Client One","Athlete-test-password-123");var two=accounts.accept(accounts.invite(UUID.randomUUID()+"@example.test",coach.email()).token(),"Food Client Two","Athlete-test-password-123");

@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
 class OpenAiCoachGatewayTests {
+    @Test void nutritionToolPayloadUsesBackendFunctionsAndNoJsonObjectMode(){var gateway=new OpenAiCoachGateway("never-in-payload");var input=List.<Map<String,Object>>of(Map.of("role","user","content","Maak een voedingsschema"));var p=gateway.toolPayload(input,AiNutritionTasks.tools(),AiNutritionTasks.instructions());assertEquals(false,p.get("store"));assertEquals(false,p.get("parallel_tool_calls"));assertFalse(p.containsKey("text"));assertTrue(p.get("tools").toString().contains("get_nutrition_context"));assertTrue(p.get("tools").toString().contains("propose_nutrition_plan"));assertFalse(p.toString().contains("never-in-payload"));assertEquals(input,p.get("input"));}
     @Test void syntheticDiagnosticRedactsKeyAndKeepsProviderReason(){var gateway=new OpenAiCoachGateway("sk-test-secret");String safe=gateway.safeSyntheticError(400,"{\"error\":{\"message\":\"Example: sk-test-secret cannot be used\"}}");assertEquals("OpenAI HTTP 400: Example: [verwijderd] cannot be used",safe);assertFalse(safe.contains("sk-test-secret"));}
     @Test void serializedRequestsContainValidInputShapes(){
         var gateway=new OpenAiCoachGateway("test-key");var mapper=tools.jackson.databind.json.JsonMapper.builder().build();

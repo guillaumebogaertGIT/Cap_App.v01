@@ -17,13 +17,14 @@ public class AiCoachController {
     private static final org.slf4j.Logger LOG=org.slf4j.LoggerFactory.getLogger(AiCoachController.class);
     public record Input(UUID id,String message,List<AiCoachGateway.Turn> history,boolean consent,String mode,Boolean ownWorkouts,Boolean ownNutrition,Boolean ownProfile,Boolean ownBookings,Boolean ownMealPlan) {}
     private final AiOwnContext ownContext;
+    private final AiNutritionTasks nutritionTasks;
     private final AiCoachSettings settings;private final AiCoachActions actions;private final AiNutritionPlanner nutritionPlanner;private final NutritionPreferences preferences;private final MeasurementService measurements;
     private final StaffPolicy policy;private final AiWorkoutDrafts drafts;
     private final JdbcTemplate jdbc;private final AccountService accounts;private final AiCoachGateway gateway;private final TransactionTemplate transaction;
     private final boolean enabled;private final Set<String> testers;
-    public AiCoachController(JdbcTemplate jdbc,AccountService accounts,AiCoachGateway gateway,PlatformTransactionManager manager,StaffPolicy policy,AiWorkoutDrafts drafts,AiOwnContext ownContext,AiCoachSettings settings,AiCoachActions actions,AiNutritionPlanner nutritionPlanner,NutritionPreferences preferences,MeasurementService measurements,
+    public AiCoachController(JdbcTemplate jdbc,AccountService accounts,AiCoachGateway gateway,PlatformTransactionManager manager,StaffPolicy policy,AiWorkoutDrafts drafts,AiOwnContext ownContext,AiCoachSettings settings,AiCoachActions actions,AiNutritionPlanner nutritionPlanner,NutritionPreferences preferences,MeasurementService measurements,AiNutritionTasks nutritionTasks,
         @Value("${cap.ai-coach.enabled:false}") boolean enabled,@Value("${cap.ai-coach.testers:}") String testers){
-        this.jdbc=jdbc;this.accounts=accounts;this.gateway=gateway;this.policy=policy;this.drafts=drafts;this.ownContext=ownContext;this.settings=settings;this.actions=actions;this.nutritionPlanner=nutritionPlanner;this.preferences=preferences;this.measurements=measurements;transaction=new TransactionTemplate(manager);this.enabled=enabled;
+        this.jdbc=jdbc;this.accounts=accounts;this.gateway=gateway;this.policy=policy;this.drafts=drafts;this.ownContext=ownContext;this.settings=settings;this.actions=actions;this.nutritionPlanner=nutritionPlanner;this.preferences=preferences;this.measurements=measurements;this.nutritionTasks=nutritionTasks;transaction=new TransactionTemplate(manager);this.enabled=enabled;
         this.testers=new HashSet<>();for(String email:testers.split(","))if(!email.isBlank())this.testers.add(email.trim().toLowerCase(Locale.ROOT));
     }
     private AccountService.Account user(Principal p){if(p==null)throw error(HttpStatus.UNAUTHORIZED,"Log opnieuw in.");return accounts.account(p.getName());}
@@ -43,6 +44,10 @@ public class AiCoachController {
         });
     }
     @GetMapping("/nutrition-profile") public ResponseEntity<?> nutritionProfile(Principal p,@RequestParam UUID athleteId){return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(nutritionPlanner.profile(user(p),athleteId));}
+    private AccountService.Account nutritionActor(Principal p){var actor=user(p);if(!ready(actor))throw error(HttpStatus.FORBIDDEN,"Coach Glenn is niet beschikbaar.");var v=settings.read(actor).values();if(!v.consent()||!v.coachActions())throw error(HttpStatus.FORBIDDEN,"Schakel Coach Glenn en coachacties in via de instellingen.");return actor;}
+    @PostMapping("/nutrition-chat") public ResponseEntity<?> nutritionChat(Principal p,@RequestBody AiNutritionTasks.Input input) throws Exception {var actor=nutritionActor(p);return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(nutritionTasks.turn(actor,input,id->reserve(actor,id)));}
+    @GetMapping("/nutrition-chat/{id}") public ResponseEntity<?> restoreNutritionChat(Principal p,@PathVariable UUID id){return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(nutritionTasks.restore(nutritionActor(p),id));}
+    @DeleteMapping("/nutrition-chat/{id}") public void clearNutritionChat(Principal p,@PathVariable UUID id){nutritionTasks.clear(user(p),id);}
     @PostMapping("/diagnostic") public ResponseEntity<?> diagnostic(Principal p,@RequestBody VersionedDiagnostic input){
         var actor=user(p);if(!policy.role(actor).equals("OWNER")||!ready(actor))throw error(HttpStatus.FORBIDDEN,"Deze verbindingstest is alleen beschikbaar voor een toegestane beheerder.");
         if(input==null||input.id()==null)throw error(HttpStatus.BAD_REQUEST,"Testreferentie ontbreekt.");

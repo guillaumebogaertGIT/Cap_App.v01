@@ -21,11 +21,12 @@ public class AiCoachActions {
     public record AssignInput(UUID clientId,String date,String workoutId){}
     public record MealInput(UUID clientId,LocalDate weekStart,String name,List<MealPlanController.Day> days,Boolean repeatDay,Boolean publish){}
     public record TargetInput(UUID clientId,NutritionController.Targets targets){}
+    public record NutritionDraftInput(UUID clientId,LocalDate weekStart,UUID planId,int version,MealPlanController.Content content,NutritionTaskRules.Targets targets){}
     public record Command(String type,JsonNode data,String summary,String expectedState,Integer clientConsentVersion,String clientConsentId){public Command(String type,JsonNode data,String summary){this(type,data,summary,null,null,null);}public Command(String type,JsonNode data,String summary,String expectedState){this(type,data,summary,expectedState,null,null);}}
     private final JdbcTemplate jdbc;private final StaffPolicy policy;private final AccountWorkoutService workouts;private final AccountExerciseService exercises;
-    private final MealPlanController meals;private final NutritionController nutrition;private final PlanningService planning;private final CoachShiftController shifts;private final AiCoachSettings settings;private final NutritionPreferences preferences;private final AiOwnContext ownContext;private final MeasurementService measurements;
+    private final NutritionPlanValidator nutritionValidator;private final MealPlanController meals;private final NutritionController nutrition;private final PlanningService planning;private final CoachShiftController shifts;private final AiCoachSettings settings;private final NutritionPreferences preferences;private final AiOwnContext ownContext;private final MeasurementService measurements;
     private final JsonMapper json=JsonMapper.builder().build();
-    public AiCoachActions(JdbcTemplate jdbc,StaffPolicy policy,AccountWorkoutService workouts,AccountExerciseService exercises,MealPlanController meals,NutritionController nutrition,PlanningService planning,CoachShiftController shifts,AiCoachSettings settings,NutritionPreferences preferences,AiOwnContext ownContext,MeasurementService measurements){this.jdbc=jdbc;this.policy=policy;this.workouts=workouts;this.exercises=exercises;this.meals=meals;this.nutrition=nutrition;this.planning=planning;this.shifts=shifts;this.settings=settings;this.preferences=preferences;this.ownContext=ownContext;this.measurements=measurements;}
+    public AiCoachActions(JdbcTemplate jdbc,StaffPolicy policy,AccountWorkoutService workouts,AccountExerciseService exercises,MealPlanController meals,NutritionController nutrition,PlanningService planning,CoachShiftController shifts,AiCoachSettings settings,NutritionPreferences preferences,AiOwnContext ownContext,MeasurementService measurements,NutritionPlanValidator nutritionValidator){this.nutritionValidator=nutritionValidator;this.jdbc=jdbc;this.policy=policy;this.workouts=workouts;this.exercises=exercises;this.meals=meals;this.nutrition=nutrition;this.planning=planning;this.shifts=shifts;this.settings=settings;this.preferences=preferences;this.ownContext=ownContext;this.measurements=measurements;}
     private ResponseStatusException invalid(String text){return new ResponseStatusException(HttpStatus.BAD_REQUEST,text);}
     private LocalDate today(){return LocalDate.now(ZoneId.of("Europe/Brussels"));}
     private Principal principal(AccountService.Account actor){return actor::email;}
@@ -80,6 +81,19 @@ public class AiCoachActions {
     private Command normalize(AccountService.Account actor,Command command) throws Exception {
         var data=command.data();if(data==null||!data.isObject())throw invalid("Actiegegevens ontbreken.");
         return switch(command.type()){
+            case "save_nutrition_draft"->{
+                policy.require(actor,NUTRITION_MANAGE);policy.require(actor,CLIENT_HEALTH);var p=read(data,NutritionDraftInput.class);String who=client(actor,p.clientId());
+                if(p.weekStart()==null||p.weekStart().getDayOfWeek()!=DayOfWeek.MONDAY||p.targets()==null)throw invalid("Week of doelen ontbreken.");
+                var existing=meals.client(principal(actor),p.clientId(),p.weekStart());
+                if(p.planId()==null&&!existing.isEmpty()||p.planId()!=null&&(existing.isEmpty()||!existing.getFirst().id().equals(p.planId())||existing.getFirst().version()!=p.version()))throw new ResponseStatusException(HttpStatus.CONFLICT,"Het voedingsplan is inmiddels gewijzigd. Vraag een nieuw voorstel.");
+                var content=meals.valid(p.content());var refs=meals.foods();
+                for(var day:content.days()){
+                    if(day.meals().size()<3)throw invalid("Elke dag moet complete maaltijden bevatten.");
+                    for(var meal:day.meals())for(var food:meal.foods())if(refs.stream().noneMatch(f->f.name().equals(food.name())&&f.preparation().equals(food.preparation())&&f.unit().equals(food.unit())&&f.calories()==food.calories()&&f.proteinG()==food.proteinG()&&f.carbsG()==food.carbsG()&&f.fatG()==food.fatG()))throw invalid("Voedingswaarden komen niet overeen met CAP-referenties.");
+                    var total=NutritionPlanValidator.totals(day.meals());if(!nutritionValidator.meets(total,p.targets()))throw invalid("Het voedingsconcept haalt de dagelijkse doelen niet.");
+                }
+                yield new Command(command.type(),data,"Voedingsconcept voor "+who+" · "+p.weekStart()+" · alleen concept opslaan, niet publiceren");
+            }
             case "create_workout"->{var p=read(data,WorkoutInput.class);var workout=checkedWorkout(actor,p.workout());String target="bibliotheek";
                 if(p.clientId()!=null){policy.require(actor,WORKOUT_ASSIGN);target=client(actor,p.clientId());date(p.date());target+=" op "+p.date();}
                 if(p.sessionId()!=null){policy.require(actor,CLASS_MANAGE);var session=planning.list(actor,today(),today().plusDays(370)).stream().filter(s->s.id().equals(p.sessionId())).findFirst().orElseThrow(()->invalid("Les niet gevonden."));target+="; koppelen aan "+session.title()+" "+session.date();}
@@ -101,9 +115,17 @@ public class AiCoachActions {
             default->throw invalid("Deze actie wordt niet ondersteund.");
         };
     }
+    @Transactional(rollbackFor=Exception.class) public Map<String,Object> stageNutrition(AccountService.Account actor,UUID id,NutritionTaskRules.State state,MealPlanController.Content content) throws Exception {
+        var approval=preferences.sharedWithAi(state.clientId).orElseThrow(()->invalid("De AI-toestemming is ingetrokken."));
+        if(approval.version()!=state.consentVersion)throw new ResponseStatusException(HttpStatus.CONFLICT,"De voorkeuren zijn gewijzigd.");
+        var base=normalize(actor,new Command("save_nutrition_draft",json.valueToTree(new NutritionDraftInput(state.clientId,state.weekStart,state.planId,state.planVersion,content,state.targets)),""));
+        var command=new Command(base.type(),base.data(),base.summary(),null,approval.version(),state.clientId.toString());
+        jdbc.update("INSERT INTO ai_coach_action(id,user_id,payload) VALUES(?,?,?)",id,actor.id(),json.writeValueAsString(List.of(command)));return Map.of("id",id);
+    }
     @Transactional(rollbackFor=Exception.class) public Map<String,Object> stage(AccountService.Account actor,UUID id,String output,Map<String,Object> resources) throws Exception {
         var root=json.readTree(output);String answer=root.path("answer").asText();if(answer.isBlank()||answer.length()>4000||!root.path("actions").isArray()||root.path("actions").size()>5)throw invalid("Het actievoorstel is onvolledig. Vraag een korter voorstel.");
         if(root.path("actions").isEmpty())return Map.of("answer",answer);
+        for(var item:root.path("actions"))if(item.path("type").asText().equals("save_nutrition_draft"))throw invalid("Gebruik het voedingsgesprek voor een gecontroleerd voedingsconcept.");
         var commands=new ArrayList<Command>();
         @SuppressWarnings("unchecked")var clients=(List<Map<String,Object>>)resources.get("matchingClients");var allowed=clients.stream().map(c->c.get("id").toString()).toList();
         for(var item:root.path("actions")){var command=normalize(actor,new Command(item.path("type").asText(),item.path("data"),""));var target=command.data().path("clientId");if(target.isString()&&!target.asText().isBlank()&&!allowed.contains(target.asText()))throw invalid("De klant is niet eenduidig gevonden. Geef de volledige naam op.");if(command.type().equals("create_lesson"))for(var targetId:command.data().path("athleteIds"))if(!allowed.contains(targetId.asText()))throw invalid("De lesdeelnemer is niet eenduidig gevonden.");if(target.isString()&&!target.asText().isBlank()){
@@ -118,6 +140,8 @@ public class AiCoachActions {
     }
     @Transactional(rollbackFor=Exception.class) public Map<String,Object> confirm(AccountService.Account actor,UUID id) throws Exception {
         jdbc.query("SELECT id FROM cap_user WHERE id=? FOR UPDATE",(r,i)->r.getObject(1),actor.id());
+        var taskRows=jdbc.queryForList("SELECT processing_id FROM ai_nutrition_task WHERE user_id=? AND payload::jsonb->>'proposalId'=? FOR UPDATE",actor.id(),id.toString());
+        if(taskRows.stream().anyMatch(r->r.get("processing_id")!=null))throw new ResponseStatusException(HttpStatus.CONFLICT,"Er wordt een nieuwe versie voorbereid. Wacht op het nieuwste voorstel.");
         var rows=jdbc.queryForList("SELECT payload,result,expires_at>CURRENT_TIMESTAMP AS valid FROM ai_coach_action WHERE id=? AND user_id=? FOR UPDATE",id,actor.id());if(rows.isEmpty())throw new ResponseStatusException(HttpStatus.NOT_FOUND,"Voorstel niet gevonden.");var row=rows.getFirst();
         if(row.get("result")!=null)return json.readValue(row.get("result").toString(),new tools.jackson.core.type.TypeReference<Map<String,Object>>(){});
         var prefs=settings.read(actor).values();if(!prefs.consent()||!prefs.coachActions()||!Boolean.TRUE.equals(row.get("valid")))throw invalid("Toestemming is ingetrokken of het voorstel is verlopen. Vraag een nieuw voorstel.");
@@ -126,6 +150,9 @@ public class AiCoachActions {
         var results=new ArrayList<String>();
         for(var stored:commands){if(stored.clientConsentVersion()!=null){UUID idClient=UUID.fromString(stored.clientConsentId()==null?stored.data().path("clientId").asText():stored.clientConsentId());var approval=preferences.sharedWithAi(idClient).orElseThrow(()->invalid("De klant heeft AI-toestemming ingetrokken. Vraag een nieuw voorstel."));if(approval.version()!=stored.clientConsentVersion())throw new ResponseStatusException(HttpStatus.CONFLICT,"De voorkeuren van de klant zijn gewijzigd. Vraag een nieuw voorstel.");}var c=normalize(actor,stored);if(!json.writeValueAsString(c.data()).equals(json.writeValueAsString(stored.data())))throw new ResponseStatusException(HttpStatus.CONFLICT,"De gegevens zijn gewijzigd. Vraag een nieuw voorstel.");var d=c.data();
             switch(c.type()){
+                case "save_nutrition_draft"->{var p=read(d,NutritionDraftInput.class);var saved=meals.save(principal(actor),new MealPlanController.Input(p.planId(),p.clientId(),p.weekStart(),p.version(),p.content()));
+                    jdbc.update("UPDATE ai_nutrition_task SET payload=jsonb_set(jsonb_set(jsonb_set(payload::jsonb,'{status}','\"saved\"'),'{planId}',to_jsonb(?::text)),'{planVersion}',to_jsonb(?::integer))::text WHERE user_id=? AND payload::jsonb->>'proposalId'=?",saved.id().toString(),saved.version(),actor.id(),id.toString());
+                }
                 case "create_workout"->{var p=read(d,WorkoutInput.class);var w=workouts.save(null,new Workout(null,p.workout().name(),p.workout().description(),p.workout().exercises(),p.clientId()==null?"":p.clientId().toString(),p.date(),p.workout().category(),p.workout().workoutType()),null,actor);if(p.sessionId()!=null)workouts.attach(p.sessionId(),w.id(),actor);}
                 case "assign_workout"->{var p=read(d,AssignInput.class);workouts.assign(p.workoutId(),p.clientId().toString(),p.date(),null,actor);}
                 case "create_meal_plan"->{var p=read(d,MealInput.class);var plan=meals.save(principal(actor),new MealPlanController.Input(null,p.clientId(),p.weekStart(),0,new MealPlanController.Content(p.name(),p.days())));if(Boolean.TRUE.equals(p.publish()))meals.publish(principal(actor),plan.id(),new MealPlanController.Version(plan.version()));}
@@ -135,6 +162,6 @@ public class AiCoachActions {
                 default->throw invalid("Onbekende actie.");
             }results.add(c.summary());
         }
-        var result=Map.<String,Object>of("answer","Bevestigd en opgeslagen in CAP.","completed",results);jdbc.update("UPDATE ai_coach_action SET result=? WHERE id=? AND user_id=?",json.writeValueAsString(result),id,actor.id());policy.audit(actor,"AI_ACTION_CONFIRM",id.toString(),commands.length+" confirmed actions");return result;
+        String receipt=Arrays.stream(commands).allMatch(c->c.type().equals("save_nutrition_draft"))?"Voedingsconcept opgeslagen. Nog niet gepubliceerd; de klant ziet deze nieuwe versie niet.":"Bevestigd en opgeslagen in CAP.";var result=Map.<String,Object>of("answer",receipt,"completed",results);jdbc.update("UPDATE ai_coach_action SET result=? WHERE id=? AND user_id=?",json.writeValueAsString(result),id,actor.id());policy.audit(actor,"AI_ACTION_CONFIRM",id.toString(),commands.length+" confirmed actions");return result;
     }
 }
