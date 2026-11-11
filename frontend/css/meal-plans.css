@@ -24,6 +24,8 @@
 .nutrition-option:focus-visible { outline:2px solid var(--accent-text); outline-offset:3px; }
 .nutrition-option-bar { display:flex; flex-wrap:wrap; gap:.75rem; align-items:center; margin-block:1rem; }
 .nutrition-option-bar h3 { margin:0; }
+.club-form label.nutrition-consent-choice { display:grid; grid-template-columns:1.25rem minmax(0,1fr); align-items:start; gap:.75rem; cursor:pointer; line-height:1.45; }
+.club-form label.nutrition-consent-choice input[type="checkbox"] { width:1.25rem; height:1.25rem; min-height:0; margin:.15rem 0 0; accent-color:var(--accent); }
 #coach-nutrition[data-nutrition-panel="menu"] > .nutrition-athlete-bar,
 #coach-nutrition[data-nutrition-panel="menu"] > #nutrition-athlete-name,
 #coach-nutrition[data-nutrition-panel] > #nutrition-saved-state,

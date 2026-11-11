@@ -17,15 +17,17 @@ import tools.jackson.databind.node.ObjectNode;
 @Service @Profile("accounts")
 public class AiNutritionPlanner {
     public record Input(UUID id,UUID athleteId,String instruction,JsonNode draft,String scope,Integer day,Integer meal,boolean shareProfile,String allergies,boolean shareAllergies){}
-    private final JdbcTemplate jdbc;private final StaffPolicy policy;private final MealPlanController meals;
+    private final JdbcTemplate jdbc;private final StaffPolicy policy;private final MealPlanController meals;private final NutritionPreferences preferences;
     private final JsonMapper json=JsonMapper.builder().build();
-    public AiNutritionPlanner(JdbcTemplate jdbc,StaffPolicy policy,MealPlanController meals){this.jdbc=jdbc;this.policy=policy;this.meals=meals;}
+    public AiNutritionPlanner(JdbcTemplate jdbc,StaffPolicy policy,MealPlanController meals,NutritionPreferences preferences){this.jdbc=jdbc;this.policy=policy;this.meals=meals;this.preferences=preferences;}
     private ResponseStatusException invalid(String message){return new ResponseStatusException(HttpStatus.BAD_REQUEST,message);}
-    public Map<String,Object> context(AccountService.Account actor,Input input){
+    public Map<String,Object> context(AccountService.Account actor,Input input){return context(actor,input,false);}
+    public Map<String,Object> context(AccountService.Account actor,Input input,boolean shareApproved){
         policy.require(actor,StaffPolicy.Permission.NUTRITION_MANAGE);
         if(input==null||input.id()==null||input.athleteId()==null||input.instruction()==null||input.instruction().isBlank()||input.instruction().length()>2000)throw invalid("Kies een klant en geef een opdracht van maximaal 2000 tekens.");
         policy.requireClient(actor,input.athleteId().toString());
         if(jdbc.queryForObject("SELECT COUNT(*) FROM cap_user WHERE id=? AND role='ATHLETE' AND active=TRUE",Integer.class,input.athleteId())!=1)throw invalid("Deze klant is niet beschikbaar.");
+        var approval=preferences.sharedWithAi(input.athleteId());if(approval.isEmpty())throw invalid("De klant heeft het delen van gegevens met AI nog niet toegestaan.");
         if(!Set.of("edit","week","day","meal").contains(input.scope()==null?"":input.scope()))throw invalid("Kies welk deel van het plan je wilt aanpassen.");
         if(input.draft()==null||!input.draft().isObject()||!input.draft().path("days").isArray()||input.draft().path("days").size()!=7||json.writeValueAsBytes(input.draft()).length>18000)throw invalid("Het concept moet zeven dagen bevatten en mag niet te groot zijn.");
         if((input.scope().equals("day")||input.scope().equals("meal"))&&(input.day()==null||input.day()<0||input.day()>6))throw invalid("Kies een dag.");
@@ -36,7 +38,7 @@ public class AiNutritionPlanner {
         if(!input.shareAllergies()&&java.util.regex.Pattern.compile("(?iu)allerg|intoleran|coeliak|coeliac|anafyl|anaphyl").matcher(supplied).find())throw invalid("De opdracht of het concept noemt een allergie of intolerantie. Bevestig delen voor deze aanvraag of verwijder die informatie.");
         var result=new LinkedHashMap<String,Object>();result.put("draft",input.draft());result.put("scope",input.scope());result.put("day",input.day());result.put("meal",input.meal());result.put("foods",meals.foods());
         result.put("allergies",input.shareAllergies()&&input.allergies()!=null&&!input.allergies().isBlank()?input.allergies().trim():"Onbekend; vraag hiernaar en doe geen aannames.");
-        if(input.shareProfile())result.putAll(profile(actor,input.athleteId()));
+        if(input.shareProfile()||shareApproved&&approval.isPresent()){result.putAll(profile(actor,input.athleteId()));if(shareApproved&&approval.isPresent()){var value=approval.get();result.put("savedDietaryInformation",Map.of("allergies",value.allergies(),"avoidedFoods",value.avoidedFoods()));}}
         return result;
     }
     public Map<String,Object> profile(AccountService.Account actor,UUID athleteId){

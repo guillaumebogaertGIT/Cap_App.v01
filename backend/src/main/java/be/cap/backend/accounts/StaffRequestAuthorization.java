@@ -17,7 +17,7 @@ class StaffRequestAuthorization {
         if(path.equals("/api/ai-coach/nutrition-draft"))return method.equals("POST")&&policy.allows(user,NUTRITION_MANAGE);
         if(path.equals("/api/ai-coach/nutrition-profile"))return get&&policy.allows(user,NUTRITION_MANAGE)&&policy.allows(user,CLIENT_HEALTH);
         if(path.equals("/api/ai-coach/settings"))return get||method.equals("PUT");
-        if(path.startsWith("/api/ai-coach/actions/"))return method.equals("POST")||method.equals("DELETE");
+        if(path.startsWith("/api/ai-coach/actions/"))return !athlete&&(method.equals("POST")||method.equals("DELETE"));
         if(path.equals("/api/meal-plans/foods")||path.equals("/api/meal-plans/self"))return get;
         if(path.equals("/api/meal-plans/self/consumed"))return get&&athlete;
         if(path.matches("/api/meal-plans/self/[^/]+/consume"))return method.equals("POST")&&athlete;
@@ -42,6 +42,8 @@ class StaffRequestAuthorization {
         if(path.startsWith("/api/coaches"))return (get || path.equals("/api/coaches") && method.equals("POST")
             || path.matches("/api/coaches/[^/]+/active") && method.equals("PUT")) && policy.allows(user,get?CLASS_VIEW:STAFF_MANAGE);
         if(path.startsWith("/api/measurements/athletes/"))return policy.allows(user,CLIENT_HEALTH);
+        if(path.equals("/api/nutrition-preferences/self"))return athlete&&(get||method.equals("PUT"));
+        if(path.equals("/api/nutrition-preferences"))return get&&policy.allows(user,NUTRITION_MANAGE)&&policy.allows(user,CLIENT_HEALTH);
         if(path.equals("/api/nutrition-targets/self"))return get||!athlete&&method.equals("PUT");
         if(path.startsWith("/api/nutrition-targets"))return athlete && get || policy.allows(user,NUTRITION_MANAGE);
         if(path.startsWith("/api/food-diary"))return true; // Principal ownership is enforced in the controller; cross-client reads keep their staff guard.

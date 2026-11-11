@@ -17,21 +17,21 @@ public class AiCoachController {
     private static final org.slf4j.Logger LOG=org.slf4j.LoggerFactory.getLogger(AiCoachController.class);
     public record Input(UUID id,String message,List<AiCoachGateway.Turn> history,boolean consent,String mode,Boolean ownWorkouts,Boolean ownNutrition,Boolean ownProfile,Boolean ownBookings,Boolean ownMealPlan) {}
     private final AiOwnContext ownContext;
-    private final AiCoachSettings settings;private final AiCoachActions actions;private final AiNutritionPlanner nutritionPlanner;
+    private final AiCoachSettings settings;private final AiCoachActions actions;private final AiNutritionPlanner nutritionPlanner;private final NutritionPreferences preferences;private final MeasurementService measurements;
     private final StaffPolicy policy;private final AiWorkoutDrafts drafts;
     private final JdbcTemplate jdbc;private final AccountService accounts;private final AiCoachGateway gateway;private final TransactionTemplate transaction;
     private final boolean enabled;private final Set<String> testers;
-    public AiCoachController(JdbcTemplate jdbc,AccountService accounts,AiCoachGateway gateway,PlatformTransactionManager manager,StaffPolicy policy,AiWorkoutDrafts drafts,AiOwnContext ownContext,AiCoachSettings settings,AiCoachActions actions,AiNutritionPlanner nutritionPlanner,
+    public AiCoachController(JdbcTemplate jdbc,AccountService accounts,AiCoachGateway gateway,PlatformTransactionManager manager,StaffPolicy policy,AiWorkoutDrafts drafts,AiOwnContext ownContext,AiCoachSettings settings,AiCoachActions actions,AiNutritionPlanner nutritionPlanner,NutritionPreferences preferences,MeasurementService measurements,
         @Value("${cap.ai-coach.enabled:false}") boolean enabled,@Value("${cap.ai-coach.testers:}") String testers){
-        this.jdbc=jdbc;this.accounts=accounts;this.gateway=gateway;this.policy=policy;this.drafts=drafts;this.ownContext=ownContext;this.settings=settings;this.actions=actions;this.nutritionPlanner=nutritionPlanner;transaction=new TransactionTemplate(manager);this.enabled=enabled;
+        this.jdbc=jdbc;this.accounts=accounts;this.gateway=gateway;this.policy=policy;this.drafts=drafts;this.ownContext=ownContext;this.settings=settings;this.actions=actions;this.nutritionPlanner=nutritionPlanner;this.preferences=preferences;this.measurements=measurements;transaction=new TransactionTemplate(manager);this.enabled=enabled;
         this.testers=new HashSet<>();for(String email:testers.split(","))if(!email.isBlank())this.testers.add(email.trim().toLowerCase(Locale.ROOT));
     }
     private AccountService.Account user(Principal p){if(p==null)throw error(HttpStatus.UNAUTHORIZED,"Log opnieuw in.");return accounts.account(p.getName());}
     private boolean allowed(AccountService.Account user){return Set.of("ATHLETE","COACH").contains(user.role())&&testers.contains(user.email().toLowerCase(Locale.ROOT));}
     private boolean ready(AccountService.Account user){return allowed(user)&&enabled&&gateway.configured();}
     private ResponseStatusException error(HttpStatus status,String message){return new ResponseStatusException(status,message);}
-    @GetMapping public ResponseEntity<?> status(Principal p){var user=user(p);return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(Map.of("available",ready(user),"canDraft",ready(user)&&policy.allows(user,StaffPolicy.Permission.WORKOUT_TEMPLATE_MANAGE),"testUser",allowed(user),"settings",settings.read(user),"remainingRequests",ready(user)?500-jdbc.queryForObject("SELECT reserved_cents FROM ai_coach_budget WHERE id=1",Integer.class):0));}
-    @PostMapping("/actions/{id}/confirm") public Map<String,Object> confirm(Principal p,@PathVariable UUID id) throws Exception {var actor=user(p);if(!ready(actor))throw error(HttpStatus.FORBIDDEN,"Coach Glenn is niet beschikbaar voor dit account.");return actions.confirm(actor,id);}
+    @GetMapping public ResponseEntity<?> status(Principal p){var user=user(p);return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(Map.of("available",ready(user),"canDraft",ready(user)&&policy.allows(user,StaffPolicy.Permission.WORKOUT_TEMPLATE_MANAGE),"testUser",allowed(user),"settings",settings.read(user),"clientDataApproved",user.role().equals("ATHLETE")&&preferences.sharedWithAi(user.id()).isPresent(),"remainingRequests",ready(user)?500-jdbc.queryForObject("SELECT reserved_cents FROM ai_coach_budget WHERE id=1",Integer.class):0));}
+    @PostMapping("/actions/{id}/confirm") public Map<String,Object> confirm(Principal p,@PathVariable UUID id) throws Exception {var actor=user(p);if(!actor.role().equals("COACH")||!ready(actor))throw error(HttpStatus.FORBIDDEN,"Alleen bevoegde coaches kunnen acties bevestigen.");return actions.confirm(actor,id);}
     @DeleteMapping("/actions/{id}") public void cancel(Principal p,@PathVariable UUID id){var actor=user(p);jdbc.update("DELETE FROM ai_coach_action WHERE id=? AND user_id=? AND result IS NULL",id,actor.id());}
     private void reserve(AccountService.Account user,UUID id){
         transaction.executeWithoutResult(tx->{
@@ -54,7 +54,7 @@ public class AiCoachController {
     @PostMapping("/nutrition-draft") public ResponseEntity<?> nutritionDraft(Principal p,@RequestBody AiNutritionPlanner.Input input){
         var user=user(p);if(!ready(user))throw error(HttpStatus.FORBIDDEN,"Coach Glenn is niet beschikbaar voor dit account.");
         var prefs=settings.read(user).values();if(!prefs.consent()||!prefs.coachActions())throw error(HttpStatus.FORBIDDEN,"Schakel Coach Glenn en coachacties in via de instellingen.");
-        var context=nutritionPlanner.context(user,input);reserve(user,input.id());
+        var context=nutritionPlanner.context(user,input,true);reserve(user,input.id());
         try{var result=nutritionPlanner.apply(input,gateway.nutritionDraft(input.instruction().trim(),context));jdbc.update("UPDATE ai_coach_request SET state='completed' WHERE id=?",input.id());return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(result);}
         catch(Exception failure){if(failure instanceof InterruptedException)Thread.currentThread().interrupt();jdbc.update("UPDATE ai_coach_request SET state='failed' WHERE id=?",input.id());
             if(failure instanceof ResponseStatusException invalid)throw error(HttpStatus.BAD_REQUEST,invalid.getReason()+" Je concept is niet gewijzigd.");
@@ -79,8 +79,19 @@ public class AiCoachController {
         if(workout||actionMode&&policy.allows(user,StaffPolicy.Permission.WORKOUT_VIEW)){try{candidates=drafts.candidates(user,input.message());}catch(Exception e){throw error(HttpStatus.SERVICE_UNAVAILABLE,"De oefenbibliotheek kon niet laden.");}}
         if(turns.stream().mapToInt(t->t.content().getBytes(StandardCharsets.UTF_8).length).sum()>8000)throw error(HttpStatus.BAD_REQUEST,"Dit gesprek is te lang. Kies Gesprek wissen.");
         String personalContext;
-        try{personalContext=ownContext.read(user,savedSettings.version()>0?prefs.ownWorkouts():Boolean.TRUE.equals(input.ownWorkouts()),savedSettings.version()>0?prefs.ownNutrition():Boolean.TRUE.equals(input.ownNutrition()),savedSettings.version()>0?prefs.ownProfile():Boolean.TRUE.equals(input.ownProfile()),savedSettings.version()>0?prefs.ownBookings():Boolean.TRUE.equals(input.ownBookings()),savedSettings.version()>0?prefs.ownMealPlan():Boolean.TRUE.equals(input.ownMealPlan()));}catch(Exception unavailable){throw error(HttpStatus.SERVICE_UNAVAILABLE,"Je eigen gegevens konden niet veilig laden. Er is geen AI-verzoek verstuurd. Zet eventueel andere gegevens uit.");}
-        Map<String,Object> resources;try{resources=actionMode?actions.resources(user,turns.stream().map(AiCoachGateway.Turn::content).collect(java.util.stream.Collectors.joining("\n")),candidates):Map.of();}catch(Exception e){throw error(HttpStatus.SERVICE_UNAVAILABLE,"Coachgegevens konden niet laden. Er is geen AI-verzoek verstuurd.");}
+        try{
+            var approval=user.role().equals("ATHLETE")?preferences.sharedWithAi(user.id()):Optional.<NutritionPreferences.Values>empty();
+            if(user.role().equals("ATHLETE")){
+                if(approval.isEmpty())personalContext="";
+                else {String q=input.message().toLowerCase(Locale.ROOT);boolean food=q.matches("(?s).*(voed|maaltijd|eet|calorie|eiwit|macro|allerg|intoler|vermijd|meal|nutrition|diet).*"),training=q.matches("(?s).*(train|workout|oefen|kracht|record|squat|bench|deadlift).*"),booking=q.matches("(?s).*(boek|sessie|planning|afspraak|les|agenda).*"),measure=q.matches("(?s).*(gewicht|lengte|lichaam|meting|vetpercentage|progress|voortgang|profiel).*");boolean general=!food&&!training&&!booking&&!measure;
+                    String snapshot=ownContext.read(user,training||general,food||general,true,booking||general,food||general);var mapper=tools.jackson.databind.json.JsonMapper.builder().build();var data=(tools.jackson.databind.node.ObjectNode)mapper.readTree(snapshot);var values=approval.get();
+                    if(food||general)data.set("dietaryInformation",mapper.valueToTree(Map.of("allergies",values.allergies(),"avoidedFoods",values.avoidedFoods())));
+                    if(measure||general){var m=measurements.snapshot(user.id());data.set("measurements",mapper.valueToTree(Map.of("profile",m.profile(),"recent",m.measurements().stream().limit(5).map(entry->Map.of("recordedAt",Objects.toString(entry.recordedAt(),""),"values",entry.values())).toList())));}
+                    personalContext=mapper.writeValueAsString(data);
+                }
+            }else personalContext=ownContext.read(user,savedSettings.version()>0?prefs.ownWorkouts():Boolean.TRUE.equals(input.ownWorkouts()),savedSettings.version()>0?prefs.ownNutrition():Boolean.TRUE.equals(input.ownNutrition()),savedSettings.version()>0?prefs.ownProfile():Boolean.TRUE.equals(input.ownProfile()),savedSettings.version()>0?prefs.ownBookings():Boolean.TRUE.equals(input.ownBookings()),savedSettings.version()>0?prefs.ownMealPlan():Boolean.TRUE.equals(input.ownMealPlan()));
+        }catch(Exception unavailable){throw error(HttpStatus.SERVICE_UNAVAILABLE,"Je eigen gegevens konden niet veilig laden. Er is geen AI-verzoek verstuurd.");}
+        Map<String,Object> resources;try{resources=actionMode?actions.resourcesForChat(user,turns.stream().map(AiCoachGateway.Turn::content).collect(java.util.stream.Collectors.joining("\n")),input.message(),candidates,true):Map.of();}catch(Exception e){throw error(HttpStatus.SERVICE_UNAVAILABLE,"Coachgegevens konden niet laden. Er is geen AI-verzoek verstuurd.");}
         reserve(user,input.id());
         try{
             Map<String,Object> result;

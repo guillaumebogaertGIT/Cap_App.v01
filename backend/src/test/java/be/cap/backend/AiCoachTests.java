@@ -9,18 +9,35 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-@TestPropertySource(properties={"cap.ai-coach.enabled=true","cap.ai-coach.testers=coach@example.test"})
+@TestPropertySource(properties={"cap.ai-coach.enabled=true","cap.ai-coach.testers=coach@example.test,ai-athlete@example.test,ai-approval@example.test"})
 class AiCoachTests extends AccountApiTests {
     @MockitoBean AiCoachGateway gateway;
     @org.springframework.beans.factory.annotation.Autowired be.cap.backend.accounts.AiOwnContext ownContext;
     @org.springframework.beans.factory.annotation.Autowired be.cap.backend.accounts.AccountService accounts;
     @org.springframework.beans.factory.annotation.Autowired be.cap.backend.accounts.AccountWorkoutService workouts;
+    @org.springframework.beans.factory.annotation.Autowired be.cap.backend.accounts.NutritionPreferences preferences;
     @BeforeEach void cleanAiLedger(){jdbc.update("DELETE FROM ai_coach_settings");jdbc.update("DELETE FROM ai_coach_action");jdbc.update("DELETE FROM ai_coach_request");jdbc.update("UPDATE ai_coach_budget SET reserved_cents=0 WHERE id=1");}
+    @Test void athleteCannotEnableOrConfirmCoachActionsOrAssignOthers() throws Exception {
+        var coach=accounts.account("coach@example.test");var athlete=accounts.accept(accounts.invite("ai-athlete@example.test",coach.email()).token(),"AI Athlete","Athlete-test-password-123");var web=client();login(web,athlete.email(),"Athlete-test-password-123");when(gateway.configured()).thenReturn(true);when(gateway.answer(anyList())).thenReturn("Vraag je coach om een toewijzing.");
+        String settingsBody=json.writeValueAsString(Map.of("version",0,"values",Map.of("consent",true,"ownProfile",false,"ownWorkouts",false,"ownNutrition",false,"ownBookings",false,"ownMealPlan",false,"coachActions",true)));
+        assertEquals(400,request(web,"PUT","/api/ai-coach/settings",settingsBody,csrf(web),false).statusCode());
+        assertEquals(403,request(web,"POST","/api/ai-coach/actions/"+UUID.randomUUID()+"/confirm","{}",csrf(web),false).statusCode());
+        assertEquals(403,request(web,"POST","/api/ai-coach/nutrition-draft","{}",csrf(web),false).statusCode());
+        assertEquals(403,request(web,"PUT","/api/workouts/"+UUID.randomUUID()+"/assignment","{}",csrf(web),false).statusCode());
+        var response=request(web,"POST","/api/ai-coach",json.writeValueAsString(Map.of("id",UUID.randomUUID(),"message","Wijs een workout toe aan een andere klant","consent",true,"mode","auto")),csrf(web),false);assertEquals(200,response.statusCode(),response.body());assertFalse(json.readTree(response.body()).has("proposal"));verify(gateway,never()).propose(anyList(),anyMap(),anyString());
+    }
+    @Test void athleteApprovalControlsOwnAiDataAndWithdrawalStopsSharing() throws Exception {
+        var coach=accounts.account("coach@example.test");var athlete=accounts.accept(accounts.invite("ai-approval@example.test",coach.email()).token(),"AI Approval","Athlete-test-password-123");var web=client();login(web,athlete.email(),"Athlete-test-password-123");when(gateway.configured()).thenReturn(true);when(gateway.answer(anyList())).thenReturn("Vraag beantwoord.");when(gateway.answer(anyList(),anyString())).thenReturn("Vraag beantwoord.");
+        String initial=json.writeValueAsString(Map.of("id",UUID.randomUUID(),"message","Wat kan ik eten qua voeding?","consent",true,"mode","chat","ownNutrition",true));assertEquals(200,request(web,"POST","/api/ai-coach",initial,csrf(web),false).statusCode());verify(gateway,never()).answer(anyList(),anyString());
+        preferences.save(()->athlete.email(),new be.cap.backend.accounts.NutritionPreferences.Values("pinda","vis",true,0));
+        String approved=initial.replaceAll("\"id\":\"[^\"]+\"","\"id\":\""+UUID.randomUUID()+"\"");assertEquals(200,request(web,"POST","/api/ai-coach",approved,csrf(web),false).statusCode());var capture=org.mockito.ArgumentCaptor.forClass(String.class);verify(gateway).answer(anyList(),capture.capture());assertTrue(capture.getValue().contains("pinda"));assertTrue(capture.getValue().contains("vis"));assertFalse(capture.getValue().contains(athlete.email()));
+        preferences.save(()->athlete.email(),new be.cap.backend.accounts.NutritionPreferences.Values("pinda","vis",false,1));String revoked=initial.replaceAll("\"id\":\"[^\"]+\"","\"id\":\""+UUID.randomUUID()+"\"");assertEquals(200,request(web,"POST","/api/ai-coach",revoked,csrf(web),false).statusCode());verify(gateway,times(1)).answer(anyList(),anyString());verify(gateway,times(2)).answer(anyList());
+    }
     @Test void syntheticDiagnosticRequiresOwnerAndConsentAndReservesBudget() throws Exception {
         var owner=client();login(owner,"coach@example.test","Coach-test-password-123");when(gateway.configured()).thenReturn(true);when(gateway.diagnostic()).thenReturn("OpenAI HTTP 400: fixed diagnostic");
         String input=json.writeValueAsString(Map.of("id",UUID.randomUUID()));assertEquals(403,request(owner,"POST","/api/ai-coach/diagnostic",input,csrf(owner),false).statusCode());
         var settingsBody=json.writeValueAsString(Map.of("version",0,"values",Map.of("consent",true,"ownProfile",false,"ownWorkouts",false,"ownNutrition",false,"ownBookings",false,"ownMealPlan",false,"coachActions",false)));
-        assertEquals(200,request(owner,"PUT","/api/ai-coach/settings",settingsBody,csrf(owner),false).statusCode());
+        var savedSettings=request(owner,"PUT","/api/ai-coach/settings",settingsBody,csrf(owner),false);assertEquals(200,savedSettings.statusCode(),savedSettings.body());
         assertEquals(403,request(owner,"POST","/api/ai-coach/diagnostic",input,null,false).statusCode());
         var result=request(owner,"POST","/api/ai-coach/diagnostic",input,csrf(owner),false);assertEquals(200,result.statusCode(),result.body());assertTrue(result.body().contains("fixed diagnostic"));assertEquals(1,jdbc.queryForObject("SELECT reserved_cents FROM ai_coach_budget WHERE id=1",Integer.class));
         assertEquals(409,request(owner,"POST","/api/ai-coach/diagnostic",input,csrf(owner),false).statusCode());verify(gateway,times(1)).diagnostic();

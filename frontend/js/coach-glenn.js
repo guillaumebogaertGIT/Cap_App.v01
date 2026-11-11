@@ -87,12 +87,12 @@
         if(!window.capReal||!eligible())return;
         loading=true;send.disabled=true;input.disabled=true;
         try{
-            const status=await window.capReal.request('/api/ai-coach');available=status.available;if(status.settings)applySettings(status.settings);budget.textContent='Gedeeld testbudget: nog '+status.remainingRequests+' conservatief gereserveerde aanvragen beschikbaar (geen exact OpenAI-saldo).';
+            const status=await window.capReal.request('/api/ai-coach');available=status.available;if(status.settings)applySettings(status.settings);if(!isCoach()&&!status.clientDataApproved)dataSummary.textContent='Persoonlijke gegevens gebruiken? Geef toestemming bij Voeding.';budget.textContent='Gedeeld testbudget: nog '+status.remainingRequests+' conservatief gereserveerde aanvragen beschikbaar (geen exact OpenAI-saldo).';
             mode.textContent=available?'AI-test via OpenAI':'Voorbeeldchat';
             consentLabel.hidden=!available;
             dataOptions.hidden=!available;
             disclosure.open=false;
-            notice.textContent=available?'AI-test via OpenAI. Je vragen en recente chattekst worden naar OpenAI gestuurd, voor coaches ook gedeelde oefennamen. Persoonlijke gegevens worden alleen gedeeld volgens je bewaarde voorkeuren op de Coach Glenn-pagina. CAP bewaart de chat niet; OpenAI kan gegevens verwerken volgens zijn bewaarbeleid. Geen betalingen, wachtwoorden, privéberichten, coachnotities of medische gegevens.': 'Voorbeeldchat · De echte AI-test is voor dit account nog niet beschikbaar. Geen vragen naar een AI-dienst.';
+            notice.textContent=available?'AI-test via OpenAI. Je vragen en recente chattekst worden naar OpenAI gestuurd. Bij toestemming kunnen relevante profiel-, trainings-, voedings- en gezondheidsgegevens worden gedeeld. Betaalgegevens, wachtwoorden en privéberichten worden niet automatisch gedeeld. CAP bewaart de chat niet; OpenAI kan gegevens verwerken volgens zijn bewaarbeleid.': 'Voorbeeldchat · De echte AI-test is voor dit account nog niet beschikbaar. Geen vragen naar een AI-dienst.';
             reset();
         }catch{notice.textContent='AI-status kon niet laden. De voorbeeldchat blijft beschikbaar; er worden geen AI-vragen verstuurd.';}
         finally{loading=false;send.disabled=false;input.disabled=false;}
@@ -119,11 +119,12 @@
         ownProfile=dataChoice('Mijn profiel','Je naam, opgeslagen doel en trainingservaring. Geen geboortedatum, lichaamsmetingen, foto of contactgegevens.');
         ownBookings=dataChoice('Mijn boekingen','Maximaal 8 eigen actieve boekingen in de komende 14 dagen. Geen deelnemerslijsten of sessienotities.');
         ownMealPlan=dataChoice('Mijn voedingsplan','Het gepubliceerde plan van deze week: maaltijdnamen en opgetelde algemene boodschappen met hoeveelheden. Alleen je eigen plan, geen concepten.');
+        if(!isCoach()){for(const choice of [ownWorkouts,ownNutrition,ownProfile,ownBookings,ownMealPlan])choice.closest('label').hidden=true;const info=node('small','Je bepaalt bij Voeding → Voedingsvoorkeuren en toestemming voor AI of je gegevens mogen worden gebruikt.');dataOptions.append(info);}
         dataOptions.append(node('small','Deze voorkeuren blijven bij je CAP-account bewaard nadat je ze opslaat. Uitzetten wist dit gesprek en stopt nieuwe gegevensdeling; eerder verzonden gegevens worden daarmee niet bij OpenAI verwijderd.'));
         dataSummary=node('p','Eigen gegevens: uit','coach-glenn-data-summary');
         function scopeChanged(){settingsDirty=true;settingsState.textContent='Voorkeuren gewijzigd: bewaar om ze te gebruiken.';reset();const active=[ownWorkouts.checked?'workouts':'',ownNutrition.checked?'voeding':'',ownProfile.checked?'profiel':'',ownBookings.checked?'boekingen':'',ownMealPlan.checked?'voedingsplan':''].filter(Boolean);dataSummary.textContent=active.length?'Met eigen '+active.join(' en '):'Eigen gegevens: uit';}
         ownWorkouts.onchange=scopeChanged;ownNutrition.onchange=scopeChanged;ownProfile.onchange=scopeChanged;ownBookings.onchange=scopeChanged;ownMealPlan.onchange=scopeChanged;disclosure.insertBefore(dataOptions,suggestions);
-        coachActionsInput=dataChoice('Coachacties voorbereiden','Deel overeenkomende klantnamen, coachnamen, catalogusoefeningen en opgeslagen workoutnamen met OpenAI. Coach Glenn mag workouts/toewijzingen, voedingsplannen, dagdoelen, lessen en werkuren voorstellen. Elke opslag vereist Bevestigen; je bestaande CAP-rechten blijven gelden. Geen betalingen, wachtwoorden, privéberichten of medische dossiers.');
+        coachActionsInput=dataChoice('Coachacties voorbereiden','Deel klantnamen en, wanneer de klant dit heeft toegestaan, relevante profiel-, trainings-, boekings-, meet- en voedingsgegevens met OpenAI. Coach Glenn mag acties voorstellen; elke opslag vereist Bevestigen. Je CAP-rechten blijven gelden. Geen betaalgegevens, wachtwoorden of privéberichten.');
         coachActionsInput.onchange=scopeChanged;coachActionsInput.closest('label').hidden=!isCoach();
         const settingsRoot=document.getElementById('coach-glenn-settings');settingsForm=node('form',null,'settings-card');
         const explanation=node('p','OpenAI verwerkt je vragen, recente chattekst en de gegevens waarvoor je hieronder kiest. Je instellingen blijven bewaard bij je CAP-account. CAP bewaart geen gesprek; actievoorstellen verlopen na 24 uur. Eerder naar OpenAI verzonden gegevens worden door uitschakelen niet teruggehaald.','sample-notice');

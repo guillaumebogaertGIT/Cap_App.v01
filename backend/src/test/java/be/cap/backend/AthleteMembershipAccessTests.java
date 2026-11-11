@@ -32,6 +32,7 @@ class AthleteMembershipAccessTests {
         for(String p:List.of("/api/club/sessions","/api/club/bookings","/api/billing","/api/accounts/me","/api/accounts/access"))assertEquals(200,get(p),p);
         for(String p:List.of("/api/records","/api/training","/api/workouts","/api/exercises","/api/nutrition-targets/self","/api/food-diary","/api/meal-plans/self","/api/ai-coach","/api/ai-coach/settings","/api/social/notifications","/api/measurements","/api/food-products/personal"))assertEquals(403,get(p),p);
         var token=web.csrf(client);assertEquals(403,web.request(client,"POST","/api/club/sessions/"+UUID.randomUUID()+"/booking","{}",token,false).statusCode());
+        assertEquals(200,get("/api/nutrition-preferences/self"));assertEquals(200,web.request(client,"PUT","/api/nutrition-preferences/self","{\"allergies\":\"\",\"avoidedFoods\":\"\",\"aiShare\":false,\"version\":0}",token,false).statusCode());
         assertEquals(403,web.request(client,"PUT","/api/accounts/profile","{}",token,false).statusCode());
         assertTrue(access.allowed(athlete,"POST","/api/billing/checkout"));
         var html=web.request(client,"GET","/app/index.html",null,null,false);assertEquals(200,html.statusCode());assertTrue(html.body().contains("\"fullAccess\":false"));assertTrue(html.body().contains("\"draft\":null"));

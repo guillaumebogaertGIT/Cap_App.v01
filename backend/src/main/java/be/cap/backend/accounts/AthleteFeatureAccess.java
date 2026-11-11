@@ -23,6 +23,7 @@ public class AthleteFeatureAccess {
     public boolean allowed(AccountService.Account user,String method,String path){
         // Essential account and purchase operations stay usable without paid access.
         if(path.equals("/api/accounts/access")||path.equals("/api/accounts/me")||path.equals("/api/accounts/password")||path.equals("/api/accounts/logout")||path.equals("/api/billing")||path.matches("/api/billing/(checkout|portal|cancel|reconcile)"))return true;
+        if(path.equals("/api/nutrition-preferences/self")&&(method.equals("GET")||method.equals("PUT")))return true; // Allow clients to withdraw their data-sharing choice.
         if(method.equals("GET")&&(path.equals("/api/accounts/profile")||path.equals("/api/accounts/profile/photo")||path.equals("/api/club/sessions")||path.equals("/api/club/bookings")))return true;
         return fullAccess(user);
     }

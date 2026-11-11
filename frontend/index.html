@@ -70,6 +70,7 @@
     <script src="js/nutrition-calculator.js" defer></script>
     <script src="js/nutrition.js" defer></script>
     <script src="js/my-nutrition.js" defer></script>
+    <script src="js/nutrition-preferences.js" defer></script>
     <script src="js/health-navigation.js" defer></script>
     <script src="js/food-data.js" defer></script>
     <script src="js/food-diary.js" defer></script>
@@ -642,6 +643,18 @@
         <section id="nutrition" data-view aria-labelledby="nutrition-title" hidden>
             <header class="dashboard-header"><div><h2 id="nutrition-title" tabindex="-1">Voeding</h2><p class="dashboard-intro">Jouw dagdoelen van de coach.</p></div></header>
             <article class="club-card"><h3>Mijn dagdoelen</h3><p id="athlete-nutrition-status" role="status"></p><dl id="athlete-nutrition-targets" class="nutrition-metrics"></dl><p id="athlete-nutrition-energy-note" class="sample-notice"></p><p class="sample-notice">Je dagdoelen staan los van wat je in je voedingsdagboek registreert.</p></article>
+            <details id="nutrition-preferences" class="saved-workout" hidden>
+                <summary>Voedingsvoorkeuren en toestemming voor AI</summary>
+                <form id="nutrition-preferences-form" class="club-form">
+                    <p>Deze gegevens zijn zichtbaar voor bevoegde CAP-coaches. Leeg betekent onbekend, niet dat je geen allergieën hebt.</p>
+                    <label>Allergieën en intoleranties<textarea name="allergies" maxlength="500" rows="2" placeholder="Bijvoorbeeld: pinda's"></textarea></label>
+                    <label>Voeding die ik vermijd<textarea name="avoidedFoods" maxlength="500" rows="2" placeholder="Bijvoorbeeld: vegetarisch"></textarea></label>
+                    <label class="nutrition-consent-choice"><input name="aiShare" type="checkbox"><span>Ik geef CAP toestemming om mijn profiel, trainingen, boekingen, voedingsdoelen, voedingsdagboek, voedingsplan, metingen en bovenstaande allergieën en voorkeuren met OpenAI te delen voor persoonlijke coaching en voedingsvoorstellen.</span></label>
+                    <p class="sample-notice">Alleen gegevens die nodig zijn voor de vraag worden gebruikt. Betaalgegevens, wachtwoorden en privéberichten worden niet automatisch gedeeld. Deze informatie kan gezondheidsgegevens bevatten.</p>
+                    <p class="sample-notice">Optioneel. Je kunt dit later uitzetten en bewaren; eerder gedeelde gegevens worden daarmee niet teruggehaald. Je coach controleert elk voorstel.</p>
+                    <button type="submit" class="primary-button">Voorkeuren bewaren</button><p role="status"></p>
+                </form>
+            </details>
             <article class="club-card">
                 <div class="health-overview-heading"><h3>Voedingsdagboek</h3><label>Datum<input id="athlete-food-date" type="date" required></label></div>
                 <p id="food-diary-storage-note" class="sample-notice">Log wat je hebt gegeten. Je log blijft in deze browser bewaard.</p>
