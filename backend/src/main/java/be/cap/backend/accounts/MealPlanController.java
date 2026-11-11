@@ -98,7 +98,9 @@ public class MealPlanController {
             if(!Objects.equals(old.athleteId(),input.athleteId())||!Objects.equals(old.weekStart(),input.weekStart()))throw error(HttpStatus.BAD_REQUEST,"Kopieer het plan om een andere klant of week te kiezen.");
             if(jdbc.update("UPDATE meal_plan SET payload=?,version=version+1,updated_by=?,updated_at=CURRENT_TIMESTAMP WHERE id=? AND version=?",payload,actor.id(),id,input.version())!=1)throw error(HttpStatus.CONFLICT,"Dit plan is gewijzigd. Laad het opnieuw.");
         }
-        policy.audit(actor,"MEAL_PLAN_SAVE",id.toString(),"Draft saved");return jdbc.query("SELECT * FROM meal_plan WHERE id=?",(r,i)->row(r,false),id).getFirst();
+        var saved=jdbc.query("SELECT * FROM meal_plan WHERE id=?",(r,i)->row(r,false),id).getFirst();
+        jdbc.update("INSERT INTO meal_plan_revision(plan_id,version,athlete_id,week_start,payload) VALUES(?,?,?,?,?)",saved.id(),saved.version(),saved.athleteId(),saved.weekStart(),json.writeValueAsString(saved.content()));
+        policy.audit(actor,"MEAL_PLAN_SAVE",id.toString(),"Draft saved");return saved;
     }
     @PostMapping("/{id}/publish") public Plan publish(Principal p,@PathVariable UUID id,@RequestBody Version input){
         var actor=user(p);coach(actor);

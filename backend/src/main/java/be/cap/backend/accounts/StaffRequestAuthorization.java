@@ -20,6 +20,8 @@ class StaffRequestAuthorization {
         if(path.equals("/api/ai-coach/settings"))return get||method.equals("PUT");
         if(path.startsWith("/api/ai-coach/actions/"))return !athlete&&(method.equals("POST")||method.equals("DELETE"));
         if(path.equals("/api/meal-plans/foods")||path.equals("/api/meal-plans/self"))return get;
+        if(path.equals("/api/meal-plans/self/day"))return get&&athlete;
+        if(path.equals("/api/meal-plans/self/day/consume"))return method.equals("POST")&&athlete;
         if(path.equals("/api/meal-plans/self/consumed"))return get&&athlete;
         if(path.matches("/api/meal-plans/self/[^/]+/consume"))return method.equals("POST")&&athlete;
         if(path.equals("/api/meal-plans")||path.startsWith("/api/meal-plans/"))return policy.allows(user,NUTRITION_MANAGE);

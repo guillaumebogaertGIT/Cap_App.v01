@@ -1,34 +1,43 @@
-// Small task launcher; panels stay mounted so switching never discards a draft.
+// One nutrition route per role, with an explicit client selection before client work.
 document.addEventListener('DOMContentLoaded',()=>{
-    const page=document.getElementById('coach-nutrition');
+    const $=id=>document.getElementById(id),coach=$('coach-nutrition'),own=$('nutrition'),real=window.capReal;
     const node=(tag,text,cls)=>{const el=document.createElement(tag);if(text!=null)el.textContent=text;if(cls)el.className=cls;return el;};
-    const menu=node('nav',null,'nutrition-option-grid');menu.setAttribute('aria-label','Voedingsopties');
-    const bar=node('div',null,'nutrition-option-bar'),back=node('button','Alle voedingsopties','secondary-button'),title=node('h3');back.type='button';title.tabIndex=-1;bar.append(back,title);bar.hidden=true;
-    const options=[
-        ['plan','Voedingsplan maken','Maaltijden en porties per week','M4 3h16v18H4zM8 7h8M8 12h3M8 17h8'],
-        ['calculator','Doelen berekenen','Bereken en controleer dagdoelen','M5 3h14v18H5zM8 7h8M8 12h1m6 0h1M8 17h1m6 0h1'],
-        ['targets','Dagdoelen bekijken','Bekijk of pas doelen handmatig aan','M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18M12 7a5 5 0 1 0 0 10 5 5 0 0 0 0-10M12 11v2'],
-        ['diary','Dagboek bekijken','Bekijk wat je klant heeft gegeten','M4 5h16v16H4zM8 3v4m8-4v4M4 11h16M8 15h3'],
-        ['templates','Sjablonen gebruiken','Herbruikbare voedingsplannen','M8 3h12v14H8zM4 7v14h12M11 7h6m-6 4h6'],
-        ['own','Mijn voeding','Open je eigen doelen en dagboek','M12 3a4 4 0 1 0 0 8 4 4 0 0 0 0-8M4 21v-2a8 8 0 0 1 16 0v2']
-    ];
-    const buttons=new Map();let lastPanel='menu',lastRoute=location.hash;
-    function show(panel,focus=false){
-        page.dataset.nutritionPanel=panel;menu.hidden=panel!=='menu';bar.hidden=panel==='menu';
-        title.textContent=options.find(row=>row[0]===panel)?.[1]||'';
-        if(focus){if(panel==='menu')buttons.get(lastPanel)?.focus();else title.focus();}
-        if(panel!=='menu')lastPanel=panel;
-        if(panel==='templates')document.querySelector('#coach-meal-plans .meal-plan-toolbar')?.scrollIntoView({block:'nearest'});
+    const isCoach=()=>real?real.account.role==='COACH':previewRole==='coach';
+    const option=(title,copy,action,path)=>{const b=node('button',null,'nutrition-option');b.type='button';const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');svg.setAttribute('viewBox','0 0 24 24');svg.setAttribute('aria-hidden','true');const p=document.createElementNS(svg.namespaceURI,'path');p.setAttribute('d',path);svg.append(p);b.append(svg,node('strong',title),node('span',copy));b.onclick=action;return b;};
+    const menu=node('nav',null,'nutrition-option-grid'),bar=node('div',null,'nutrition-option-bar'),back=node('button','Terug','secondary-button'),heading=node('h3');back.type='button';heading.tabIndex=-1;bar.append(back,heading);coach.querySelector('header').after(menu,bar);
+    const selection=node('button','Verder met deze klant','primary-button');selection.type='button';selection.onclick=()=>{if(window.capNutritionTargets.selectedAthlete())show('client-menu',true);};coach.querySelector('.nutrition-athlete-bar').append(selection);
+    const history=node('section',null,'nutrition-client-history');history.setAttribute('aria-label','Opgeslagen voedingsschema’s');coach.append(history);
+    let panel='entry',previousRoute='',historyGeneration=0,historyOffset=0;
+    const client=()=>window.capNutritionTargets?.selectedAthlete();
+    function show(value,focus=false){panel=value;coach.dataset.nutritionPanel=value;menu.replaceChildren();menu.hidden=!['entry','client-menu','create'].includes(value);bar.hidden=value==='entry';heading.textContent=value==='pick'?'Selecteer een klant':client()?.name||'Klantvoeding';
+        coach.querySelector('.dashboard-intro').textContent=value==='entry'?'Je eigen voeding of aan de slag voor een klant.':client()?.name?'Je werkt voor '+client().name+'.':'Zoek en selecteer eerst een klant.';
+        selection.disabled=!client();selection.textContent=client()?'Verder met '+client().name:'Selecteer eerst een klant';
+        if(value==='entry')menu.append(option('Mijn voeding','Mijn doelen, schema en dagboek',()=>{location.hash='nutrition';},'M12 3a4 4 0 1 0 0 8 4 4 0 0 0 0-8M4 21v-2a8 8 0 0 1 16 0v2'),option('Klantvoeding','Kies eerst de klant voor wie je wilt werken',()=>show('pick',true),'M8 3a3 3 0 1 0 0 6 3 3 0 0 0 0-6M2 21v-3a6 6 0 0 1 12 0v3M17 3a3 3 0 0 1 0 6m0 5a5 5 0 0 1 5 5v2'));
+        if(value==='client-menu')menu.append(option('Bekijk dagboek','Wat deze klant heeft gelogd',()=>show('diary',true),'M4 3h16v18H4zM8 7h8M8 12h8M8 17h5'),option('Bekijk voedingsschema','Opgeslagen schema’s en toewijzingen',()=>show('history',true),'M4 5h16v16H4zM8 3v4m8-4v4M4 11h16'),option('Maak voedingsschema','Handmatig of met AI, daarna zelf aanpassen',()=>show('create',true),'M12 5v14M5 12h14'),option('Dagdoelen','Bereken, bekijk en bewaar behoeften',()=>show('calculator',true),'M5 3h14v18H5zM8 7h8M8 12h1m6 0h1M8 17h1m6 0h1'));
+        if(value==='create')menu.append(option('Handmatig maken','Vul zelf maaltijden en hoeveelheden in',()=>start('manual'),'M4 20h4L20 8l-4-4L4 16zM14 6l4 4'),option('Maak met AI','Gebruik automatisch de opgeslagen dagdoelen',()=>start('ai'),'M5 6h14v14H5zM12 2v4M8 11h1m6 0h1M8 16h8'));
+        back.onclick=()=>show(value==='pick'?'entry':value==='client-menu'?'pick':value==='create'?'client-menu':value==='manual'||value==='ai'?'create':'client-menu',true);
+        if(value==='history'){historyOffset=0;loadHistory(false);}
+        if(focus){if(menu.hidden)heading.focus();else menu.querySelector('button')?.focus();}
     }
-    for(const [id,label,description,path]of options){
-        const el=node(id==='own'?'a':'button',null,'nutrition-option');
-        if(id==='own')el.href='#nutrition';else{el.type='button';el.onclick=()=>show(id,true);}
-        const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');svg.setAttribute('viewBox','0 0 24 24');svg.setAttribute('aria-hidden','true');const shape=document.createElementNS(svg.namespaceURI,'path');shape.setAttribute('d',path);svg.append(shape);
-        el.append(svg,node('strong',label),node('span',description));menu.append(el);buttons.set(id,el);
+    async function start(mode){show(mode,true);await window.capMealPlans?.begin(mode);}
+    async function loadHistory(append){const selected=client(),generation=++historyGeneration;if(!selected)return;const status=node('p','Schema’s laden…');status.setAttribute('role','status');if(!append)history.replaceChildren(node('h3','Voedingsschema’s voor '+selected.name));history.append(status);
+        try{const rows=real?await real.request('/api/meal-plans/history?athleteId='+selected.id+'&offset='+historyOffset):window.capMealPlans?.history()||[];if(generation!==historyGeneration||selected.id!==client()?.id)return;status.remove();
+            if(!append&&!rows.length)history.append(node('p','Nog geen voedingsschema bewaard voor deze klant. Kies Maak voedingsschema.'));
+            for(const row of rows){const item=node('article',null,'nutrition-history-row'),copy=node('div');copy.append(node('h4',row.content.name),node('p',window.capDateTime.dateTime(row.savedAt)+' · versie '+row.version));const view=node('button','Bekijken','secondary-button'),edit=node('button','Openen en aanpassen','secondary-button');view.type=edit.type='button';view.onclick=()=>window.capMealPlans.preview(row.content);edit.onclick=async()=>{show('manual',true);await window.capMealPlans.openRevision(row);};item.append(copy,view,edit);history.append(item);}
+            if(rows.length===20){const more=node('button','Oudere schema’s','secondary-button');more.type='button';more.onclick=()=>{more.remove();historyOffset+=20;loadHistory(true);};history.append(more);}
+            if(!append&&real){const assignments=await real.request('/api/meal-plans/assignments?athleteId='+selected.id);if(generation!==historyGeneration||selected.id!==client()?.id)return;history.append(node('h3','Toegewezen periodes'));if(!assignments.length)history.append(node('p','Nog geen schema met datums toegewezen.'));for(const a of assignments)history.append(node('p',a.name+' · '+window.capDateTime.date(a.startDate)+' – '+window.capDateTime.date(a.endDate)));}
+        }catch(error){if(generation===historyGeneration)status.textContent=error.message||'Schema’s konden niet laden. Open deze optie opnieuw om te herhalen.';}
     }
-    page.querySelector('header').after(menu,bar);
-    page.querySelector('.dashboard-intro').textContent='Kies wat je wilt doen voor je klant of jezelf.';
-    back.onclick=()=>show('menu',true);
-    document.addEventListener('cap:viewchange',()=>{if(location.hash!==lastRoute){if(location.hash==='#coach-nutrition')show('plan');lastRoute=location.hash;}});
-    show('plan');
+    $('nutrition-athlete-select').addEventListener('change',()=>show('client-menu',true));
+    document.addEventListener('cap:nutrition-athlete-changed',()=>{selection.disabled=!client();if(!['entry','pick'].includes(panel)){heading.textContent=client()?.name||'Klantvoeding';if(panel==='history')loadHistory(false);}});
+    document.addEventListener('cap:meal-plan-saved',()=>{if(panel==='history')loadHistory(false);});
+    // Own nutrition starts with the same three clear destinations on phone and desktop.
+    const ownMenu=node('nav',null,'nutrition-option-grid'),ownBar=node('div',null,'nutrition-option-bar'),ownBack=node('button','Alle voedingsopties','secondary-button'),ownHeading=node('h3');ownBack.type='button';ownHeading.tabIndex=-1;ownBar.append(ownBack,ownHeading);own.querySelector('header').after(ownMenu,ownBar);
+    const targets=$('athlete-nutrition-targets').closest('article'),diary=$('athlete-food-date').closest('article');targets.dataset.nutritionOwn='targets';diary.dataset.nutritionOwn='diary';$('nutrition-preferences').dataset.nutritionOwn='targets';$('my-meal-plan').dataset.nutritionOwn='plan';
+    let ownPanel='menu';
+    function ownShow(value,focus=false){ownPanel=value;own.dataset.nutritionOwnPanel=value;ownMenu.hidden=value!=='menu';ownBar.hidden=value==='menu';ownHeading.textContent={targets:'Mijn dagdoelen',plan:'Voedingsschema',diary:'Mijn voeding'}[value]||'';if(value==='plan')$('my-meal-plan').open=true;if(focus)(value==='menu'?ownMenu.querySelector('button'):ownHeading).focus();}
+    ownMenu.append(option('Mijn dagdoelen','Calorieën, macro’s, water en voedingsvoorkeuren',()=>ownShow('targets',true),'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18M12 7a5 5 0 1 0 0 10 5 5 0 0 0 0-10'),option('Voedingsschema','De maaltijden die je coach voor je heeft ingepland',()=>ownShow('plan',true),'M4 5h16v16H4zM8 3v4m8-4v4M4 11h16'),option('Mijn voeding','Scan, zoek en voeg je gegeten voeding toe',()=>ownShow('diary',true),'M4 3v7a3 3 0 0 0 6 0V3M7 3v18M18 3v18M18 3c-4 2-4 8 0 9'));
+    ownBack.onclick=()=>ownShow('menu',true);
+    document.addEventListener('cap:viewchange',()=>{if(location.hash!==previousRoute){if(location.hash==='#coach-nutrition')show('entry');if(location.hash==='#nutrition')ownShow('menu');previousRoute=location.hash;}ownMenu.children[1].hidden=isCoach();own.querySelector('.dashboard-intro').textContent=isCoach()?'Je eigen voeding, los van klantvoeding.':'Kies je doelen, je schema of je voedingsdagboek.';});
+    window.capNutritionFlow={show,ownShow};show('entry');ownShow('menu');
 });

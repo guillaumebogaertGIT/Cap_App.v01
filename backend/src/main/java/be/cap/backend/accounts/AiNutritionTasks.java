@@ -18,7 +18,7 @@ import static be.cap.backend.accounts.StaffPolicy.Permission.*;
 /** Durable, actor-owned task state. Tools read current authorized records, never a model-supplied identity. */
 @Service @Profile("accounts")
 public class AiNutritionTasks {
-    public record Input(UUID id,UUID conversationId,int revision,String message,List<AiCoachGateway.Turn> history){}
+    public record Input(UUID id,UUID conversationId,int revision,String message,List<AiCoachGateway.Turn> history,UUID athleteId,LocalDate weekStart){}
     private record Work(UUID id,int revision,NutritionTaskRules.State state,Map<String,Object> cached){}
     private final JdbcTemplate jdbc;private final StaffPolicy policy;private final NutritionPreferences preferences;
     private final MealPlanController meals;private final NutritionPlanValidator validator;private final AiCoachGateway gateway;
@@ -85,6 +85,7 @@ public class AiNutritionTasks {
         Work work=begin(actor,input);if(work.cached()!=null)return work.cached();var state=work.state();state.lastError=null;
         try{
             var matches=findClients(actor,input.message());
+            if(input.athleteId()!=null){var chosen=context(actor,input.athleteId());if(!matches.isEmpty()&&matches.stream().noneMatch(c->c.get("id").equals(input.athleteId().toString())))throw new IllegalArgumentException("De opdracht noemt een andere klant dan de geselecteerde klant. Kies eerst de juiste klant.");matches=List.of(Map.of("id",input.athleteId().toString(),"name",chosen.get("name").toString()));}
             var explicitName=Pattern.compile("(?iu)\\bvoor\\s+([\\p{L}][\\p{L}'’-]*)").matcher(input.message());
             if(matches.isEmpty()&&explicitName.find()&&!Set.of("de","het","een","volgende","komende","deze","die","hem","haar","mij","mezelf","elke","iedere","alle","mijn","zijn").contains(explicitName.group(1).toLowerCase(Locale.ROOT))){NutritionTaskRules.merge(state,input.message(),clock);state.status="clarification";return finish(actor,input,work,"Ik vind geen bevoegde klant met die naam. Wat is de volledige klantnaam? Er is geen plan voor een andere klant gemaakt.");}
             if(matches.isEmpty()&&state.clientId==null&&input.history()!=null)for(int i=input.history().size()-1;i>=0;i--){var earlier=findClients(actor,input.history().get(i).content());if(!earlier.isEmpty()){matches=earlier;break;}}
@@ -94,6 +95,7 @@ public class AiNutritionTasks {
                 state.clientId=selected;state.clientName=matches.getFirst().get("name");state.candidates=List.of();
             }
             NutritionTaskRules.merge(state,input.message(),clock);
+            if(input.weekStart()!=null){if(input.weekStart().getDayOfWeek()!=DayOfWeek.MONDAY)throw new IllegalArgumentException("Kies de maandag van de schemaweek.");state.weekStart=input.weekStart();}
             if(state.clientId==null){state.status="clarification";return finish(actor,input,work,"Voor welke klant wil je het voedingsschema maken? Geef de volledige naam.");}
             var ctx=context(actor,state.clientId);state.consentVersion=(Integer)ctx.get("consentVersion");
             state.targets=NutritionTaskRules.targets(state,(Map<String,Object>)ctx.get("savedTargets"));

@@ -78,3 +78,32 @@
 .meal-plan-day > summary small { display:block; color:var(--muted); font-size:.8125rem; line-height:1.4; margin-top:.2rem; }
 
 .meal-plan-ai-settings { display:inline-flex; min-height:44px; align-items:center; margin-inline-start:.75rem; color:var(--accent-text); }
+
+/* Client-first nutrition: mounted forms keep their drafts while destinations stay focused. */
+#coach-nutrition[data-nutrition-panel] > :where(.nutrition-athlete-bar,#nutrition-athlete-name,#nutrition-saved-state,.nutrition-layout,.coach-food-diary,#coach-meal-plans,.nutrition-client-history,.sample-notice) { display:none; }
+#coach-nutrition[data-nutrition-panel="pick"] > .nutrition-athlete-bar { display:flex; flex-wrap:wrap; gap:1rem; }
+#coach-nutrition[data-nutrition-panel="pick"] > .nutrition-athlete-bar > label { flex:1 1 15rem; min-width:0; }
+#coach-nutrition[data-nutrition-panel="manual"] > #coach-meal-plans:not([hidden]),
+#coach-nutrition[data-nutrition-panel="ai"] > #coach-meal-plans:not([hidden]),
+#coach-nutrition[data-nutrition-panel="history"] > .nutrition-client-history,
+#coach-nutrition[data-nutrition-panel="diary"] > .coach-food-diary { display:block; }
+#coach-nutrition[data-nutrition-panel="calculator"] > .nutrition-layout { display:grid; }
+#coach-nutrition[data-nutrition-panel="calculator"] > #nutrition-saved-state { display:block; }
+#coach-meal-plans[data-editor-mode="manual"] > .meal-plan-ai { display:none; }
+.meal-plan-assignment { margin-block:2rem 0; padding-block:1.25rem; border-top:1px solid var(--border); }
+.meal-plan-assignment h4 { margin:0 0 .75rem; }
+.nutrition-history-row { display:flex; align-items:center; flex-wrap:wrap; gap:.75rem; padding-block:1rem; border-bottom:1px solid var(--border); }
+.nutrition-history-row > div { flex:1 1 15rem; min-width:0; }
+.nutrition-history-row h4 { margin:0 0 .35rem; overflow-wrap:anywhere; }
+.nutrition-history-row p { margin:0; color:var(--muted); }
+#nutrition[data-nutrition-own-panel] > [data-nutrition-own],
+#nutrition[data-nutrition-own-panel] > [data-coach-nutrition-nav] { display:none; }
+#nutrition[data-nutrition-own-panel="targets"] > [data-nutrition-own="targets"]:not([hidden]),
+#nutrition[data-nutrition-own-panel="plan"] > [data-nutrition-own="plan"]:not([hidden]),
+#nutrition[data-nutrition-own-panel="diary"] > [data-nutrition-own="diary"]:not([hidden]) { display:block; }
+.nutrition-option-grid > [hidden] { display:none; }
+@media(max-width:36rem) {
+    .nutrition-option-grid { grid-template-columns:minmax(0,1fr); }
+    .nutrition-option { min-height:6rem; }
+    .nutrition-history-row > button { flex:1 1 10rem; }
+}

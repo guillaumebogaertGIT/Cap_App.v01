@@ -41,7 +41,7 @@ document.addEventListener('DOMContentLoaded',()=>{
     for(const id of ['nutrition','coach-nutrition']){
         const nav=document.createElement('nav');nav.className='club-actions';nav.setAttribute('aria-label','Voedingsweergave');
         const own=document.createElement('a');own.href='#nutrition';own.className='secondary-button';own.textContent='Mijn voeding';nav.append(own);
-        if(!real||window.capCan('NUTRITION_MANAGE')){const clients=document.createElement('a');clients.href='#coach-nutrition';clients.className='secondary-button';clients.textContent='Voeding sporters';nav.append(clients);}
+        if(!real||window.capCan('NUTRITION_MANAGE')){const clients=document.createElement('a');clients.href='#coach-nutrition';clients.className='secondary-button';clients.textContent='Klantvoeding';nav.append(clients);}
         document.getElementById(id).querySelector('header').after(nav);nav.dataset.coachNutritionNav='';
     }
     async function refresh(){
