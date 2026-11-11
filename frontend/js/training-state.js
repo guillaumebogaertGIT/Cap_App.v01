@@ -1,0 +1,9 @@
+// Pure draft/timer rules shared by the player and persistence tests.
+(function(root){const api={
+    valid(set){return set.reps!==''&&set.kg!==''&&set.kg!=null&&Number.isInteger(Number(set.reps))&&Number(set.reps)>0&&Number(set.reps)<=1000&&Number.isFinite(Number(set.kg))&&Number(set.kg)>=0&&Number(set.kg)<=2000&&(set.rir==null||set.rir===''||Number.isInteger(Number(set.rir))&&Number(set.rir)>=0&&Number(set.rir)<=10);},
+    remaining(deadline,now=Date.now()){return Math.max(0,Math.ceil(((deadline||0)-now)/1000));},
+    normalize(draft){if(!draft)return null;draft.ui||={exerciseIndex:0,completed:draft.exercises.map(e=>e.sets.map(s=>api.valid(s))),restUntil:null};draft.ui.exerciseIndex=Math.max(0,Math.min(draft.exercises.length-1,draft.ui.exerciseIndex||0));draft.ui.completed=draft.exercises.map((e,i)=>e.sets.map((s,j)=>Boolean(draft.ui.completed?.[i]?.[j])&&api.valid(s)));return draft;},
+    payload(draft){return draft.exercises.map(e=>({exerciseIndex:e.exerciseIndex,sets:e.sets.map(s=>({reps:s.reps===''?0:Number(s.reps),kg:s.kg===''||s.kg==null?null:Number(s.kg),rir:s.rir===''||s.rir==null?null:Number(s.rir)}))}));},
+    finished(draft){return api.payload(draft).map((e,i)=>({...e,sets:e.sets.filter((_,j)=>draft.ui.completed[i][j])}));},
+    reconcile(server,local){if(!server)return{draft:null,recovery:null};if(!local||local.id!==server.id)return{draft:api.normalize(server),recovery:null};if(local.localPending===false&&local.version!==server.version)return{draft:api.normalize(server),recovery:null};if(local.version===server.version)return{draft:api.normalize(local),recovery:null};return{draft:api.normalize(server),recovery:api.normalize(local)};}
+};if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.capTrainingState=api;})(typeof window==='undefined'?globalThis:window);

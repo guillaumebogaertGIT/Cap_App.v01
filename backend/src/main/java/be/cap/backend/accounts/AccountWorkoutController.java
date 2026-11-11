@@ -38,12 +38,12 @@ class AccountWorkoutController {
         return service.finish(new TrainingStore.Completion(input.id(),null,null,null,input.exercises()),input.version(),user(p));
     }
     record Start(String assignmentId) {}
-    record Progress(String id,int version,List<TrainingStore.ExerciseResult> exercises) {}
+    record Progress(String id,int version,List<TrainingStore.ExerciseResult> exercises,AccountWorkoutService.UiState ui) {}
     @GetMapping("/api/training/active") org.springframework.http.ResponseEntity<AccountWorkoutService.Draft> active(Principal p) throws IOException {
         var draft=service.active(user(p));return draft==null?org.springframework.http.ResponseEntity.noContent().build():org.springframework.http.ResponseEntity.ok(draft);
     }
     @PostMapping("/api/training/active") AccountWorkoutService.Draft start(Principal p,@RequestBody Start input) throws IOException { return service.start(input.assignmentId(),user(p)); }
-    @PutMapping("/api/training/active") AccountWorkoutService.Draft progress(Principal p,@RequestBody Progress input) throws IOException { return service.progress(input.id(),input.version(),input.exercises(),user(p)); }
+    @PutMapping("/api/training/active") AccountWorkoutService.Draft progress(Principal p,@RequestBody Progress input) throws IOException { return service.progress(input.id(),input.version(),input.exercises(),input.ui(),user(p)); }
     @DeleteMapping("/api/training/active") @ResponseStatus(HttpStatus.NO_CONTENT) void discard(Principal p) throws IOException { service.discard(user(p)); }
     @GetMapping("/api/session-workouts") List<AccountWorkoutService.SessionWorkout> sessions(Principal p) { return service.sessionWorkouts(user(p)); }
     record Attachment(String workoutId) {}

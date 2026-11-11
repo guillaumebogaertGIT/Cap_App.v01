@@ -21,6 +21,7 @@ window.capWorkoutView = {
         });
         return blocks;
     },
+    compact(e){const sets=this.setTargets(e);const same=sets.length&&sets.every(s=>s.reps===sets[0].reps&&s.targetKg===sets[0].targetKg&&s.loadMode===sets[0].loadMode&&s.loadValue===sets[0].loadValue);return (same?sets.length+' × '+this.targetText(sets[0]):sets.map((s,i)=>(i+1)+': '+this.targetText(s)).join(' / '))+(e.restSeconds!=null?' · Rust '+e.restSeconds+' s':'')+(e.tempo?' · Tempo '+e.tempo:'');},
     render(exercises, onRemove = null) {
         const container = document.createElement('div'); container.className = 'workout-blocks';
         this.blocks(exercises).forEach(block => {
@@ -30,12 +31,7 @@ window.capWorkoutView = {
             block.items.forEach(({ exercise: e, index }) => {
                 const item = document.createElement('li');
                 item.textContent = `${e.name} · ${e.sets} × ${e.reps}${e.targetKg != null ? ` · ${e.targetKg} kg` : ''}${e.restSeconds != null ? ` · Rust ${e.restSeconds} s` : ''}${e.tempo ? ` · Tempo ${e.tempo}` : ''}`;
-                if (e.setPlan?.length) {
-                    item.textContent = e.name + (e.restSeconds != null ? ' · Rust ' + e.restSeconds + ' s' : '') + (e.tempo ? ' · Tempo ' + e.tempo : '');
-                    const sets = document.createElement('ul');
-                    this.setTargets(e).forEach((set, i) => { const line = document.createElement('li'); line.textContent = 'Set ' + (i + 1) + ': ' + this.targetText(set); sets.append(line); });
-                    item.append(sets);
-                }
+                const name=document.createElement('strong');name.textContent=e.name;const targets=document.createElement('span');targets.textContent=this.compact(e);item.replaceChildren(name,targets);
                 if(e.rir!=null)item.append(document.createTextNode(' · Doel-RIR '+e.rir));
                 window.capExerciseVideo.append(item, e.name);
                 if (onRemove) {

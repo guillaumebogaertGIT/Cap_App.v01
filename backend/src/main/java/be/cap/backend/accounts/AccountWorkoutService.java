@@ -174,7 +174,10 @@ public class AccountWorkoutService {
         jdbc.update("DELETE FROM training_draft WHERE athlete_id=?",user.id());
         return finished;
     }
-    public record Draft(String id,Workout planned,String startedAt,String assignmentId,List<TrainingStore.ExerciseResult> exercises,int version) {}
+    public record UiState(int exerciseIndex,List<List<Boolean>> completed,Long restUntil) {}
+    public record Draft(String id,Workout planned,String startedAt,String assignmentId,List<TrainingStore.ExerciseResult> exercises,int version,UiState ui) {
+        public Draft(String id,Workout planned,String startedAt,String assignmentId,List<TrainingStore.ExerciseResult> exercises,int version){this(id,planned,startedAt,assignmentId,exercises,version,null);}
+    }
     private Draft active(AccountService.Account user,boolean lock) throws IOException {
         if(!user.role().equals("ATHLETE")) throw new ResponseStatusException(HttpStatus.FORBIDDEN);
         var rows=jdbc.query("SELECT payload FROM training_draft WHERE athlete_id=?"+(lock?" FOR UPDATE":""),(row,index)->row.getString(1),user.id());
@@ -204,6 +207,9 @@ public class AccountWorkoutService {
         return draft;
     }
     public Draft progress(String id,int version,List<TrainingStore.ExerciseResult> exercises,AccountService.Account user) throws IOException {
+        return progress(id,version,exercises,null,user);
+    }
+    public Draft progress(String id,int version,List<TrainingStore.ExerciseResult> exercises,UiState ui,AccountService.Account user) throws IOException {
         var draft=active(user,true);
         if(draft==null||!draft.id().equals(id)) throw missing();
         if(version!=draft.version()) throw new ResponseStatusException(HttpStatus.CONFLICT,"Deze training is op een ander scherm gewijzigd. Vernieuw de pagina.");
@@ -215,7 +221,11 @@ public class AccountWorkoutService {
             for(var set:exercise.sets()) if(set==null||set.reps()<0||set.reps()>1000||set.kg()!=null&&(!Double.isFinite(set.kg())||set.kg()<0||set.kg()>2000)||set.rir()!=null&&(set.rir()<0||set.rir()>10))
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"Controleer gewicht, herhalingen en RIR.");
         }
-        var updated=new Draft(draft.id(),draft.planned(),draft.startedAt(),draft.assignmentId(),exercises,version+1);
+        if(ui!=null){
+            if(ui.exerciseIndex()<0||ui.exerciseIndex()>=exercises.size()||ui.completed()==null||ui.completed().size()!=exercises.size()||ui.restUntil()!=null&&(ui.restUntil()<0||ui.restUntil()>System.currentTimeMillis()+86400000L))throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"Controleer de trainingsvoortgang en rusttimer.");
+            for(int i=0;i<exercises.size();i++){final int index=i;var result=exercises.stream().filter(e->e.exerciseIndex()==index).findFirst().orElseThrow();var flags=ui.completed().get(i);if(flags==null||flags.size()!=result.sets().size()||flags.stream().anyMatch(java.util.Objects::isNull))throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"Controleer de setstatus.");for(int j=0;j<flags.size();j++)if(flags.get(j)&&(result.sets().get(j).reps()<1||result.sets().get(j).kg()==null))throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"Vul herhalingen en gewicht in voordat je een set voltooit.");}
+        }
+        var updated=new Draft(draft.id(),draft.planned(),draft.startedAt(),draft.assignmentId(),exercises,version+1,ui);
         jdbc.update("UPDATE training_draft SET payload=? WHERE athlete_id=?",mapper.writeValueAsString(updated),user.id());return updated;
     }
     public void discard(AccountService.Account user) throws IOException { active(user,true);jdbc.update("DELETE FROM training_draft WHERE athlete_id=?",user.id()); }

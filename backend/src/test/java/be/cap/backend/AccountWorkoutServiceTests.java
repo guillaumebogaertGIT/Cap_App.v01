@@ -25,6 +25,15 @@ class AccountWorkoutServiceTests {
     String date(){return LocalDate.now(ZoneId.of("Europe/Brussels")).plusDays(2).toString();}
     Workout template(String name){return new Workout(null,name,"",List.of(new Workout.Exercise("Squat",1,5,"fixed",40.0,null,null)),"","","","lower-body");}
     TrainingStore.Completion completion(AccountWorkoutService.Draft draft,double kg){return new TrainingStore.Completion(draft.id(),"forged-client-id",null,null,List.of(new TrainingStore.ExerciseResult(0,List.of(new TrainingStore.SetResult(5,kg)))));}
+    @Test void focusedDraftUiPersistsWithActualResultsAndRejectsInvalidOrStaleStates() throws Exception {
+        var user=athlete();var saved=workouts.save(null,template("Focused workout"),null,coach());workouts.assign(saved.id(),user.id().toString(),date(),null,coach());var draft=workouts.start(workouts.assignments(user).getFirst().assignmentId(),user);
+        var results=List.of(new TrainingStore.ExerciseResult(0,List.of(new TrainingStore.SetResult(5,40.0,2))));var ui=new AccountWorkoutService.UiState(0,List.of(List.of(true)),System.currentTimeMillis()+90000);
+        var updated=workouts.progress(draft.id(),draft.version(),results,ui,user);assertEquals(ui,workouts.active(user).ui());assertEquals(40.0,workouts.active(user).exercises().getFirst().sets().getFirst().kg());
+        assertThrows(ResponseStatusException.class,()->workouts.progress(draft.id(),draft.version(),results,ui,user));
+        assertThrows(ResponseStatusException.class,()->workouts.progress(draft.id(),updated.version(),results,new AccountWorkoutService.UiState(2,List.of(List.of(true)),null),user));
+        var blank=List.of(new TrainingStore.ExerciseResult(0,List.of(new TrainingStore.SetResult(0,null,null))));assertThrows(ResponseStatusException.class,()->workouts.progress(draft.id(),updated.version(),blank,ui,user));
+        var finished=workouts.finish(completion(updated,40),updated.version(),user);assertEquals(finished.id(),workouts.finish(completion(updated,40),updated.version(),user).id());assertNull(workouts.active(user));
+    }
     @Test void assignmentsDraftsHistoryAndRecordsBelongToRealAthlete() throws Exception {
         var first=athlete();var other=athlete();
         var saved=workouts.save(null,template("Own workout"),null,coach());
