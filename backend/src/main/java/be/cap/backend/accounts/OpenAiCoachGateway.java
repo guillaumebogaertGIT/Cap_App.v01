@@ -57,6 +57,8 @@ public class OpenAiCoachGateway implements AiCoachGateway {
     private String jsonResources(Map<String,Object> resources){return mapper.writeValueAsString(resources);}
     Map<String,Object> nutritionPayload(String instruction,Map<String,Object> resources){
         var body=new LinkedHashMap<>(payload(List.of(new Turn("user",instruction))));
+        // A single text input avoids message-array serialization differences on this endpoint.
+        body.put("input",instruction);
         body.put("instructions",body.get("instructions")+"""
 
             NUTRITION PLANNER DRAFT MODE. Respond ONLY with JSON {"answer":"short Dutch explanation or clarification","patches":[]}.

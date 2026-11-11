@@ -14,26 +14,26 @@ document.addEventListener('DOMContentLoaded',()=>{
     const selected=()=>window.capNutritionTargets?.selectedAthlete();
     const preview=window.capStorage.map('meal-plans-v1');
     const editor=node('section',null,'meal-plan-workspace');editor.id='coach-meal-plans';
-    editor.append(node('h3','Voedingsschema'),node('p','Maak een concept met AI of vul je schema zelf in. Controleer porties, allergieën en geschatte voedingswaarden vóór je publiceert.','sample-notice'));
+    editor.append(node('h3','Voedingsschema'));
     const clientSummary=node('p','Kies een klant om te beginnen.','meal-plan-client-summary');clientSummary.setAttribute('role','status');editor.append(clientSummary);
     const targetPanel=node('details',null,'meal-plan-targets');targetPanel.append(node('summary','Dagdoelen bekijken of aanpassen'));const targetForm=node('form',null,'club-form'),targetFields=node('div',null,'meal-plan-target-fields'),targetInputs={};
     for(const [key,label,min] of [['calories','Calorieën (kcal)',1],['proteinG','Eiwit (g)',0],['carbsG','Koolhydraten (g)',0],['fatG','Vet (g)',0],['waterMl','Water (ml)',0]]){const wrap=node('label',label),input=node('input');input.type='number';input.min=String(min);input.max='100000';input.step='any';input.required=true;input.inputMode='decimal';wrap.append(input);targetFields.append(wrap);targetInputs[key]=input;}
     const targetSave=node('button','Dagdoelen bewaren','secondary-button');targetSave.type='submit';const targetStatus=node('p');targetStatus.setAttribute('role','status');targetForm.append(targetFields,targetSave,targetStatus);targetPanel.append(targetForm);editor.append(targetPanel);
     const aiPanel=node('section',null,'meal-plan-ai');aiPanel.setAttribute('aria-labelledby','meal-plan-ai-title');
     const aiHeading=node('h4','Maak voedingsschema met AI');aiHeading.id='meal-plan-ai-title';
-    const aiLabel=node('label','Wat wil je maken of aanpassen?'),aiRequest=node('textarea');aiRequest.rows=3;aiRequest.maxLength=2000;aiRequest.placeholder='Bijv. een weekmenu met 2.800 kcal, veel eiwitten en eenvoudige maaltijden';aiLabel.append(aiRequest);
+    const aiLabel=node('label','Wat wil je maken?'),aiRequest=node('textarea');aiRequest.rows=3;aiRequest.maxLength=2000;aiRequest.placeholder='Bijv. een weekmenu met 2.800 kcal, veel eiwitten en eenvoudige maaltijden';aiLabel.append(aiRequest);
     const aiControls=node('div',null,'meal-plan-ai-controls');
     const scopeLabel=node('label','Aanpassen'),aiScope=node('select');for(const [value,label] of [['edit','Alleen gevraagde wijzigingen'],['week','Hele week vervangen'],['day','Eén dag vervangen'],['meal','Eén maaltijd vervangen']])aiScope.add(new Option(label,value));scopeLabel.append(aiScope);
     const dayLabel=node('label','Dag'),aiDay=node('select');days.forEach((name,i)=>aiDay.add(new Option(name,String(i))));dayLabel.append(aiDay);
     const mealLabel=node('label','Maaltijd'),aiMeal=node('select');mealLabel.append(aiMeal);aiControls.append(scopeLabel,dayLabel,mealLabel);
-    const aiOptions=node('details',null,'meal-plan-ai-options');aiOptions.append(node('summary','Profiel en allergieën delen'));
-    const profileChoice=node('label',null,'meal-plan-ai-choice'),shareProfile=node('input');shareProfile.type='checkbox';profileChoice.append(shareProfile,node('span','Deel het doel, de ervaring, dagdoelen en geplande lessen van deze klant met OpenAI zolang deze optie aanstaat.'));
+    const aiOptions=node('details',null,'meal-plan-ai-options');aiOptions.append(node('summary','Meer opties'),aiControls);
+    const profileChoice=node('label',null,'meal-plan-ai-choice'),shareProfile=node('input');shareProfile.type='checkbox';profileChoice.append(shareProfile,node('span','Deel doel, ervaring, dagdoelen en geplande lessen met OpenAI zolang dit aanstaat.'));
     const allergyLabel=node('label','Bekende allergieën of dieetbeperkingen'),allergies=node('textarea');allergies.rows=2;allergies.maxLength=500;allergies.placeholder='Vraag dit eerst na; leeg betekent onbekend';allergyLabel.append(allergies);
-    const allergyChoice=node('label',null,'meal-plan-ai-choice'),shareAllergies=node('input');shareAllergies.type='checkbox';allergyChoice.append(shareAllergies,node('span','Ik wil deze allergie-informatie voor deze aanvraag met OpenAI delen.'));
-    aiOptions.append(profileChoice,allergyLabel,allergyChoice,node('p','Deze keuzes gelden voor dit voorstel. Controleer ingrediënten en bereidingswijze altijd zelf.','sample-notice'));
-    const aiRun=button('Maak voedingsschema met AI',()=>generatePlan());aiRun.className='primary-button';const aiMessage=node('p');aiMessage.setAttribute('role','status');
+    const allergyChoice=node('label',null,'meal-plan-ai-choice'),shareAllergies=node('input');shareAllergies.type='checkbox';allergyChoice.append(shareAllergies,node('span','Deel deze allergieën met OpenAI voor dit voorstel.'));
+    aiOptions.append(profileChoice,allergyLabel,allergyChoice,node('p','Controleer altijd de ingrediënten en allergieën.','sample-notice'));
+    const aiRun=button('Maak voorstel',()=>generatePlan());aiRun.className='primary-button';const aiMessage=node('p');aiMessage.setAttribute('role','status');
     const aiSettings=node('a','AI-instellingen');aiSettings.href='#coach-glenn';aiSettings.className='meal-plan-ai-settings';
-    aiPanel.append(aiHeading,node('p','Je opdracht en het huidige concept worden voor dit voorstel naar OpenAI gestuurd. Deel allergieën alleen na bevestiging hieronder.','sample-notice'),aiLabel,aiControls,aiOptions,aiRun,aiSettings,aiMessage);editor.append(aiPanel);
+    aiPanel.append(aiHeading,aiLabel,node('p','Je opdracht en concept worden met OpenAI gedeeld.','sample-notice'),aiRun,aiOptions,aiSettings,aiMessage);editor.append(aiPanel);
     const toolbar=node('div',null,'meal-plan-toolbar'),weekLabel=node('label','Week vanaf'),week=node('input');week.type='date';week.value=currentWeek();week.required=true;weekLabel.append(week);
     const refresh=button('Plan laden',()=>loadEditor(true)),templateLabel=node('label','Opgeslagen sjabloon'),templateSelect=node('select');templateSelect.add(new Option('Kies een sjabloon',''));templateLabel.append(templateSelect);
     const useTemplate=button('Gebruik als kopie',()=>{const template=templates.find(t=>t.id===templateSelect.value);if(!template)return;rememberUndo();content=clone(template.content);title.value=content.name;markDirty();renderEditor();});
@@ -66,7 +66,7 @@ document.addEventListener('DOMContentLoaded',()=>{
     let openMeal='';
     function updateAiChoices(){dayLabel.hidden=!['day','meal'].includes(aiScope.value);mealLabel.hidden=aiScope.value!=='meal';const previous=aiMeal.value;aiMeal.replaceChildren();const selectedDay=content.days.find(day=>day.day===Number(aiDay.value));(selectedDay?.meals||[]).forEach((meal,index)=>aiMeal.add(new Option(meal.name||'Maaltijd '+(index+1),String(index))));if([...aiMeal.options].some(option=>option.value===previous))aiMeal.value=previous;}
     aiScope.onchange=updateAiChoices;aiDay.onchange=updateAiChoices;
-    function quickAi(day,meal){aiScope.value=meal==null?'day':'meal';aiDay.value=String(day);updateAiChoices();if(meal!=null)aiMeal.value=String(meal);aiPanel.scrollIntoView({block:'start',behavior:'smooth'});aiRequest.focus();}
+    function quickAi(day,meal){aiOptions.open=true;aiScope.value=meal==null?'day':'meal';aiDay.value=String(day);updateAiChoices();if(meal!=null)aiMeal.value=String(meal);aiPanel.scrollIntoView({block:'start',behavior:'smooth'});aiRequest.focus();}
     function syncAiClient(){const id=selected()?.id||'';if(aiClientId===id)return;aiClientId=id;aiRequest.value='';allergies.value='';shareAllergies.checked=false;shareProfile.checked=false;aiMessage.textContent='';}
     async function loadProfile(){const client=selected(),version=++profileGeneration;dailyTargets=null;for(const input of Object.values(targetInputs))input.value='';targetStatus.textContent='';if(!client){clientSummary.textContent='Kies een klant om te beginnen.';return;}
         clientSummary.textContent=client.name+' · profiel en dagdoelen laden…';
