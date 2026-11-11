@@ -22,6 +22,9 @@ class OpenAiCoachGatewayTests {
         assertFalse(gateway.providerFailure(400,"private provider details").userMessage().contains("private"));
         assertEquals("provider_request/http400/invalid_json_schema/text.format.schema",gateway.providerFailure(400,"{\"error\":{\"code\":\"invalid_json_schema\",\"param\":\"text.format.schema\",\"message\":\"private input\"}}").diagnostic());
         assertEquals("provider_request/http400",gateway.providerFailure(400,"{\"error\":{\"code\":\"private input\",\"param\":\"secret-key\"}}").diagnostic());
+        assertEquals("provider_request/http400/context_length_exceeded/input",gateway.providerFailure(400,"{\"error\":{\"code\":\"context_length_exceeded\",\"param\":\"input\",\"message\":\"private patient data\"}}").diagnostic());
+        assertEquals("provider_request/http400/input_type/input_item",gateway.providerFailure(400,"{\"error\":{\"message\":\"Invalid type: private patient data\",\"param\":\"input[0].content[0].text\"}}").diagnostic());
+        assertEquals("provider_request/http400/context_limit/input",gateway.providerFailure(400,"{\"error\":{\"message\":\"Maximum context length exceeded: private patient data\",\"param\":\"input\"}}").diagnostic());
     }
     @Test void draftSchemaUsesOnlyCatalogAndKeepsPrivacyAndTokenCaps(){
         var payload=new OpenAiCoachGateway("secret").draftPayload(List.of(new AiCoachGateway.Turn("user","Full body")),List.of("Squat","Push-up"));

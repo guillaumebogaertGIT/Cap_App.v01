@@ -93,12 +93,17 @@ public class OpenAiCoachGateway implements AiCoachGateway {
     }
     public String draft(List<Turn> turns,List<String> exercises) throws Exception {return request(draftPayload(turns,exercises));}
     AiCoachFailure providerFailure(int status,String body){
-        String code="",param="";try{var error=mapper.readTree(body).path("error");code=error.path("code").asText();param=error.path("param").asText();}catch(Exception ignored){}
+        String code="",param="",message="";try{var error=mapper.readTree(body).path("error");code=error.path("code").asText();param=error.path("param").asText();message=error.path("message").asText().toLowerCase(Locale.ROOT);}catch(Exception ignored){}
         if(code.equals("insufficient_quota"))return new AiCoachFailure("provider_quota");
         // Only fixed, known API metadata is retained; never copy an error message or arbitrary input value.
         String detail="http"+status;
-        if(Set.of("model_not_found","invalid_json_schema","unsupported_parameter","unsupported_value","invalid_parameter","invalid_value","unknown_parameter").contains(code))detail+="/"+code;
+        if(Set.of("model_not_found","invalid_json_schema","unsupported_parameter","unsupported_value","invalid_parameter","invalid_value","unknown_parameter","context_length_exceeded","string_above_max_length","string_below_min_length","missing_required_parameter","invalid_type","empty_input","content_filter").contains(code))detail+="/"+code;
+        else if(message.contains("context length")||message.contains("context window")||message.contains("maximum context")||message.contains("too many tokens"))detail+="/context_limit";
+        else if(message.contains("moderation")||message.contains("safety system")||message.contains("content policy"))detail+="/content_filter";
+        else if(message.contains("input is required")||message.contains("input must not be empty")||message.contains("input cannot be empty"))detail+="/empty_input";
+        else if(message.contains("invalid type")||message.contains("expected a string")||message.contains("expected an array"))detail+="/input_type";
         if(Set.of("model","text.format","text.format.schema","text.format.type","reasoning","reasoning.effort","max_output_tokens","service_tier","input","store").contains(param))detail+="/"+param;
+        else if(param.matches("input\\[[0-9]{1,3}\\](\\.content(\\[[0-9]{1,3}\\])?(\\.text|\\.type)?|\\.role|\\.type)?"))detail+="/input_item";
         return new AiCoachFailure(switch(status){case 401,403->"provider_key";case 429->"provider_rate";case 400,404,422->"provider_request";default->"provider_unavailable";},detail);
     }
     private String request(Map<String,Object> payload) throws Exception {
