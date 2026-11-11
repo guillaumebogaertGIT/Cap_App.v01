@@ -43,6 +43,14 @@ public class AiCoachController {
         });
     }
     @GetMapping("/nutrition-profile") public ResponseEntity<?> nutritionProfile(Principal p,@RequestParam UUID athleteId){return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(nutritionPlanner.profile(user(p),athleteId));}
+    @PostMapping("/diagnostic") public ResponseEntity<?> diagnostic(Principal p,@RequestBody VersionedDiagnostic input){
+        var actor=user(p);if(!policy.role(actor).equals("OWNER")||!ready(actor))throw error(HttpStatus.FORBIDDEN,"Deze verbindingstest is alleen beschikbaar voor een toegestane beheerder.");
+        if(input==null||input.id()==null)throw error(HttpStatus.BAD_REQUEST,"Testreferentie ontbreekt.");
+        if(!settings.read(actor).values().consent())throw error(HttpStatus.FORBIDDEN,"Schakel Coach Glenn eerst in bij de instellingen.");
+        reserve(actor,input.id());try{String result=gateway.diagnostic();jdbc.update("UPDATE ai_coach_request SET state='completed' WHERE id=?",input.id());return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(Map.of("result",result));}
+        catch(Exception failure){if(failure instanceof InterruptedException)Thread.currentThread().interrupt();jdbc.update("UPDATE ai_coach_request SET state='failed' WHERE id=?",input.id());String result=failure instanceof IllegalStateException&&failure.getMessage()!=null?failure.getMessage():"De verbindingstest is mislukt zonder aanvullende informatie.";return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(Map.of("result",result));}
+    }
+    public record VersionedDiagnostic(UUID id){}
     @PostMapping("/nutrition-draft") public ResponseEntity<?> nutritionDraft(Principal p,@RequestBody AiNutritionPlanner.Input input){
         var user=user(p);if(!ready(user))throw error(HttpStatus.FORBIDDEN,"Coach Glenn is niet beschikbaar voor dit account.");
         var prefs=settings.read(user).values();if(!prefs.consent()||!prefs.coachActions())throw error(HttpStatus.FORBIDDEN,"Schakel Coach Glenn en coachacties in via de instellingen.");

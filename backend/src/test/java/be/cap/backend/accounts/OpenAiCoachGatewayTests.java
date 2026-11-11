@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
 class OpenAiCoachGatewayTests {
+    @Test void syntheticDiagnosticRedactsKeyAndKeepsProviderReason(){var gateway=new OpenAiCoachGateway("sk-test-secret");String safe=gateway.safeSyntheticError(400,"{\"error\":{\"message\":\"Example: sk-test-secret cannot be used\"}}");assertEquals("OpenAI HTTP 400: Example: [verwijderd] cannot be used",safe);assertFalse(safe.contains("sk-test-secret"));}
     @Test void serializedRequestsContainValidInputShapes(){
         var gateway=new OpenAiCoachGateway("test-key");var mapper=tools.jackson.databind.json.JsonMapper.builder().build();
         var chat=mapper.readTree(mapper.writeValueAsString(gateway.payload(List.of(new AiCoachGateway.Turn("user","Hallo")))));

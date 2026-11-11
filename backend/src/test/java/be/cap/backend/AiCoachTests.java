@@ -16,6 +16,16 @@ class AiCoachTests extends AccountApiTests {
     @org.springframework.beans.factory.annotation.Autowired be.cap.backend.accounts.AccountService accounts;
     @org.springframework.beans.factory.annotation.Autowired be.cap.backend.accounts.AccountWorkoutService workouts;
     @BeforeEach void cleanAiLedger(){jdbc.update("DELETE FROM ai_coach_settings");jdbc.update("DELETE FROM ai_coach_action");jdbc.update("DELETE FROM ai_coach_request");jdbc.update("UPDATE ai_coach_budget SET reserved_cents=0 WHERE id=1");}
+    @Test void syntheticDiagnosticRequiresOwnerAndConsentAndReservesBudget() throws Exception {
+        var owner=client();login(owner,"coach@example.test","Coach-test-password-123");when(gateway.configured()).thenReturn(true);when(gateway.diagnostic()).thenReturn("OpenAI HTTP 400: fixed diagnostic");
+        String input=json.writeValueAsString(Map.of("id",UUID.randomUUID()));assertEquals(403,request(owner,"POST","/api/ai-coach/diagnostic",input,csrf(owner),false).statusCode());
+        var settingsBody=json.writeValueAsString(Map.of("version",0,"values",Map.of("consent",true,"ownProfile",false,"ownWorkouts",false,"ownNutrition",false,"ownBookings",false,"ownMealPlan",false,"coachActions",false)));
+        assertEquals(200,request(owner,"PUT","/api/ai-coach/settings",settingsBody,csrf(owner),false).statusCode());
+        assertEquals(403,request(owner,"POST","/api/ai-coach/diagnostic",input,null,false).statusCode());
+        var result=request(owner,"POST","/api/ai-coach/diagnostic",input,csrf(owner),false);assertEquals(200,result.statusCode(),result.body());assertTrue(result.body().contains("fixed diagnostic"));assertEquals(1,jdbc.queryForObject("SELECT reserved_cents FROM ai_coach_budget WHERE id=1",Integer.class));
+        assertEquals(409,request(owner,"POST","/api/ai-coach/diagnostic",input,csrf(owner),false).statusCode());verify(gateway,times(1)).diagnostic();
+        jdbc.update("UPDATE cap_user SET staff_role='INSTRUCTOR' WHERE email='coach@example.test'");try{assertEquals(403,request(owner,"POST","/api/ai-coach/diagnostic",json.writeValueAsString(Map.of("id",UUID.randomUUID())),csrf(owner),false).statusCode());}finally{jdbc.update("UPDATE cap_user SET staff_role='OWNER' WHERE email='coach@example.test'");}
+    }
     @Test void ownContextRequiresOptInAndExcludesOtherUsersAndPrivateFields() throws Exception {
         var coach=accounts.account("coach@example.test");
         var first=accounts.accept(accounts.invite(UUID.randomUUID()+"@example.test",coach.email()).token(),"Private identity one","Athlete-test-password-123");

@@ -71,6 +71,11 @@ public class OpenAiCoachGateway implements AiCoachGateway {
         body.put("max_output_tokens",6000);body.put("text",Map.of("format",Map.of("type","json_object")));return body;
     }
     public String nutritionDraft(String instruction,Map<String,Object> resources) throws Exception {return request(nutritionPayload(instruction,resources));}
+    public String diagnostic() throws Exception {
+        // Fixed synthetic input: no account context, conversation or client records.
+        var payload=actionPayload(List.of(new Turn("user","Hallo")),Map.of(),"");
+        request(payload,true);return "De testaanvraag is door OpenAI geaccepteerd.";
+    }
     public String propose(List<Turn> turns,Map<String,Object> resources,String context) throws Exception {return request(actionPayload(turns,resources,context));}
     public String draft(List<Turn> turns,List<String> exercises,String context) throws Exception {return request(withContext(draftPayload(turns,exercises),context));}
     Map<String,Object> draftPayload(List<Turn> turns,List<String> exercises){
@@ -106,7 +111,8 @@ public class OpenAiCoachGateway implements AiCoachGateway {
         else if(param.matches("input\\[[0-9]{1,3}\\](\\.content(\\[[0-9]{1,3}\\])?(\\.text|\\.type)?|\\.role|\\.type)?"))detail+="/input_item";
         return new AiCoachFailure(switch(status){case 401,403->"provider_key";case 429->"provider_rate";case 400,404,422->"provider_request";default->"provider_unavailable";},detail);
     }
-    private String request(Map<String,Object> payload) throws Exception {
+    private String request(Map<String,Object> payload) throws Exception {return request(payload,false);}
+    private String request(Map<String,Object> payload,boolean syntheticDiagnostic) throws Exception {
         String body=mapper.writeValueAsString(payload);
         // Conservative fixed-cent reservation still covers this bounded text-only request.
         if(body.getBytes(StandardCharsets.UTF_8).length>40000)throw new IllegalStateException("AI request too large");
@@ -117,7 +123,7 @@ public class OpenAiCoachGateway implements AiCoachGateway {
         var response=client.send(request,HttpResponse.BodyHandlers.ofInputStream());
         try(var stream=response.body()){
             byte[] bytes=stream.readNBytes(65537);
-            if(response.statusCode()!=200)throw providerFailure(response.statusCode(),new String(bytes,StandardCharsets.UTF_8));
+            if(response.statusCode()!=200){String failureBody=new String(bytes,StandardCharsets.UTF_8);if(syntheticDiagnostic)throw new IllegalStateException(safeSyntheticError(response.statusCode(),failureBody));throw providerFailure(response.statusCode(),failureBody);}
             if(bytes.length>65536)throw new AiCoachFailure("provider_response_size");
             var root=mapper.readTree(new String(bytes,StandardCharsets.UTF_8));
             if(!root.path("status").asText().equals("completed"))throw new AiCoachFailure("provider_incomplete");
@@ -129,5 +135,13 @@ public class OpenAiCoachGateway implements AiCoachGateway {
             }
             String answer=output.toString().trim();if(answer.isBlank()||answer.length()>48000)throw new IllegalStateException("AI empty");return answer;
         }
+    }
+    String safeSyntheticError(int status,String body){
+        String message;try{message=mapper.readTree(body).path("error").path("message").asText();}catch(Exception ignored){message="";}
+        if(message.isBlank())return "OpenAI gaf HTTP "+status+" zonder verdere toelichting.";
+        // This method is only used with the fixed synthetic payload above, never with user data.
+        if(!key.isBlank())message=message.replace(key,"[verwijderd]");
+        message=message.replaceAll("(?i)sk-[a-z0-9_-]+","[verwijderd]").replaceAll("[\\p{Cntrl}&&[^\\n\\t]]"," ");
+        return "OpenAI HTTP "+status+": "+message.substring(0,Math.min(message.length(),600));
     }
 }

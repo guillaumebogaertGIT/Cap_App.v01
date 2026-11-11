@@ -10,5 +10,6 @@ public interface AiCoachGateway {
     default String draft(List<Turn> turns,List<String> exercises,String context) throws Exception {return draft(turns,exercises);}
     default String draft(List<Turn> turns,List<String> exercises) throws Exception {throw new UnsupportedOperationException();}
     default String nutritionDraft(String instruction,java.util.Map<String,Object> resources) throws Exception {throw new UnsupportedOperationException();}
+    default String diagnostic() throws Exception {throw new UnsupportedOperationException();}
     default String propose(List<Turn> turns,java.util.Map<String,Object> resources,String context) throws Exception {throw new UnsupportedOperationException();}
 }
