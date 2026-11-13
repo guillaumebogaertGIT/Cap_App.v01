@@ -187,10 +187,11 @@
         sessionWorkouts.replaceChildren();
         sessionWorkouts.hidden = coach();
         if (coach()) return;
-        const heading = element('h3', 'Mijn geboekte sessies');
+        const selectedDay=window.capWorkoutDate||window.capAgenda.today();
+        const heading = element('h3', 'Mijn groepssessies op deze dag');
         heading.id = 'booked-session-workouts-title';
         sessionWorkouts.append(heading);
-        const sessions = data.sessions.filter(session => visibleSession(session) && session.type !== 'Open gym' && !session.cancelled && !past({ ...session, start: session.end })
+        const sessions = data.sessions.filter(session => visibleSession(session) && session.type !== 'Open gym' && !session.cancelled && session.date===selectedDay
             && bookingsFor(session).some(ownBooking))
             .sort((a, b) => `${a.date}${a.start}`.localeCompare(`${b.date}${b.start}`));
         const list = element('div', undefined, 'compact-session-list');
@@ -206,7 +207,8 @@
             if (real && session.workoutSnapshot) card.append(button('Training starten', () => window.capTraining.start({ ...session.workoutSnapshot, assignmentId: 'session:' + session.id })));
             list.append(card);
         });
-        if (!sessions.length) list.append(element('p', 'Nog geen komende sessies geboekt. Bekijk eerst het programma in Planning en schrijf je in.', 'club-empty'));
+        if (!sessions.length) list.append(element('p', 'Geen groepssessies geboekt op deze dag.', 'club-empty'));
+        document.dispatchEvent(new CustomEvent('cap:workout-bookings',{detail:{date:selectedDay,count:sessions.length}}));
         sessionWorkouts.append(list);
         if (sessions.length > visibleSessionLimit) {
             sessionWorkouts.append(button(`Meer sessies tonen (${sessions.length - visibleSessionLimit})`, () => { visibleSessionLimit += 6; renderSessionWorkouts(); }));
@@ -519,6 +521,7 @@
     $('new-product').addEventListener('click', () => openProduct());
     ['booking-filter', 'product-filter'].forEach((id) => $(id).addEventListener('change', render));
     document.addEventListener('cap:viewchange', render);
+    document.addEventListener('cap:workout-day',renderSessionWorkouts);
     window.capClub = {
         athleteSessions() {
             if (coach() || !window.capAccess.signedIn) return [];

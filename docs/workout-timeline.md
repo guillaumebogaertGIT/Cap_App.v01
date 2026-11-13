@@ -1,5 +1,11 @@
 # Athlete workout timeline
 
+November 13 self-planning follow-up (local): empty personal days offer Workout toevoegen. Picker reads only the authenticated athlete's existing unfinished, unscheduled weekly assignments and sorts by block/week end ascending. Shows deadline and allowed week; choosing outside the assigned week or an active workout is disabled. Reuses owned PUT /workout-assignments/{id}/schedule; successful save reloads the selected day, errors remain in the dialog. No duplication or copying of coach templates. Current blocks are the existing weekStart-to-six-days-later model; arbitrary multiweek deadlines are not added.
+
+Booked session rendering now follows the same selected date through cap:workout-day; actual owned non-cancelled bookings display existing session name/time/program and training action. Other dates are excluded, including their empty-state effects. cap:workout-bookings suppresses the contradictory no-workouts message on a booked-session day. Existing private booked sessions remain supported alongside groups. Browser checked schedule persistence, earliest-first ordering, out-of-week disabled choice, today/tomorrow/no-booking filtering and five widths without page/dialog overflow. Existing6 Node tests, syntax/diff and detector passed. No backend changes, real account writes or push.
+
+November 13 local follow-up: Workouts now opens on the current Brussels day on phone and laptop, without falling forward/back to another assignment. Day arrows step one calendar day; date/calendar control opens a date chooser and assigned-day list. Multiple assignments on a day are all shown; completed ones remain visible. Empty today says "Geen workouts vandaag". Weekly undated assignments remain under "Nog te plannen" with existing day-planning action. Reentering Workouts resets to today; in-page refresh retains chosen date. Old athlete week browser hidden; coach library unchanged. Browser checked empty tomorrow, only-tomorrow/no-today, assigned-day selection, custom date and route reentry, plus no overflow360/390/430/768/1440. JavaScript syntax, scoped diff and detector passed. No backend/data changes or push.
+
 November 11, 2026: local implementation, not pushed or deployed.
 
 ## Flow and files

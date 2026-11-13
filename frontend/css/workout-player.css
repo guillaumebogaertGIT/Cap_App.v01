@@ -62,6 +62,27 @@
 .training-session-date a {display:inline-flex;align-items:center;min-height:44px;}
 .workout-day-overview h3 {font-size:1.35rem;margin:.5rem 0;}
 .workout-day-status {font-size:.85rem;color:var(--muted);}
+.workout-calendar-nav {max-width:52rem;gap:.35rem;}
+.workout-date-control {display:inline-flex;align-items:center;justify-content:center;gap:.5rem;min-width:44px;min-height:44px;padding:.5rem;}
+.workout-date-control svg {width:21px;height:21px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linejoin:round;stroke-linecap:round;flex-shrink:0;}
+.workout-calendar-open {flex:1;min-width:0;}
+.workout-calendar-open strong {font-size:.88rem;overflow-wrap:anywhere;}
+.workout-today {min-height:44px;margin-bottom:.75rem;}
+.workout-day-empty {padding:1.5rem 0 2rem;}
+.workout-day-empty h3 {margin:.5rem 0;font-size:1.2rem;}
+.workout-day-empty p {color:var(--muted);font-size:.9rem;}
+.workout-day-history {display:inline-flex;align-items:center;min-height:44px;margin-top:1rem;}
+.workout-calendar-dialog {width:min(92vw,36rem);max-height:85dvh;overflow:auto;}
+.workout-calendar-dates {display:flex;flex-direction:column;gap:.25rem;}
+.workout-calendar-date {display:flex;flex-direction:column;align-items:flex-start;gap:.3rem;width:100%;min-height:56px;padding:.7rem .5rem;text-align:left;background:var(--surface);color:var(--text);border:0;border-bottom:1px solid var(--border);border-radius:0;}
+.workout-calendar-date span {font-size:.85rem;color:var(--muted);overflow-wrap:anywhere;}
+.workout-calendar-date[aria-current="date"] {background:var(--highlight-bg,var(--surface));}
+.workout-calendar-unplanned {padding-block:.5rem;border-bottom:1px solid var(--border);}
+.workout-calendar-unplanned button {min-height:44px;}
+.workout-picker-item {padding:1rem 0;border-bottom:1px solid var(--border);}
+.workout-picker-item h4 {margin:0 0 .4rem;}
+.workout-picker-item p {font-size:.85rem;margin:.35rem 0;color:var(--muted);}
+.workout-picker-item button {min-height:44px;margin-top:.5rem;}
 body.training-focus #training>.dashboard-header,body.training-focus #training>.sample-notice {display:none;}
 body.training-focus #training>.club-toolbar,body.training-focus #training>#training-records,body.training-focus #training>#training-history,body.training-focus #training>h3 {display:none;}
 .training-session-heading {margin:0;}
