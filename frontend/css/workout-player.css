@@ -1,4 +1,8 @@
 /* A compact training timeline; CAP tokens keep both themes and the shared shell. */
+@media(max-width:800px) {
+    body.workout-zoom-locked {touch-action:pan-y;}
+    body.workout-zoom-locked :is(input,select,textarea) {font-size:16px;}
+}
 #active-training {max-width:none;}
 .workout-timeline {list-style:none;margin:0;padding:0;}
 .workout-timeline li {position:relative;--block-tone:var(--accent,#f5a719);}

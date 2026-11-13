@@ -7,5 +7,11 @@ document.addEventListener('DOMContentLoaded',()=>{
     function keyboard(){const viewport=window.visualViewport;document.body.classList.toggle('keyboard-open',media.matches&&Boolean(viewport)&&window.innerHeight-viewport.height>140&&document.activeElement.matches('input,textarea,select'));}
     function drawMenu(){if(!media.matches)return;const open=menu.getAttribute('aria-expanded')==='true';menu.innerHTML='<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="'+(open?'m6 6 12 12M18 6 6 18':'M4 6h16M4 12h16M4 18h16')+'"/></svg>';menu.setAttribute('aria-label',open?'Menu sluiten':'Menu openen');}
     new MutationObserver(drawMenu).observe(menu,{attributes:true,attributeFilter:['aria-expanded']});
+    // Safari gestures are cancelled only inside the phone workout flow.
+    const workoutZoomLocked=()=>media.matches&&['#workouts','#training'].includes(location.hash);
+    const updateWorkoutZoom=()=>document.body.classList.toggle('workout-zoom-locked',workoutZoomLocked());
+    for(const name of ['gesturestart','gesturechange'])document.addEventListener(name,event=>{if(workoutZoomLocked())event.preventDefault();},{passive:false});
+    document.addEventListener('touchmove',event=>{if(workoutZoomLocked()&&event.touches.length>1)event.preventDefault();},{passive:false});
+    media.addEventListener('change',updateWorkoutZoom);window.addEventListener('hashchange',updateWorkoutZoom);document.addEventListener('cap:viewchange',updateWorkoutZoom);updateWorkoutZoom();
     media.addEventListener('change',apply);window.visualViewport?.addEventListener('resize',keyboard);document.addEventListener('focusin',keyboard);document.addEventListener('focusout',()=>setTimeout(keyboard,0));document.addEventListener('cap:viewchange',drawMenu);apply();drawMenu();
 });
