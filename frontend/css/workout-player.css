@@ -141,3 +141,53 @@ body.training-focus #training>.club-toolbar,body.training-focus #training>#train
     body.training-focus main {padding-top:1rem;}
     .workout-player-detail .secondary-button {min-height:44px;}
 }
+
+/* Exercise execution follows the supplied IMG_5210 composition. */
+.workout-player-detail>.player-detail-nav,.workout-player-detail>.training-group,.workout-player-detail>.training-prescribed,.workout-player-detail>.exercise-video,.workout-player-detail>.training-previous {display:none;}
+.workout-player-detail>#active-exercise-title {display:flex;align-items:center;justify-content:center;text-align:center;min-height:150px;margin:0;padding:2rem .5rem 3rem;font-size:1.6rem;line-height:1.25;font-weight:650;}
+.player-round-progress {position:relative;display:flex;align-items:center;justify-content:center;min-height:44px;margin:0 0 1rem;padding:0;border:0;}
+.player-round-progress::before {content:"";position:absolute;left:0;right:0;top:50%;height:4px;background:var(--muted);}
+.player-round-progress>strong {position:relative;z-index:1;padding:.4rem 1.2rem;background:var(--accent,#f5a719);color:#252a2c;border-radius:24px;font-size:.85rem;}
+.player-round-progress>nav {display:none;}
+.execution-block-icon {position:absolute;left:0;top:0;display:grid;place-items:center;width:44px;height:44px;border:1px solid var(--accent,#f5a719);border-radius:50%;background:var(--surface);z-index:2;}
+.execution-block-icon svg {width:25px;height:25px;stroke:var(--text);stroke-width:1.8;fill:none;}
+.execution-block-icon>span {position:absolute;right:-4px;top:-8px;display:grid;place-items:center;background:var(--accent,#f5a719);color:#252a2c;min-width:23px;height:23px;border-radius:50%;font-size:.8rem;}
+.execution-actions {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.5rem;margin:.6rem 0 1.8rem;}
+.execution-actions button {display:flex;align-items:center;justify-content:center;gap:.4rem;min-height:44px;padding:.6rem .25rem;background:var(--surface);color:var(--text);border:1px solid var(--border);border-radius:12px;font-size:.7rem;font-weight:650;text-transform:uppercase;letter-spacing:.04em;}
+.execution-actions svg {width:20px;height:20px;stroke:var(--accent,#f5a719);fill:none;stroke-width:1.8;flex-shrink:0;}
+.set-log-table {border-collapse:separate;border-spacing:0 .7rem;}
+.set-log-table thead th {padding:.5rem .2rem .6rem;text-transform:uppercase;letter-spacing:.035em;font-size:.85rem;color:var(--text);font-weight:700;}
+.set-log-table th:first-child,.set-log-table th:last-child {width:auto;}
+.set-log-table tr>:last-child {display:none;}
+.set-log-table tbody th,.set-log-table td {border:0;padding:.4rem .5rem;text-align:center;}
+.set-log-table tbody th {width:27%;}
+.set-log-table tbody th>small:not(.execution-completed) {display:none;}
+.set-log-table .execution-completed {font-size:.65rem;}
+.set-log-table input {height:54px;max-width:92px;margin:auto;display:block;font-size:20px;font-weight:600;background:var(--surface);border:1px solid var(--border);border-radius:12px;text-align:center;}
+.set-log-table input:disabled {background:var(--surface);border:1px solid var(--border);}
+.set-log-table tr[data-current="true"] {background:var(--highlight-bg,#fff0d4);}
+.set-log-table tr[data-current="true"] th {border-left:3px solid var(--accent,#f5a719);}
+.execution-set-number {min-width:44px;min-height:44px;border:0;padding:.25rem;background:transparent;color:var(--text);font-weight:600;font-size:1rem;}
+.set-log[data-advanced="true"] input {max-width:74px;}
+.player-advanced-toggle {font-size:.75rem;}
+.player-complete-next {margin:.5rem 0 1rem;}
+.player-dock {gap:0;background:transparent;border:0;box-shadow:none;padding:0;justify-content:initial;}
+.player-dock button {width:25%;height:58px;background:var(--surface);}
+.player-dock button:first-child {border-radius:30px 0 0 30px;}
+.player-dock button:nth-child(2) {border-radius:0;background:var(--surface);color:var(--text);}
+.player-dock button:nth-child(3) {border-radius:0 30px 30px 0;background:var(--surface);color:var(--text);}
+.player-dock button:last-child {margin-left:.6rem;border-radius:50%;}
+.player-dock svg {width:28px;height:28px;}
+@media(max-width:999px) {
+    body.training-focus:has(.workout-player-layout[data-exercise-open="true"]) .mobile-app-header {display:none;}
+    body.training-focus:has(.workout-player-layout[data-exercise-open="true"]) #active-training>button:not(#training-retry-inline) {display:none;}
+    .workout-player-detail {padding-bottom:5rem;}
+    .workout-player-layout {margin-top:0;}
+    .workout-player-detail>#active-exercise-title {min-height:150px;font-size:1.5rem;}
+    .player-dock {width:min(310px,calc(100vw - 40px));}
+}
+@media(min-width:1000px) {
+    .workout-player-detail {max-width:46rem;}
+    .workout-player-detail>#active-exercise-title {min-height:150px;}
+    .set-log-table input {max-width:130px;}
+}

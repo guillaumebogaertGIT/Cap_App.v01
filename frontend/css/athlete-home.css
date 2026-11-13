@@ -44,3 +44,71 @@
 .athlete-home [role=status]:empty { display: none; }
 @media(min-width:1000px) { .athlete-home-grid { grid-template-columns: minmax(0,1.2fr) minmax(0,1fr); align-items: start; } .athlete-home-workouts { grid-row: span 2; } .athlete-home-community { grid-column: 1 / -1; } }
 @media(max-width:420px) { .athlete-home-training { flex-wrap: wrap; } .athlete-home-training > div { flex-basis: 100%; } }
+
+/* Athlete Home is a compact daily dashboard, with deeper lists in their own routes. */
+.athlete-dashboard .athlete-home-grid {gap:.65rem;}
+.athlete-dashboard .athlete-home-grid>section {padding:.6rem .75rem;}
+.athlete-dashboard .athlete-home-grid>section>header {margin-bottom:0;}
+.athlete-dashboard .athlete-home-workouts>header h3 {font-size:.95rem;}
+.athlete-dashboard .athlete-home-toolbar {margin-bottom:0;}
+.athlete-dashboard main {padding-top:.75rem;}
+.athlete-dashboard .athlete-home-food [data-food]>p.sample-notice:first-child {display:none;}
+.athlete-dashboard .athlete-activity-bars>div>span {height:28px;}
+.athlete-dashboard #dashboard>.dashboard-header {display:none;}
+.athlete-dashboard .welcome-bar {margin-bottom:.25rem;padding-block:.25rem;}
+.athlete-dashboard .welcome-heading h2 {font-size:1.25rem;margin:0;}
+.athlete-home-toolbar {gap:.4rem;min-height:44px;}
+.athlete-home-toolbar>p {font-size:.8rem;margin:0;padding:0;}
+.athlete-home-toolbar button {min-height:44px;padding:.5rem;font-size:.75rem;}
+.athlete-home-grid {grid-template-columns:repeat(2,minmax(0,1fr));gap:.65rem;margin-top:.5rem;align-items:stretch;}
+.athlete-home-grid>section {padding:.65rem .75rem;align-self:stretch;border-radius:14px;}
+.athlete-home-grid>section>header {min-height:36px;margin:0 0 .25rem;padding:0;border:0;gap:.3rem;}
+.athlete-home-grid h3 {font-size:.9rem;}
+.athlete-home-grid header a,.athlete-home-link {min-height:44px;font-size:.75rem;}
+.athlete-home-grid :is(p,.sample-notice) {padding:0;margin:.3rem 0;font-size:.8rem;line-height:1.45;}
+.athlete-home-grid :is(.athlete-home-workouts,.athlete-home-activity,.athlete-home-food) {grid-column:1/-1;grid-row:auto;}
+.athlete-home-grid .athlete-home-community {grid-column:auto;}
+.athlete-home-training {flex-wrap:nowrap;padding:.35rem 0;border:0;gap:.6rem;}
+.athlete-home-training>div {flex:1 1 auto;}
+.athlete-home-training h4 {font-size:1rem;line-height:1.3;}
+.athlete-home-training :is(a,button) {min-height:44px;padding:.55rem .65rem;font-size:.8rem;flex-shrink:0;}
+.athlete-home-workouts {background:var(--highlight-bg,var(--surface));}
+.athlete-home [data-workouts] {max-height:none;overflow:visible;}
+.athlete-home [data-workouts]>.secondary-button {font-size:.75rem;min-height:44px;}
+.athlete-home-activity [data-activity] {display:flex;align-items:center;gap:1rem;}
+.athlete-activity-total {display:flex;align-items:center;gap:.5rem;max-width:9rem;}
+.athlete-activity-total strong {font-size:1.8rem;font-weight:650;}
+.athlete-activity-total span {font-size:.75rem;color:var(--muted);}
+.athlete-activity-bars {display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:.5rem;flex:1;}
+.athlete-activity-bars>div {display:flex;flex-direction:column;align-items:center;gap:.15rem;}
+.athlete-activity-bars>div>span {display:flex;align-items:flex-end;width:12px;height:35px;background:var(--hover);border-radius:4px;overflow:hidden;}
+.athlete-activity-bars i {display:block;width:100%;background:var(--accent,#f5a719);border-radius:4px;}
+.athlete-activity-bars small {font-size:.65rem;color:var(--muted);}
+.athlete-home-nutrients {margin:.3rem 0;gap:.4rem;}
+.athlete-home-nutrient {gap:.2rem;}
+.athlete-home-nutrient strong {font-size:.8rem;}
+.athlete-home-nutrient-track {height:3rem;width:1.8rem;}
+.athlete-home-nutrient-label {font-size:.7rem;}
+.athlete-home-nutrient small {font-size:.65rem;}
+.athlete-home-post {padding:.2rem 0;border:0;}
+.athlete-home-post-heading {gap:.25rem;}
+.athlete-home-post-heading strong {font-size:.8rem;}
+.athlete-home-post-heading small {display:none;}
+.athlete-home-post-heading img {width:24px;height:24px;}
+.athlete-home-post>p,.athlete-home-message span {font-size:.75rem;-webkit-line-clamp:2;}
+.athlete-home-message {padding:.2rem 0;border:0;gap:.2rem;}
+.athlete-home-message strong {font-size:.8rem;}
+.athlete-home-message small {display:none;}
+.athlete-home-grid>section:is(.athlete-home-messages,.athlete-home-community)>header {flex-wrap:nowrap;}
+.athlete-home-grid>section:is(.athlete-home-messages,.athlete-home-community) h3 {font-size:.8rem;overflow-wrap:anywhere;}
+@media(min-width:1000px) {
+    .athlete-home-grid {grid-template-columns:1.15fr 1fr 1fr;gap:1rem;}
+    .athlete-home-grid .athlete-home-workouts {grid-column:1/3;grid-row:1;}
+    .athlete-home-grid .athlete-home-activity {grid-column:3;grid-row:1;}
+    .athlete-home-grid .athlete-home-food {grid-column:1;grid-row:2;}
+    .athlete-home-grid .athlete-home-messages {grid-column:2;grid-row:2;}
+    .athlete-home-grid .athlete-home-community {grid-column:3;grid-row:2;}
+    .athlete-home-grid>section {padding:1rem;}
+    .athlete-home-grid h3 {font-size:1rem;}
+    .athlete-home-nutrient-track {height:5rem;}
+}
